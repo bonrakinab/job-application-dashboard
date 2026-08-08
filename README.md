@@ -11,10 +11,11 @@ A private, human-in-the-loop job intelligence system for discovering public job 
 - **Public job discovery** from Greenhouse, Lever and Ashby. No LinkedIn login or account scraping is required.
 - **Scheduled discovery** through a JWT-protected Supabase Edge Function invoked by pg_cron using Vault-backed credentials.
 - **Deterministic prefilter/scoring** for target role families, skill evidence, preferred locations, seniority, explicit citizenship/clearance requirements and large stated experience gaps.
-- **OpenAI structured analysis** using the Responses API when an API key is configured.
+- **Gemini-first structured AI analysis** through the Gemini Interactions API. `gemini-3.6-flash` is the default model and can run on the Gemini API free tier.
+- **Optional OpenAI provider** remains available by explicitly setting `AI_PROVIDER=openai`.
 - **Truth-constrained application pack** with tailored resume content, cover letter, outreach draft, interview themes and a claims audit. Known skill/employer/project identities are post-filtered against the master profile.
 - **ATS-friendly PDF generation** for tailored resumes and cover letters, generated server-side on demand.
-- **Company/hiring-team research** using public web sources. It never guesses private emails or phone numbers.
+- **Company/hiring-team web research** remains available with the OpenAI provider. It is intentionally disabled in the Gemini free-tier configuration because Google Search grounding is not included on that tier.
 - **Gmail integration** for daily digests and draft-only outreach. Recruiter outreach is never auto-sent.
 - **Human approval** remains between preparation and the official application page. This project intentionally does not auto-submit job applications.
 
@@ -31,7 +32,8 @@ PostgreSQL + RLS
       ▲
       │
 Vercel / Next.js dashboard
-   ├─ OpenAI Responses API (optional enrichment)
+   ├─ Gemini 3.6 Flash (default/free AI enrichment)
+   ├─ OpenAI API (optional paid provider / grounded research)
    └─ Gmail API (optional digest + draft outreach)
 ```
 
@@ -48,11 +50,23 @@ For a new environment:
    - `SUPABASE_SECRET_KEY` (or legacy `SUPABASE_SERVICE_ROLE_KEY`)
    - `DASHBOARD_PASSWORD`
    - `AUTH_SECRET`
-6. Add `OPENAI_API_KEY` to enable AI analysis, company research, and application packs.
-7. Optionally configure Gmail OAuth values and `GMAIL_DIGEST_TO` for daily email and outreach drafts.
-8. Save the private master candidate profile through **Settings** rather than committing it to Git.
+6. For free AI enrichment configure:
+   - `AI_PROVIDER=gemini`
+   - `GEMINI_API_KEY`
+   The default analysis/application-pack model is `gemini-3.6-flash`.
+7. If you explicitly want the paid OpenAI provider instead, set `AI_PROVIDER=openai` and configure `OPENAI_API_KEY`.
+8. Optionally configure Gmail OAuth values and `GMAIL_DIGEST_TO` for daily email and outreach drafts.
+9. Save the private master candidate profile through **Settings** rather than committing it to Git.
 
 See [`docs/deployment.md`](docs/deployment.md) for the production checklist and `/api/health` diagnostics.
+
+## AI privacy and cost defaults
+
+- Gemini requests use `store=false` so the app does not ask the Interactions API to retain the interaction for server-side history.
+- Email, phone number and personal links are removed from the candidate profile before it is sent to either AI provider.
+- `AI_PROVIDER` defaults to Gemini. The app does **not** silently fall back to OpenAI if Gemini is unavailable, preventing unexpected paid API usage.
+- Deterministic blockers run before AI calls, reducing unnecessary model requests.
+- Company web research is not attempted through Gemini free-tier mode because search grounding is not available there.
 
 ## Safety / privacy defaults
 

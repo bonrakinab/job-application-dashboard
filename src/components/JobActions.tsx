@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ApplicationStatus } from '@/lib/types';
 
-export function JobActions({ id, applyUrl, hasPack, status }: { id: string; applyUrl?: string; hasPack: boolean; status: ApplicationStatus }) {
+export function JobActions({ id, applyUrl, hasPack, status, canResearch }: { id: string; applyUrl?: string; hasPack: boolean; status: ApplicationStatus; canResearch: boolean }) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
   const router = useRouter();
@@ -48,7 +48,8 @@ export function JobActions({ id, applyUrl, hasPack, status }: { id: string; appl
     <div className="kicker">Actions</div>
     <div className="grid" style={{ gap: 9 }}>
       <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Re-analyze</button>
-      <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
+      <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
+      {!canResearch ? <span className="small muted">Grounded company web research is disabled in Gemini free-tier mode.</span> : null}
       <button className="btn primary" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>{hasPack ? 'Regenerate application pack' : 'Generate application pack'}</button>
       {hasPack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>

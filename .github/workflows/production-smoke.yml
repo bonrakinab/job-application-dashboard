@@ -1,10 +1,7 @@
-name: Production OpenAI smoke
+name: Production AI smoke
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/production-smoke.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,15 +22,15 @@ jobs:
           for attempt in $(seq 1 90); do
             if HEALTH=$(curl --fail --silent --show-error --max-time 15 "$BASE_URL/api/health" 2>/dev/null); then
               echo "Production health: $HEALTH"
-              echo "$HEALTH" | jq -e '.ok == true and .checks.supabase == true and .checks.dashboardAuth == true and .checks.openai == true' >/dev/null
+              echo "$HEALTH" | jq -e '.ok == true and .checks.supabase == true and .checks.dashboardAuth == true and .checks.ai == true' >/dev/null
               exit 0
             fi
             sleep 5
           done
-          echo "Production health endpoint did not become ready with Supabase, dashboard auth, and OpenAI configured." >&2
+          echo "Production health endpoint did not become ready with Supabase, dashboard auth, and the selected AI provider configured." >&2
           exit 1
 
-      - name: Request GitHub OIDC token and run one OpenAI application-pack smoke test
+      - name: Request GitHub OIDC token and run one AI application-pack smoke test
         shell: bash
         run: |
           set -euo pipefail
@@ -42,8 +39,8 @@ jobs:
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=job-agent-production-smoke" | jq -r '.value')
           test -n "$TOKEN"
           RESPONSE=$(curl --fail --silent --show-error --max-time 300 \
-            -X POST "$BASE_URL/api/internal/smoke/openai" \
+            -X POST "$BASE_URL/api/internal/smoke/ai" \
             -H "Authorization: Bearer $TOKEN" \
             -H 'Content-Type: application/json')
-          echo "OpenAI smoke result: $RESPONSE"
+          echo "AI smoke result: $RESPONSE"
           echo "$RESPONSE" | jq -e '.ok == true' >/dev/null

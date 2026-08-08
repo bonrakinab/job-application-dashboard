@@ -1,5 +1,5 @@
+import { analyzeJobWithAI, aiStatus, createApplicationPack } from '@/lib/ai';
 import { verifyGitHubActionsOidc } from '@/lib/github-actions-oidc';
-import { analyzeJobWithAI, createApplicationPack } from '@/lib/openai';
 import { getCandidateProfile, listJobs, logActivity, saveApplicationPack, saveMatch } from '@/lib/store';
 import { supabaseRequest } from '@/lib/supabase-rest';
 import type { JobWithMatch } from '@/lib/types';
@@ -7,7 +7,7 @@ import type { JobWithMatch } from '@/lib/types';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-const COMPLETED_EVENT = 'production.openai_smoke.completed';
+const COMPLETED_EVENT = 'production.ai_smoke.completed';
 
 function titlePriority(job: JobWithMatch) {
   const title = job.title.toLowerCase();
@@ -31,6 +31,8 @@ function eligible(job: JobWithMatch) {
 export async function POST(request: Request) {
   try {
     await verifyGitHubActionsOidc(request);
+    const ai = aiStatus();
+    if (!ai.configured) throw new Error(`Selected AI provider ${ai.provider} is not configured.`);
 
     const completed = await supabaseRequest<Array<{ id: number; payload: unknown }>>(
       `activity_log?event=eq.${encodeURIComponent(COMPLETED_EVENT)}&select=id,payload&order=created_at.desc&limit=1`,
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
       .sort((a, b) => (titlePriority(b) + (b.match?.overall ?? 0)) - (titlePriority(a) + (a.match?.overall ?? 0)))
       .slice(0, 5);
 
-    if (!candidates.length) throw new Error('No strong, unblocked individual-contributor job is available for the OpenAI smoke test.');
+    if (!candidates.length) throw new Error('No strong, unblocked individual-contributor job is available for the AI smoke test.');
 
     let selected: JobWithMatch | undefined;
     let aiMatch: Awaited<ReturnType<typeof analyzeJobWithAI>> | undefined;
@@ -53,8 +55,9 @@ export async function POST(request: Request) {
     for (const job of candidates) {
       const analyzed = await analyzeJobWithAI(job, profile);
       await saveMatch(job.id!, analyzed);
-      if (!analyzed.model?.startsWith('gpt-')) {
-        throw new Error(`OpenAI analysis did not run successfully: ${analyzed.explanation}`);
+      const expectedPrefix = ai.provider === 'gemini' ? 'gemini-' : 'gpt-';
+      if (!analyzed.model?.startsWith(expectedPrefix)) {
+        throw new Error(`${ai.provider} analysis did not run successfully: ${analyzed.explanation}`);
       }
       if (!analyzed.blockers.length && analyzed.recommendation !== 'skip') {
         selected = job;
@@ -63,12 +66,13 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!selected || !aiMatch) throw new Error('OpenAI analysis ran, but every smoke-test candidate was classified as blocked/skip.');
+    if (!selected || !aiMatch) throw new Error('AI analysis ran, but every smoke-test candidate was classified as blocked/skip.');
 
     const { pack, model: packModel } = await createApplicationPack(selected, profile, aiMatch);
     await saveApplicationPack(selected.id!, pack, packModel);
 
     const payload = {
+      provider: ai.provider,
       jobId: selected.id,
       company: selected.company,
       title: selected.title,
@@ -85,7 +89,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     try {
-      await logActivity('production.openai_smoke.failed', undefined, { message, failedAt: new Date().toISOString() });
+      await logActivity('production.ai_smoke.failed', undefined, { message, failedAt: new Date().toISOString() });
     } catch {
       // Do not mask the primary smoke-test failure if logging also fails.
     }

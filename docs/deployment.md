@@ -13,18 +13,36 @@ Configure these as encrypted/sensitive Vercel environment variables for Producti
 
 The application fails closed in production if Supabase private access is configured without dashboard authentication.
 
-## Optional integrations
+## AI provider
 
-### OpenAI
+Gemini is the default provider so the core AI workflow can use the Gemini API free tier.
 
+### Gemini (default)
+
+- `AI_PROVIDER=gemini`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL_JOB_ANALYSIS` (default `gemini-3.6-flash`)
+- `GEMINI_MODEL_APPLICATION_PACK` (default `gemini-3.6-flash`)
+
+Gemini is used for job analysis and truth-constrained application-pack generation. Requests use the Interactions API with structured JSON output and `store=false`. Candidate email, phone number and personal links are removed before model calls.
+
+Company/hiring-team web research is disabled in Gemini free-tier mode because Google Search grounding is not included on the free tier.
+
+### OpenAI (optional paid provider)
+
+To use OpenAI instead, explicitly set:
+
+- `AI_PROVIDER=openai`
 - `OPENAI_API_KEY`
-- `OPENAI_MODEL_JOB_ANALYSIS` (defaults are documented in `.env.example`)
+- `OPENAI_MODEL_JOB_ANALYSIS`
 - `OPENAI_MODEL_APPLICATION_PACK`
 - `OPENAI_MODEL_RESEARCH`
 
-Without an OpenAI key, scheduled discovery still works with the deterministic scorer.
+The app does not silently fail over from Gemini to OpenAI, so a Gemini quota or configuration problem cannot unexpectedly create paid OpenAI usage.
 
-### Gmail
+Without the selected AI provider's key, scheduled discovery still works with the deterministic scorer.
+
+## Gmail
 
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
@@ -33,11 +51,11 @@ Without an OpenAI key, scheduled discovery still works with the deterministic sc
 
 Outreach remains draft-only; it is not automatically sent.
 
-### Vercel Cron
+## Optional Vercel Cron fallback
 
 - `CRON_SECRET`
 
-The Supabase `daily-discovery` Edge Function and pg_cron schedule can operate independently of Vercel Cron.
+The production scheduler is Supabase `daily-discovery` + pg_cron. The protected Next.js cron route is retained only as a manual/fallback path.
 
 ## Safe secret generation
 
@@ -56,11 +74,12 @@ After a fresh deployment:
 1. Open `/api/health`.
 2. Confirm `mode` is `persistent` after Supabase credentials are configured.
 3. Confirm `dashboardAuth` is `true` before exposing private data.
-4. Confirm optional integrations individually as they are enabled.
-5. Sign in through `/login` and verify the dashboard loads persistent jobs.
-6. Trigger one manual discovery and confirm existing application statuses are preserved.
+4. Confirm `aiProvider` is the provider you intend to use and `checks.ai` is `true`.
+5. For the free setup, confirm `aiProvider` is `gemini` and `checks.gemini` is `true`.
+6. Sign in through `/login` and verify the dashboard loads persistent jobs.
+7. Trigger one analysis/application-pack action and confirm the generated model name is saved in Supabase.
 
-The health route only returns booleans indicating whether configuration groups are present. It never returns credential values.
+The health route only returns provider names and booleans indicating whether configuration groups are present. It never returns credential values.
 
 ## Supabase
 
