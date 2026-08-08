@@ -1,4 +1,4 @@
-import { analyzeJobWithAI } from '@/lib/openai';
+import { analyzeJobWithAI } from '@/lib/ai';
 import { getCandidateProfile, getJob, saveMatch } from '@/lib/store';
 
 export const runtime = 'nodejs';
