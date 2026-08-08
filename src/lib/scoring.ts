@@ -1,8 +1,7 @@
 import type { CandidateProfile, Job, MatchScore, Recommendation } from './types';
 import { clamp, normalizeText } from './utils';
 
-const SENIORITY_BLOCKERS = ['principal', 'staff', 'director', 'vp ', 'vice president', 'head of', 'chief '];
-const SOFT_SENIORITY_TERMS = ['senior', 'lead'];
+const SENIORITY_BLOCKERS = ['principal', 'staff', 'director', 'manager', 'vp ', 'vice president', 'head of', 'chief '];
 const CLEARANCE_PATTERNS = ['active security clearance', 'top secret clearance', 'secret clearance required'];
 const COUNTRY_BLOCKERS = ['us citizens only', 'u.s. citizens only', 'must be a us citizen', 'must be a u.s. citizen'];
 const STOP_WORDS = new Set(['and', 'the', 'for', 'with', 'role', 'senior', 'junior']);

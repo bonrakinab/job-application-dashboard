@@ -44,6 +44,13 @@ test('principal seniority is blocked for a low-experience profile', () => {
   assert.ok(blockers.some((value) => value.includes('seniority')));
 });
 
+test('manager titles are blocked for a low-experience profile even when AI/engineering keywords match', () => {
+  const score = deterministicScore(job({ title: 'AI Engineering Manager' }), profile);
+  assert.ok(score.blockers.some((value) => value.includes('seniority')));
+  assert.equal(score.recommendation, 'skip');
+  assert.ok(score.overall <= 49);
+});
+
 test('explicit U.S. citizenship restrictions are hard blockers', () => {
   const blockers = hardEligibility(job({ description: 'Must be a US citizen. Build AI systems.' }), profile);
   assert.ok(blockers.some((value) => value.includes('U.S. citizenship')));
