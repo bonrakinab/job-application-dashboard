@@ -7,7 +7,7 @@ function privateDataConfigured() {
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (path.startsWith('/api/cron/')) return NextResponse.next();
+  if (path === '/api/health' || path.startsWith('/api/cron/')) return NextResponse.next();
 
   if (process.env.NODE_ENV === 'production' && privateDataConfigured() && !authEnabled()) {
     return new NextResponse('Dashboard authentication must be configured before private Supabase data can be exposed.', { status: 503 });
