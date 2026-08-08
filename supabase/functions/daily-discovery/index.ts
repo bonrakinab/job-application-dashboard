@@ -12,6 +12,7 @@ const CLEARANCE_PATTERNS = ['active security clearance', 'top secret clearance',
 const COUNTRY_BLOCKERS = ['us citizens only', 'u.s. citizens only', 'must be a us citizen', 'must be a u.s. citizen'];
 const STOP_WORDS = new Set(['and', 'the', 'for', 'with', 'role', 'senior', 'junior']);
 const DOMAIN_ACRONYMS = new Set(['ai', 'ml']);
+const SKILL_EVIDENCE_CURVE = [20, 45, 62, 74, 82, 88, 93, 96, 98, 100];
 
 function stripHtml(value = '') { return value.replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim(); }
 function normalizeText(value = '') { return stripHtml(value).toLowerCase().replace(/[^a-z0-9+#.\-/ ]/g, ' ').replace(/\s+/g, ' ').trim(); }
@@ -19,6 +20,13 @@ function clamp(value: number, min = 0, max = 100) { return Math.max(min, Math.mi
 function daysSince(value?: string) { if (!value) return 0; const t = new Date(value).getTime(); return Number.isNaN(t) ? 0 : (Date.now() - t) / 86_400_000; }
 async function stableJobId(source: string, sourceKey: string, externalId: string) { const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${source}:${sourceKey}:${externalId}`)); return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32); }
 
+function scoreSkillEvidence(text: string, configuredSkills: string[]) {
+  if (!configuredSkills.length) return { score: 50, matched: [] as string[] };
+  const matched = configuredSkills.filter((skill) => text.includes(normalizeText(skill)));
+  const saturation = SKILL_EVIDENCE_CURVE[Math.min(matched.length, SKILL_EVIDENCE_CURVE.length - 1)];
+  const compactProfileCoverage = configuredSkills.length <= 6 ? (matched.length / configuredSkills.length) * 95 : 0;
+  return { score: clamp(Math.max(saturation, compactProfileCoverage)), matched };
+}
 function titleMatchesTarget(title: string, targets: string[]) {
   const normalizedTitle = normalizeText(title);
   return targets.some((target) => {
@@ -39,6 +47,11 @@ function statedYearsRequirement(text: string) {
   const matches = [...text.matchAll(/(?:at least\s*)?(\d{1,2})\+?\s*(?:or more\s*)?years?\s+(?:of\s+)?(?:professional\s+|industry\s+)?experience/g)];
   return matches.reduce((max, match) => Math.max(max, Number(match[1]) || 0), 0);
 }
+function hasSoftSeniorityGap(title: string, yearsExperience: number) {
+  const normalized = normalizeText(title);
+  if (normalized.includes('lead') && yearsExperience < 5) return true;
+  return normalized.includes('senior') && yearsExperience < 4;
+}
 function hardEligibility(job: Job, profile: CandidateProfile) {
   const text = normalizeText(`${job.title} ${job.description}`);
   const blockers: string[] = [];
@@ -57,17 +70,22 @@ function hardEligibility(job: Job, profile: CandidateProfile) {
 function deterministicScore(job: Job, profile: CandidateProfile): Match {
   const text = normalizeText(`${job.title} ${job.location ?? ''} ${job.description}`);
   const blockers = hardEligibility(job, profile);
-  const matchedSkills = (profile.skills ?? []).filter((skill) => text.includes(normalizeText(skill)));
-  const skills = profile.skills?.length ? clamp((matchedSkills.length / profile.skills.length) * 100) : 50;
+  const skillEvidence = scoreSkillEvidence(text, profile.skills ?? []);
+  const matchedSkills = skillEvidence.matched;
+  const skills = skillEvidence.score;
   const targetScore = titleMatchesTarget(job.title, profile.targetTitles ?? []) ? 100 : 25;
   const location = locationMatches(job, profile) ? 100 : 20;
-  const experience = clamp((profile.yearsExperience ?? 2) >= 2 ? 65 + targetScore * 0.25 : 50 + targetScore * 0.2);
+  const candidateYears = profile.yearsExperience ?? 0;
+  const softSeniorityGap = hasSoftSeniorityGap(job.title, candidateYears);
+  const experience = softSeniorityGap ? clamp(50 + Math.min(candidateYears, 4) * 5) : clamp(candidateYears >= 2 ? 65 + targetScore * 0.25 : 50 + targetScore * 0.2);
   const education = profile.degrees?.length ? 90 : 70;
   const domain = clamp(targetScore * 0.65 + skills * 0.35);
   const weighted = clamp(skills * 0.35 + experience * 0.2 + education * 0.1 + domain * 0.2 + location * 0.15);
-  const overall = blockers.length ? Math.min(49, weighted) : weighted;
+  const eligibleScore = softSeniorityGap ? Math.min(69, weighted) : weighted;
+  const overall = blockers.length ? Math.min(49, eligibleScore) : eligibleScore;
   const recommendation = blockers.length ? 'skip' : overall >= 90 ? 'exceptional' : overall >= 80 ? 'strong' : overall >= 70 ? 'reasonable' : overall >= 60 ? 'stretch' : 'skip';
-  return { job_id: job.id, overall, skills, experience, education, domain, location, recommendation, blockers, strengths: matchedSkills.slice(0, 6), gaps: [], must_have: [], preferred: [], matched_skills: matchedSkills, missing_skills: [], explanation: blockers.length ? blockers.join(' ') : 'Deterministic scheduled score based on role family, configured skills, location, education and experience.', model: 'deterministic-edge-v2', analyzed_at: new Date().toISOString() };
+  const gaps = softSeniorityGap ? ['Title indicates a seniority level above the configured experience level; keep as a stretch unless the description is unusually flexible.'] : [];
+  return { job_id: job.id, overall, skills, experience, education, domain, location, recommendation, blockers, strengths: matchedSkills.slice(0, 6), gaps, must_have: [], preferred: [], matched_skills: matchedSkills, missing_skills: [], explanation: blockers.length ? blockers.join(' ') : softSeniorityGap ? 'Deterministic scheduled score uses role family, skill evidence, location and education, with a soft cap for a seniority mismatch.' : 'Deterministic scheduled score based on role family, skill evidence, location, education and experience.', model: 'deterministic-edge-v3', analyzed_at: new Date().toISOString() };
 }
 
 async function db(path: string, init: RequestInit = {}) {
@@ -119,8 +137,6 @@ Deno.serve(async (request) => {
     settled.forEach((result, index) => { if (result.status === 'fulfilled') allJobs.push(...result.value); else errors.push(`${sources[index].company}: ${String((result.reason as any)?.message ?? result.reason)}`); });
     const relevant = allJobs.filter((job) => titleMatchesTarget(job.title, profile.targetTitles ?? []) && locationMatches(job, profile) && (!job.posted_at || daysSince(job.posted_at) <= MAX_AGE_DAYS));
     const now = new Date().toISOString();
-    // PostgREST bulk writes require identical object keys. ATS payloads have different optional fields,
-    // so upsert individual job rows while keeping matches/applications batched.
     for (const job of relevant) await upsert('jobs', [{ ...job, last_seen_at: now }], 'id');
     const matches = relevant.map((job) => deterministicScore(job, profile));
     await upsert('job_matches', matches, 'job_id');
