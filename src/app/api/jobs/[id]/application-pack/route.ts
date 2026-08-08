@@ -1,4 +1,4 @@
-import { createApplicationPack } from '@/lib/openai';
+import { createApplicationPack } from '@/lib/ai';
 import { getCandidateProfile, getJob, saveApplicationPack } from '@/lib/store';
 
 export const runtime = 'nodejs';
