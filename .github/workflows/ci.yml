@@ -36,3 +36,42 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  production-gmail-smoke:
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/verify-gmail-production'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      BASE_URL: https://job-application-dashboard-fx6j.vercel.app
+    steps:
+      - name: Verify Gmail production configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEALTH=$(curl --fail --silent --show-error --max-time 20 "$BASE_URL/api/health")
+          echo "Production health: $HEALTH"
+          echo "$HEALTH" | jq -e '.ok == true and .mode == "persistent" and .checks.gmailOauth == true' >/dev/null
+
+      - name: Create one unsent Gmail outreach draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=job-agent-production-smoke" | jq -r '.value')
+          test -n "$TOKEN"
+          RESPONSE_FILE=$(mktemp)
+          STATUS=$(curl --silent --show-error --max-time 120 \
+            -o "$RESPONSE_FILE" -w '%{http_code}' \
+            -X POST "$BASE_URL/api/internal/smoke/gmail" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json')
+          RESPONSE=$(cat "$RESPONSE_FILE")
+          echo "Gmail smoke HTTP status: $STATUS"
+          echo "Gmail smoke result: $RESPONSE"
+          test "$STATUS" -ge 200 -a "$STATUS" -lt 300
+          echo "$RESPONSE" | jq -e '.ok == true and .draftCreated == true' >/dev/null
