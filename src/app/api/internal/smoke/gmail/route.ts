@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     await validateGmailOAuth();
 
     const jobs = await listJobs(200);
-    let selected: typeof jobs[number] | undefined;
+    let selected: (typeof jobs)[number] | undefined;
     let pack: Awaited<ReturnType<typeof getApplicationPack>> | undefined;
 
     for (const job of jobs) {
