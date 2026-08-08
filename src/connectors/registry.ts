@@ -3,7 +3,9 @@ import { supabaseConfigured, supabaseRequest } from '@/lib/supabase-rest';
 import { ashbyAdapter } from './ashby';
 import { greenhouseAdapter } from './greenhouse';
 import { leverAdapter } from './lever';
+import { fetchHimalayasJobs } from './himalayas';
 import { fetchJobicyJobs } from './jobicy';
+import { fetchRemoteOkJobs } from './remoteok';
 import { fetchRemotiveJobs } from './remotive';
 import type { JobSourceAdapter } from './job-source';
 
@@ -57,7 +59,12 @@ export async function configuredSources() {
 export async function discoverJobs() {
   const sources = await configuredSources();
   const atsSettled = await Promise.allSettled(sources.map(async (source) => ({ source, jobs: await adapters[source.kind].fetch(source) })));
-  const supplementalSettled = await Promise.allSettled([fetchJobicyJobs(), fetchRemotiveJobs()]);
+  const supplementalSettled = await Promise.allSettled([
+    fetchJobicyJobs(),
+    fetchRemotiveJobs(),
+    fetchRemoteOkJobs(),
+    fetchHimalayasJobs(),
+  ]);
   const jobs: Job[] = [];
   const errors: string[] = [];
 
@@ -71,5 +78,5 @@ export async function discoverJobs() {
   }
 
   const deduped = new Map(jobs.map((job) => [job.id ?? `${job.source}:${job.sourceKey}:${job.externalId}`, job]));
-  return { jobs: [...deduped.values()], errors, sources: sources.length + 2 };
+  return { jobs: [...deduped.values()], errors, sources: sources.length + 4 };
 }
