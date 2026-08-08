@@ -36,3 +36,37 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  production-smoke:
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/run-production-openai-smoke'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      BASE_URL: https://job-application-dashboard-fx6j.vercel.app
+    steps:
+      - name: Verify production configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEALTH=$(curl --fail --silent --show-error --max-time 20 "$BASE_URL/api/health")
+          echo "Production health: $HEALTH"
+          echo "$HEALTH" | jq -e '.ok == true and .checks.supabase == true and .checks.dashboardAuth == true and .checks.openai == true' >/dev/null
+
+      - name: Run OIDC-authenticated OpenAI smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=job-agent-production-smoke" | jq -r '.value')
+          test -n "$TOKEN"
+          RESPONSE=$(curl --fail --silent --show-error --max-time 300 \
+            -X POST "$BASE_URL/api/internal/smoke/openai" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json')
+          echo "OpenAI smoke result: $RESPONSE"
+          echo "$RESPONSE" | jq -e '.ok == true' >/dev/null
