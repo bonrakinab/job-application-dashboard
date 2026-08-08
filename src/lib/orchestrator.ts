@@ -1,5 +1,5 @@
 import { discoverJobs } from '@/connectors/registry';
-import { analyzeJobWithAI } from './openai';
+import { analyzeJobWithAI } from './ai';
 import { deterministicScore, locationMatchesPreference, titleMatchesTarget } from './scoring';
 import { getCandidateProfile, listUnanalyzedJobs, logActivity, saveDiscoveredJobs, saveMatch } from './store';
 import type { CandidateProfile, Job } from './types';
