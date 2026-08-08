@@ -24,12 +24,13 @@ insert into job_sources(kind, source_key, company, enabled) values
   ('ashby','magical','Magical',true),
   ('ashby','terminal','Terminal',true),
   ('ashby','runbook','Runbook',true),
-  ('lever','stackadapt','StackAdapt',true),
+  ('greenhouse','stackadapt','StackAdapt',true),
+  ('greenhouse','stackadapt-confidential','StackAdapt - Confidential',true),
   ('lever','getmaple','Maple',true),
   ('lever','wealthsimple','Wealthsimple',true),
   ('lever','applydigital','APPLY',true),
   ('greenhouse','clutch','Clutch',true)
-on conflict(kind, source_key) do update set company = excluded.company;
+on conflict(kind, source_key) do update set company = excluded.company, enabled = excluded.enabled;
 
 create table if not exists jobs (
   id text primary key,
