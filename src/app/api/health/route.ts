@@ -1,4 +1,5 @@
 import { aiStatus } from '@/lib/ai';
+import { gmailConfigStatus } from '@/lib/gmail';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +9,7 @@ function present(...values: Array<string | undefined>) {
 
 export async function GET() {
   const ai = aiStatus();
+  const gmail = gmailConfigStatus();
   const checks = {
     supabase: present(process.env.SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_URL)
       && present(process.env.SUPABASE_SECRET_KEY, process.env.SUPABASE_SERVICE_ROLE_KEY),
@@ -15,10 +17,13 @@ export async function GET() {
     ai: ai.configured,
     gemini: ai.gemini,
     openai: ai.openai,
-    gmail: present(process.env.GOOGLE_CLIENT_ID)
-      && present(process.env.GOOGLE_CLIENT_SECRET)
-      && present(process.env.GOOGLE_REFRESH_TOKEN)
-      && present(process.env.GMAIL_DIGEST_TO),
+    gmail: gmail.oauth,
+    gmailOauth: gmail.oauth,
+    gmailDigest: gmail.digest,
+    gmailClientId: gmail.clientId,
+    gmailClientSecret: gmail.clientSecret,
+    gmailRefreshToken: gmail.refreshToken,
+    gmailDigestTo: gmail.digestTo,
     cron: present(process.env.CRON_SECRET),
   };
 
