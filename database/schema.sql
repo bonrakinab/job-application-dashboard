@@ -138,6 +138,14 @@ create table if not exists activity_log (
   created_at timestamptz not null default now()
 );
 
+create table if not exists oauth_connections (
+  provider text primary key,
+  refresh_token_ciphertext text not null,
+  scope text,
+  connected_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create or replace view recommended_jobs
 with (security_invoker = true) as
 select
@@ -170,3 +178,4 @@ alter table documents enable row level security;
 alter table companies enable row level security;
 alter table contacts enable row level security;
 alter table activity_log enable row level security;
+alter table oauth_connections enable row level security;
