@@ -29,8 +29,15 @@ export function titleMatchesTarget(title: string, targets: string[]) {
 
 export function locationMatchesPreference(job: Job, profile: CandidateProfile) {
   const location = normalizeText(job.location ?? '');
-  if (!location) return Boolean(job.remote);
   const preferred = profile.preferredLocations.map(normalizeText).filter(Boolean);
+  const globallyRemote = !location
+    || location === 'remote'
+    || location === 'anywhere'
+    || location === 'worldwide'
+    || location.includes('remote worldwide')
+    || location.includes('remote anywhere');
+  if (job.remote && globallyRemote) return true;
+  if (!location) return Boolean(job.remote);
   if (preferred.some((place) => location.includes(place) || place.includes(location))) return true;
   return false;
 }
