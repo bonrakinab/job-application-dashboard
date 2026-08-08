@@ -44,12 +44,17 @@ Without the selected AI provider's key, scheduled discovery still works with the
 
 ## Gmail
 
+Outreach draft creation requires only Gmail OAuth:
+
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_REFRESH_TOKEN`
+
+The optional daily digest additionally requires:
+
 - `GMAIL_DIGEST_TO`
 
-Outreach remains draft-only; it is not automatically sent.
+Outreach remains draft-only; it is never automatically sent. `/api/health` reports Gmail OAuth and digest readiness separately without exposing any values.
 
 ## Optional Vercel Cron fallback
 
@@ -76,8 +81,10 @@ After a fresh deployment:
 3. Confirm `dashboardAuth` is `true` before exposing private data.
 4. Confirm `aiProvider` is the provider you intend to use and `checks.ai` is `true`.
 5. For the free setup, confirm `aiProvider` is `gemini` and `checks.gemini` is `true`.
-6. Sign in through `/login` and verify the dashboard loads persistent jobs.
-7. Trigger one analysis/application-pack action and confirm the generated model name is saved in Supabase.
+6. Confirm `checks.gmailOauth` is `true` before creating Gmail outreach drafts.
+7. If you want the optional daily digest, also confirm `checks.gmailDigest` is `true`.
+8. Sign in through `/login` and verify the dashboard loads persistent jobs.
+9. Trigger one analysis/application-pack action and confirm the generated model name is saved in Supabase.
 
 The health route only returns provider names and booleans indicating whether configuration groups are present. It never returns credential values.
 
