@@ -1,0 +1,49 @@
+name: Production OpenAI smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/production-smoke.yml'
+
+permissions:
+  contents: read
+  deployments: read
+  id-token: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_URL: https://job-application-dashboard-fx6j.vercel.app
+    steps:
+      - name: Wait for the Vercel production health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 90); do
+            if HEALTH=$(curl --fail --silent --show-error --max-time 15 "$BASE_URL/api/health" 2>/dev/null); then
+              echo "Production health: $HEALTH"
+              echo "$HEALTH" | jq -e '.ok == true and .checks.supabase == true and .checks.dashboardAuth == true and .checks.openai == true' >/dev/null
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Production health endpoint did not become ready with Supabase, dashboard auth, and OpenAI configured." >&2
+          exit 1
+
+      - name: Request GitHub OIDC token and run one OpenAI application-pack smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN=$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=job-agent-production-smoke" | jq -r '.value')
+          test -n "$TOKEN"
+          RESPONSE=$(curl --fail --silent --show-error --max-time 300 \
+            -X POST "$BASE_URL/api/internal/smoke/openai" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json')
+          echo "OpenAI smoke result: $RESPONSE"
+          echo "$RESPONSE" | jq -e '.ok == true' >/dev/null
