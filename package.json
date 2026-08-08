@@ -1,0 +1,10 @@
+{
+  "name": "job-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal job intelligence agent: discovery, eligibility filtering, ranking, application packs, and outcome learning.",
+  "scripts": {
+    "prototype": "http-server prototype -p 4173 -c-1",
+    "typecheck": "tsc --noEmit"
+  }
+}
