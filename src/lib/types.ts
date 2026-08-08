@@ -145,6 +145,14 @@ export interface AtsSource {
   enabled?: boolean;
 }
 
+export interface CompanyWatch {
+  company: string;
+  sector: string;
+  careersUrl?: string;
+  priority: 1 | 2 | 3;
+  enabled: boolean;
+}
+
 export interface CompanyIntelligence {
   company: string;
   summary: string;
