@@ -1,45 +1,38 @@
-export type Recommendation = 'exceptional' | 'strong' | 'reasonable' | 'stretch' | 'skip';
-
-export interface Job {
-  id?: string;
-  externalId?: string;
-  source: string;
-  url: string;
-  title: string;
-  company: string;
-  location?: string;
-  description: string;
-  postedAt?: string;
-  discoveredAt?: string;
-  salaryMin?: number;
-  salaryMax?: number;
-  currency?: string;
-  employmentType?: string;
-  remote?: boolean;
-}
+export type JobSource = 'greenhouse' | 'lever' | 'ashby' | 'company' | 'apify' | 'manual';
 
 export interface CandidateProfile {
-  name: string;
-  headline?: string;
-  location?: string;
-  targetTitles: string[];
-  preferredLocations: string[];
   skills: string[];
+  preferredLocations: string[];
   minimumYears?: number;
   degrees?: string[];
   workAuthorization?: string[];
+  targetTitles: string[];
 }
 
-export interface MatchScore {
-  overall: number;
-  skills: number;
-  experience: number;
-  education: number;
-  domain: number;
-  location: number;
-  recommendation: Recommendation;
+export interface Job {
+  id: string;
+  source: JobSource;
+  externalId?: string;
+  url: string;
+  company: string;
+  title: string;
+  location: string;
+  postedAt?: string;
+  description: string;
+  requiredSkills: string[];
+  preferredSkills?: string[];
+  requiredYears?: number;
+  hardRequirements?: string[];
+}
+
+export interface JobMatch {
+  hardEligible: boolean;
   blockers: string[];
-  strengths: string[];
-  gaps: string[];
-  explanation: string;
+  overallScore: number;
+  skillsScore: number;
+  experienceScore: number;
+  locationScore: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+  recommendation: 'exceptional' | 'strong' | 'reasonable' | 'stretch' | 'skip';
 }
