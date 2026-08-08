@@ -35,7 +35,7 @@ function workflowMatches(value: unknown, path: string) {
 
 function trustedWorkflowContext(claims: Claims) {
   const workflowRef = claims.job_workflow_ref ?? claims.workflow_ref;
-  if (claims.event_name === 'push') {
+  if (claims.event_name === 'push' || claims.event_name === 'workflow_dispatch') {
     return claims.ref === MAIN_REF && workflowMatches(workflowRef, PRODUCTION_WORKFLOW_PATH);
   }
   if (claims.event_name === 'pull_request') {
