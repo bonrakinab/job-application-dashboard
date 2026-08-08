@@ -4,8 +4,9 @@ const ISSUER = 'https://token.actions.githubusercontent.com';
 const JWKS_URL = `${ISSUER}/.well-known/jwks`;
 const AUDIENCE = 'job-agent-production-smoke';
 const REPOSITORY = 'bonrakinab/job-application-dashboard';
-const REF = 'refs/heads/main';
-const WORKFLOW_SUFFIX = '/.github/workflows/production-smoke.yml@refs/heads/main';
+const MAIN_REF = 'refs/heads/main';
+const PRODUCTION_WORKFLOW_PATH = '/.github/workflows/production-smoke.yml@';
+const CI_WORKFLOW_PATH = '/.github/workflows/ci.yml@';
 
 type Claims = Record<string, unknown> & {
   iss?: string;
@@ -14,6 +15,7 @@ type Claims = Record<string, unknown> & {
   nbf?: number;
   repository?: string;
   ref?: string;
+  base_ref?: string;
   event_name?: string;
   job_workflow_ref?: string;
   workflow_ref?: string;
@@ -25,6 +27,23 @@ function decodeJson(part: string) {
 
 function audienceMatches(value: Claims['aud']) {
   return Array.isArray(value) ? value.includes(AUDIENCE) : value === AUDIENCE;
+}
+
+function workflowMatches(value: unknown, path: string) {
+  return typeof value === 'string' && value.includes(`${REPOSITORY}${path}`);
+}
+
+function trustedWorkflowContext(claims: Claims) {
+  const workflowRef = claims.job_workflow_ref ?? claims.workflow_ref;
+  if (claims.event_name === 'push') {
+    return claims.ref === MAIN_REF && workflowMatches(workflowRef, PRODUCTION_WORKFLOW_PATH);
+  }
+  if (claims.event_name === 'pull_request') {
+    const baseRef = claims.base_ref ?? '';
+    const targetsMain = baseRef === MAIN_REF || baseRef === 'main';
+    return targetsMain && workflowMatches(workflowRef, CI_WORKFLOW_PATH);
+  }
+  return false;
 }
 
 export async function verifyGitHubActionsOidc(request: Request): Promise<Claims> {
@@ -59,12 +78,7 @@ export async function verifyGitHubActionsOidc(request: Request): Promise<Claims>
   if (typeof claims.exp !== 'number' || claims.exp <= now) throw new Error('Expired GitHub OIDC token.');
   if (typeof claims.nbf === 'number' && claims.nbf > now + 30) throw new Error('GitHub OIDC token is not active yet.');
   if (claims.repository !== REPOSITORY) throw new Error('Unexpected GitHub repository claim.');
-  if (claims.ref !== REF) throw new Error('Production smoke tests must originate from main.');
-  if (claims.event_name !== 'push') throw new Error('Production smoke tests must originate from a push workflow.');
-  const workflowRef = claims.job_workflow_ref ?? claims.workflow_ref;
-  if (typeof workflowRef !== 'string' || !workflowRef.endsWith(WORKFLOW_SUFFIX)) {
-    throw new Error('Unexpected GitHub workflow claim.');
-  }
+  if (!trustedWorkflowContext(claims)) throw new Error('Unexpected GitHub workflow/ref/event claims.');
 
   return claims;
 }
