@@ -6,8 +6,8 @@ type JobicyItem = {
   url?: string;
   jobTitle?: string;
   companyName?: string;
-  jobIndustry?: string;
-  jobType?: string;
+  jobIndustry?: string[];
+  jobType?: string[];
   jobGeo?: string;
   jobLevel?: string;
   jobExcerpt?: string;
@@ -52,11 +52,11 @@ export async function fetchJobicyJobs(): Promise<Job[]> {
         salaryText: item.salaryMin || item.salaryMax
           ? `${item.salaryCurrency ?? ''} ${item.salaryMin ?? ''}${item.salaryMax ? `–${item.salaryMax}` : ''} ${item.salaryPeriod ?? ''}`.trim()
           : undefined,
-        employmentType: item.jobType,
+        employmentType: item.jobType?.join(', '),
         remote: true,
         workplaceType: 'Remote',
-        department: item.jobIndustry,
-        raw: { level: item.jobLevel, industry: item.jobIndustry },
+        department: item.jobIndustry?.join(', '),
+        raw: { level: item.jobLevel, industry: item.jobIndustry, jobType: item.jobType },
       } satisfies Job;
     });
 }
