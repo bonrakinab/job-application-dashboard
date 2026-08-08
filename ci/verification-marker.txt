@@ -1,0 +1,2 @@
+Verification branch for clean-room CI against the current main branch.
+Created: 2026-08-08
