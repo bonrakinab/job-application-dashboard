@@ -1,5 +1,6 @@
 import { JobActions } from '@/components/JobActions';
 import { StatusPill } from '@/components/StatusPill';
+import { aiStatus } from '@/lib/ai';
 import { getApplicationPack, getCompanyIntelligence, getJob } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 import { notFound } from 'next/navigation';
@@ -12,6 +13,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   if (!job) notFound();
   const [pack, research] = await Promise.all([getApplicationPack(id), getCompanyIntelligence(job.company)]);
   const match = job.match;
+  const ai = aiStatus();
+  const canResearch = ai.provider === 'openai' && ai.openai;
 
   return <>
     <div className="topbar">
@@ -74,7 +77,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
       </div>
 
       <div className="grid" style={{ alignContent: 'start' }}>
-        <JobActions id={id} applyUrl={job.applyUrl || job.url} hasPack={Boolean(pack)} status={job.application?.status || 'discovered'}/>
+        <JobActions id={id} applyUrl={job.applyUrl || job.url} hasPack={Boolean(pack)} status={job.application?.status || 'discovered'} canResearch={canResearch}/>
         <div className="card"><div className="kicker">Requirements extracted</div><h3>Must-have</h3><div className="tag-list">{match?.mustHave?.length ? match.mustHave.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">Run AI analysis to extract.</span>}</div><div className="divider"/><h3>Preferred</h3><div className="tag-list">{match?.preferred?.length ? match.preferred.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">No preferred requirements extracted.</span>}</div></div>
         <div className="card"><div className="kicker">Source</div><div className="small"><b>{job.source}</b> · {job.sourceKey}</div><div className="divider"/><a className="btn ghost" target="_blank" rel="noreferrer" href={job.url}>Open original posting ↗</a></div>
       </div>
