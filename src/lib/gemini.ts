@@ -2,7 +2,7 @@ import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types
 import { deterministicScore } from './scoring';
 import { clamp, normalizeText } from './utils';
 
-const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta2/interactions';
+const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 
 function modelProfile(profile: CandidateProfile) {
   const { email: _email, phone: _phone, links: _links, ...safe } = profile;
