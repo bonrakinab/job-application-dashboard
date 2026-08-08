@@ -1,4 +1,4 @@
-import { researchCompanyAndHiringTeam } from '@/lib/openai';
+import { researchCompanyAndHiringTeam } from '@/lib/ai';
 import { getJob, saveCompanyIntelligence } from '@/lib/store';
 
 export const runtime = 'nodejs';
