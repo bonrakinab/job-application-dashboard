@@ -1,0 +1,11 @@
+{
+  "name": "Candidate Name",
+  "headline": "MSc Computer Science | AI / ML",
+  "location": "Ontario, Canada",
+  "targetTitles": ["AI Engineer", "Machine Learning Engineer", "Data Scientist", "Solutions Engineer"],
+  "preferredLocations": ["Ontario", "Toronto", "Windsor", "Remote Canada"],
+  "skills": ["Python", "SQL", "Machine Learning", "Deep Learning", "Cloud", "Computer Vision"],
+  "minimumYears": 2,
+  "degrees": ["MSc Computer Science", "BTech Computer Science"],
+  "workAuthorization": []
+}
