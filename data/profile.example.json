@@ -2,10 +2,59 @@
   "name": "Candidate Name",
   "headline": "MSc Computer Science | AI / ML",
   "location": "Ontario, Canada",
-  "targetTitles": ["AI Engineer", "Machine Learning Engineer", "Data Scientist", "Solutions Engineer"],
-  "preferredLocations": ["Ontario", "Toronto", "Windsor", "Remote Canada"],
-  "skills": ["Python", "SQL", "Machine Learning", "Deep Learning", "Cloud", "Computer Vision"],
-  "minimumYears": 2,
-  "degrees": ["MSc Computer Science", "BTech Computer Science"],
-  "workAuthorization": []
+  "email": "",
+  "phone": "",
+  "links": {},
+  "targetTitles": [
+    "AI Engineer",
+    "Machine Learning Engineer",
+    "Data Scientist",
+    "AI Solutions Engineer"
+  ],
+  "preferredLocations": [
+    "Ontario",
+    "Toronto",
+    "Windsor",
+    "Remote Canada"
+  ],
+  "skills": [
+    "Python",
+    "SQL",
+    "Machine Learning",
+    "Deep Learning",
+    "Cloud",
+    "Computer Vision"
+  ],
+  "yearsExperience": 2,
+  "degrees": [
+    {
+      "institution": "Example University",
+      "degree": "MSc",
+      "field": "Computer Science",
+      "end": "2026"
+    }
+  ],
+  "workAuthorization": [],
+  "excludedKeywords": [],
+  "experience": [
+    {
+      "organization": "Example Employer",
+      "title": "Software Engineer",
+      "start": "2024-01",
+      "end": "2025-01",
+      "bullets": [
+        "Built and supported software systems using technologies listed in this profile."
+      ],
+      "skills": ["Python", "SQL"]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Example ML Project",
+      "description": "Built a machine-learning prototype using Python.",
+      "bullets": ["Implemented and evaluated the prototype using only the technologies listed in this profile."],
+      "skills": ["Python", "Machine Learning"]
+    }
+  ],
+  "certifications": []
 }

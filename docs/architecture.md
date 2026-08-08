@@ -1,25 +1,38 @@
-# Job Agent architecture
+# Architecture
 
-## Phase 1
+## Pipeline
 
-1. **Discovery** — adapters fetch recent jobs from public ATS/company sources; Apify is optional.
-2. **Normalization/deduplication** — canonical fields + stable job hash; existing hashes stop processing.
-3. **Deterministic prefilter** — reject obvious experience/location/hard-requirement mismatches before LLM use.
-4. **AI analysis** — structured job requirements and candidate match; results stored in `job_matches`.
-5. **Recommendation dashboard** — only eligible jobs above threshold appear in the review queue.
-6. **Human decision** — review/apply/skip; no automatic submission.
-7. **Outcome tracking** — application lifecycle is stored for later conversion analytics.
-
-## Later phases
-
-- Application-pack generator (resume + cover letter + interview brief).
-- Company/contact intelligence.
-- Gmail digest and outreach drafts.
-- Feedback model using actual interview/application outcomes.
+```text
+Public ATS sources
+  → normalization + stable job IDs
+  → target-role/location/freshness filter
+  → deterministic hard blockers
+  → OpenAI structured fit analysis
+  → Supabase persistence
+  → review queue
+  → application pack / company research on demand
+  → official employer application page
+  → application status + outcome analytics
+```
 
 ## Trust boundaries
 
-- Browser receives only the Supabase public/anon key.
-- Service-role Supabase key, OpenAI key, Gmail tokens, and optional Apify token stay server-side only.
-- `.env.local` is gitignored.
-- Generated resume content is constrained by canonical-profile facts.
+- **GitHub:** code and empty configuration templates only.
+- **Vercel:** runtime and encrypted environment variables.
+- **Supabase:** persistent private candidate/job/application data; accessed server-side through a secret key.
+- **OpenAI:** receives the job and a contact-stripped candidate profile for analysis/generation.
+- **Gmail:** OAuth refresh token is server-only. Automated daily digest may send; recruiter outreach is draft-only.
+- **ATS sources:** public Greenhouse/Lever/Ashby posting feeds; no LinkedIn account automation.
+
+## Cost controls
+
+- deterministic filtering runs before OpenAI;
+- only unanalyzed relevant jobs are sent to AI;
+- `MAX_ANALYSES_PER_RUN` defaults to 12;
+- `ANALYSIS_CONCURRENCY` defaults to 3;
+- high-volume analysis defaults to GPT-5.6 Luna;
+- higher-cost company research and application packs run only on explicit user action.
+
+## Data integrity
+
+Jobs use a deterministic SHA-256-derived ID from `source + board/site + external posting ID`. Re-discovery updates `last_seen_at` but preserves the original `discovered_at`. Application rows are inserted with conflict-ignore semantics so discovery can never reset an existing application status.
