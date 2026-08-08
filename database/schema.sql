@@ -137,7 +137,8 @@ create table if not exists activity_log (
   created_at timestamptz not null default now()
 );
 
-create or replace view recommended_jobs as
+create or replace view recommended_jobs
+with (security_invoker = true) as
 select
   j.*,
   m.overall,
