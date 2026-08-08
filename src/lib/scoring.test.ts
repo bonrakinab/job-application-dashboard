@@ -65,8 +65,37 @@ test('hard blockers cap the score below recommendation threshold', () => {
   assert.ok(score.overall <= 49);
 });
 
-test('a relevant eligible role can score without hard blockers', () => {
+test('a relevant eligible role can score strongly when the compact profile skills match', () => {
   const score = deterministicScore(job(), profile);
   assert.equal(score.blockers.length, 0);
-  assert.ok(score.overall >= 60);
+  assert.ok(score.skills >= 90);
+  assert.ok(score.overall >= 80);
+});
+
+test('broad profiles are not penalized for carrying unrelated skills', () => {
+  const broadProfile: CandidateProfile = {
+    ...profile,
+    skills: [
+      'Python', 'SQL', 'Machine Learning', 'Deep Learning', 'LLMs', 'Computer Vision',
+      'R', 'MATLAB', 'JavaScript', 'Oracle Fusion ERP', 'OCI', 'JIRA', 'Linux',
+      'BERT', 'GNN', 'CLIP', 'HNSW', 'FAISS', 'Postman', 'Agile',
+    ],
+  };
+  const score = deterministicScore(job({ description: 'Build machine learning systems using Python, SQL, and deep learning.' }), broadProfile);
+  assert.ok(score.skills >= 80);
+  assert.ok(score.overall >= 80);
+});
+
+test('senior titles are treated as stretch roles for low-experience profiles without becoming hard blockers', () => {
+  const score = deterministicScore(job({ title: 'Senior AI Engineer' }), profile);
+  assert.equal(score.blockers.length, 0);
+  assert.ok(score.overall <= 69);
+  assert.equal(score.recommendation, 'stretch');
+  assert.ok(score.gaps.some((value) => value.includes('seniority')));
+});
+
+test('a role with no configured skill evidence cannot become a strong recommendation from title and location alone', () => {
+  const score = deterministicScore(job({ description: 'Own stakeholder planning, roadmaps and vendor contracts.' }), profile);
+  assert.ok(score.skills <= 20);
+  assert.ok(score.overall < 80);
 });
