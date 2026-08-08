@@ -14,6 +14,12 @@ const portals = [
     href: `https://jobicy.com/jobs?search_keywords=${query}`,
   },
   {
+    name: 'Remotive',
+    status: 'Live import',
+    detail: 'Public remote-jobs API; imported listings always link back to Remotive as required by its API terms.',
+    href: 'https://remotive.com/remote-canada-jobs',
+  },
+  {
     name: 'LinkedIn',
     status: 'Portal search',
     detail: 'Direct search link. We do not use logged-in scraping or pretend LinkedIn offers a public job-search API.',
