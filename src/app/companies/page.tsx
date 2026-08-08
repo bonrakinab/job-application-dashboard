@@ -1,14 +1,8 @@
 import { CompanyWatchlistClient } from '@/components/CompanyWatchlistClient';
 import { listCompanyWatchlist, listJobs } from '@/lib/store';
-import { normalizeText } from '@/lib/utils';
+import { sameCompany } from '@/lib/target-company-jobs';
 
 export const dynamic = 'force-dynamic';
-
-function sameCompany(target: string, actual: string) {
-  const a = normalizeText(target).replace(/\b(inc|corp|corporation|ltd|limited|canada)\b/g, '').trim();
-  const b = normalizeText(actual).replace(/\b(inc|corp|corporation|ltd|limited|canada|confidential)\b/g, '').trim();
-  return a === b || (a.length >= 5 && (b.startsWith(a) || a.startsWith(b)));
-}
 
 export default async function CompaniesPage() {
   const [companies, jobs] = await Promise.all([listCompanyWatchlist(), listJobs(500)]);
@@ -30,7 +24,10 @@ export default async function CompaniesPage() {
         <h1 className="title">Target companies</h1>
         <div className="sub">A broad Canada-focused employer watchlist organized into overlapping groups such as MANG, FAANG/MAANG, Magnificent Seven, Fortune 5, Big Four, global IT/service-based companies, enterprise software & cloud, AI leaders and major Canadian employer groups.</div>
       </div>
-      <a className="btn ghost" href="/recommended">Recommended jobs →</a>
+      <div className="row">
+        <a className="btn primary" href="/target-jobs">View target-company jobs →</a>
+        <a className="btn ghost" href="/recommended">Recommended jobs →</a>
+      </div>
     </div>
 
     <div className="grid recommendation-metrics">
