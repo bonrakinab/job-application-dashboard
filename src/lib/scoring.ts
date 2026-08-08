@@ -2,15 +2,19 @@ import type { CandidateProfile, Job, MatchScore, Recommendation } from './types'
 import { clamp, normalizeText } from './utils';
 
 const SENIORITY_BLOCKERS = ['principal', 'staff', 'director', 'vp ', 'vice president', 'head of', 'chief '];
+const SOFT_SENIORITY_TERMS = ['senior', 'lead'];
 const CLEARANCE_PATTERNS = ['active security clearance', 'top secret clearance', 'secret clearance required'];
 const COUNTRY_BLOCKERS = ['us citizens only', 'u.s. citizens only', 'must be a us citizen', 'must be a u.s. citizen'];
 const STOP_WORDS = new Set(['and', 'the', 'for', 'with', 'role', 'senior', 'junior']);
 const DOMAIN_ACRONYMS = new Set(['ai', 'ml']);
+const SKILL_EVIDENCE_CURVE = [20, 45, 62, 74, 82, 88, 93, 96, 98, 100];
 
-function scoreKeywordCoverage(haystack: string, needles: string[]) {
-  if (!needles.length) return 50;
-  const matched = needles.filter((needle) => haystack.includes(normalizeText(needle)));
-  return clamp((matched.length / needles.length) * 100);
+function scoreSkillEvidence(haystack: string, configuredSkills: string[]) {
+  if (!configuredSkills.length) return { score: 50, matched: [] as string[] };
+  const matched = configuredSkills.filter((skill) => haystack.includes(normalizeText(skill)));
+  const saturation = SKILL_EVIDENCE_CURVE[Math.min(matched.length, SKILL_EVIDENCE_CURVE.length - 1)];
+  const compactProfileCoverage = configuredSkills.length <= 6 ? (matched.length / configuredSkills.length) * 95 : 0;
+  return { score: clamp(Math.max(saturation, compactProfileCoverage)), matched };
 }
 
 export function titleMatchesTarget(title: string, targets: string[]) {
@@ -35,6 +39,12 @@ export function locationMatchesPreference(job: Job, profile: CandidateProfile) {
 function statedYearsRequirement(text: string) {
   const matches = [...text.matchAll(/(?:at least\s*)?(\d{1,2})\+?\s*(?:or more\s*)?years?\s+(?:of\s+)?(?:professional\s+|industry\s+)?experience/g)];
   return matches.reduce((max, match) => Math.max(max, Number(match[1]) || 0), 0);
+}
+
+function hasSoftSeniorityGap(title: string, yearsExperience: number) {
+  const normalized = normalizeText(title);
+  if (normalized.includes('lead') && yearsExperience < 5) return true;
+  return normalized.includes('senior') && yearsExperience < 4;
 }
 
 export function hardEligibility(job: Job, profile: CandidateProfile) {
@@ -66,17 +76,24 @@ export function hardEligibility(job: Job, profile: CandidateProfile) {
 export function deterministicScore(job: Job, profile: CandidateProfile): MatchScore {
   const text = normalizeText(`${job.title} ${job.location ?? ''} ${job.description}`);
   const blockers = hardEligibility(job, profile);
-  const skills = scoreKeywordCoverage(text, profile.skills);
+  const skillEvidence = scoreSkillEvidence(text, profile.skills);
+  const skills = skillEvidence.score;
+  const matchedSkills = skillEvidence.matched;
   const targetHit = titleMatchesTarget(job.title, profile.targetTitles);
   const targets = targetHit ? 100 : 25;
   const location = locationMatchesPreference(job, profile) ? 100 : 20;
-  const experience = clamp((profile.yearsExperience ?? 2) >= 2 ? 65 + targets * 0.25 : 50 + targets * 0.2);
+  const candidateYears = profile.yearsExperience ?? 0;
+  const softSeniorityGap = hasSoftSeniorityGap(job.title, candidateYears);
+  const experience = softSeniorityGap
+    ? clamp(50 + Math.min(candidateYears, 4) * 5)
+    : clamp(candidateYears >= 2 ? 65 + targets * 0.25 : 50 + targets * 0.2);
   const education = profile.degrees?.length ? 90 : 70;
   const domain = clamp(targets * 0.65 + skills * 0.35);
   const weighted = clamp(skills * 0.35 + experience * 0.2 + education * 0.1 + domain * 0.2 + location * 0.15);
-  const overall = blockers.length ? Math.min(49, weighted) : weighted;
+  const eligibleScore = softSeniorityGap ? Math.min(69, weighted) : weighted;
+  const overall = blockers.length ? Math.min(49, eligibleScore) : eligibleScore;
   const recommendation: Recommendation = blockers.length ? 'skip' : overall >= 90 ? 'exceptional' : overall >= 80 ? 'strong' : overall >= 70 ? 'reasonable' : overall >= 60 ? 'stretch' : 'skip';
-  const matchedSkills = profile.skills.filter((skill) => text.includes(normalizeText(skill)));
+  const gaps = softSeniorityGap ? ['Title indicates a seniority level above the configured experience level; keep as a stretch unless the description is unusually flexible.'] : [];
 
   return {
     overall,
@@ -88,12 +105,16 @@ export function deterministicScore(job: Job, profile: CandidateProfile): MatchSc
     recommendation,
     blockers,
     strengths: matchedSkills.slice(0, 6),
-    gaps: [],
+    gaps,
     mustHave: [],
     preferred: [],
     matchedSkills,
     missingSkills: [],
-    explanation: blockers.length ? blockers.join(' ') : 'Deterministic first-pass score based on role family, configured skills, location, education and experience.',
-    model: 'deterministic-v2',
+    explanation: blockers.length
+      ? blockers.join(' ')
+      : softSeniorityGap
+        ? 'Deterministic score uses role family, skill evidence, location and education, with a soft cap for a seniority mismatch.'
+        : 'Deterministic first-pass score based on role family, skill evidence, location, education and experience.',
+    model: 'deterministic-v3',
   };
 }
