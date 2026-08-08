@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Job Agent — Phase 1</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">J</span><span>Job Agent</span></div>
+      <nav>
+        <button class="nav-item active"><span>⌁</span> Discover</button>
+        <button class="nav-item"><span>✓</span> Applications</button>
+        <button class="nav-item"><span>↗</span> Analytics</button>
+        <button class="nav-item"><span>◎</span> Profile</button>
+      </nav>
+      <div class="sidebar-foot"><div class="system-dot"></div><div><strong>Phase 1</strong><span>Mock-data mode</span></div></div>
+    </aside>
+
+    <main>
+      <header>
+        <div><p class="eyebrow">PERSONAL JOB INTELLIGENCE</p><h1>Opportunity review</h1><p class="muted">Prioritized by eligibility first, relevance second.</p></div>
+        <div class="header-actions"><button class="btn secondary" id="refreshBtn">Refresh demo</button><button class="btn primary">Run discovery</button></div>
+      </header>
+      <section class="stats" id="stats"></section>
+      <section class="panel controls">
+        <div class="search-wrap"><span>⌕</span><input id="search" placeholder="Search company, title, location…" /></div>
+        <select id="scoreFilter"><option value="0">All eligible scores</option><option value="70">70+ reasonable</option><option value="80" selected>80+ strong</option><option value="90">90+ exceptional</option></select>
+        <label class="check"><input id="eligibleOnly" type="checkbox" checked /> Eligible only</label>
+      </section>
+      <section class="grid">
+        <div class="panel jobs-panel"><div class="panel-heading"><div><h2>Recommended jobs</h2><p class="muted" id="resultCount"></p></div><span class="pill">Last 48h</span></div><div id="jobList" class="job-list"></div></div>
+        <aside class="panel detail-panel" id="detailPanel"><div class="empty-state"><div class="empty-icon">◎</div><h3>Select a job</h3><p>Review evidence, blockers, matched skills and the next action.</p></div></aside>
+      </section>
+    </main>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>
