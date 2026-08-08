@@ -4,6 +4,7 @@ import { ashbyAdapter } from './ashby';
 import { greenhouseAdapter } from './greenhouse';
 import { leverAdapter } from './lever';
 import { fetchJobicyJobs } from './jobicy';
+import { fetchRemotiveJobs } from './remotive';
 import type { JobSourceAdapter } from './job-source';
 
 const adapters: Record<SourceKind, JobSourceAdapter> = {
@@ -56,7 +57,7 @@ export async function configuredSources() {
 export async function discoverJobs() {
   const sources = await configuredSources();
   const atsSettled = await Promise.allSettled(sources.map(async (source) => ({ source, jobs: await adapters[source.kind].fetch(source) })));
-  const jobicySettled = await Promise.allSettled([fetchJobicyJobs()]);
+  const supplementalSettled = await Promise.allSettled([fetchJobicyJobs(), fetchRemotiveJobs()]);
   const jobs: Job[] = [];
   const errors: string[] = [];
 
@@ -64,11 +65,11 @@ export async function discoverJobs() {
     if (result.status === 'fulfilled') jobs.push(...result.value.jobs);
     else errors.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
   }
-  for (const result of jobicySettled) {
+  for (const result of supplementalSettled) {
     if (result.status === 'fulfilled') jobs.push(...result.value);
     else errors.push(result.reason instanceof Error ? result.reason.message : String(result.reason));
   }
 
   const deduped = new Map(jobs.map((job) => [job.id ?? `${job.source}:${job.sourceKey}:${job.externalId}`, job]));
-  return { jobs: [...deduped.values()], errors, sources: sources.length + 1 };
+  return { jobs: [...deduped.values()], errors, sources: sources.length + 2 };
 }
