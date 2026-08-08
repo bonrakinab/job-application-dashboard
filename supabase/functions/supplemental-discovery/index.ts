@@ -145,7 +145,7 @@ function deterministicScore(job: Job, profile: CandidateProfile): Match {
   const overall = blockers.length ? Math.min(49, eligibleScore) : eligibleScore;
   const recommendation = blockers.length ? 'skip' : overall >= 90 ? 'exceptional' : overall >= 80 ? 'strong' : overall >= 70 ? 'reasonable' : overall >= 60 ? 'stretch' : 'skip';
   const gaps = softSeniorityGap ? ['Title indicates a seniority level above the configured experience level; keep as a stretch unless the description is unusually flexible.'] : [];
-  return { job_id: job.id, overall, skills, experience, education, domain, location, recommendation, blockers, strengths: matchedSkills.slice(0, 6), gaps, must_have: [], preferred: [], matched_skills: matchedSkills, missing_skills: [], explanation: blockers.length ? blockers.join(' ') : softSeniorityGap ? 'Scheduled supplemental score uses role family, skill evidence, location and education, with a soft cap for a seniority mismatch.' : 'Scheduled supplemental score based on role family, skill evidence, location, education and experience.', model: 'deterministic-supplemental-v1', analyzed_at: new Date().toISOString() };
+  return { job_id: job.id, overall, skills, experience, education, domain, location, recommendation, blockers, strengths: matchedSkills.slice(0, 6), gaps, must_have: [], preferred: [], matched_skills: matchedSkills, missing_skills: [], explanation: blockers.length ? blockers.join(' ') : softSeniorityGap ? 'Scheduled supplemental score uses role family, skill evidence, location and education, with a soft cap for a seniority mismatch.' : 'Scheduled supplemental score based on role family, skill evidence, location, education and experience.', model: 'deterministic-supplemental-v2', analyzed_at: new Date().toISOString() };
 }
 
 async function fetchJobicy(): Promise<Job[]> {
@@ -164,6 +164,32 @@ async function fetchRemotive(): Promise<Job[]> {
   return Promise.all((payload.jobs ?? []).filter((item: any) => item.id != null && item.title && item.company_name && item.url).map(async (item: any) => ({
     id: await stableJobId('remotive', 'public-api', String(item.id)), external_id: String(item.id), source: 'remotive', source_key: 'public-api', url: item.url, apply_url: item.url, title: item.title, company: item.company_name, location: item.candidate_required_location || 'Remote', description: stripHtml(item.description || ''), posted_at: item.publication_date, salary_text: item.salary || undefined, employment_type: item.job_type, remote: true, workplace_type: 'Remote', department: item.category, raw: { sourceAttribution: 'Remotive' },
   })));
+}
+
+function jobRow(job: Job, now: string) {
+  return {
+    id: job.id,
+    external_id: job.external_id,
+    source: job.source,
+    source_key: job.source_key,
+    url: job.url,
+    apply_url: job.apply_url ?? null,
+    title: job.title,
+    company: job.company,
+    location: job.location ?? null,
+    description: job.description,
+    posted_at: job.posted_at ?? null,
+    last_seen_at: now,
+    salary_min: job.salary_min ?? null,
+    salary_max: job.salary_max ?? null,
+    currency: job.currency ?? null,
+    salary_text: job.salary_text ?? null,
+    employment_type: job.employment_type ?? null,
+    remote: job.remote ?? null,
+    workplace_type: job.workplace_type ?? null,
+    department: job.department ?? null,
+    raw: job.raw ?? null,
+  };
 }
 
 async function db(path: string, init: RequestInit = {}) {
@@ -198,7 +224,7 @@ Deno.serve(async (request) => {
     const deduped = [...new Map(allJobs.map((job) => [job.id, job])).values()];
     const relevant = deduped.filter((job) => titleMatchesTarget(job.title, profile.targetTitles ?? []) && locationMatches(job, profile) && (!job.posted_at || daysSince(job.posted_at) <= MAX_AGE_DAYS));
     const now = new Date().toISOString();
-    await upsert('jobs', relevant.map((job) => ({ ...job, last_seen_at: now })), 'id');
+    await upsert('jobs', relevant.map((job) => jobRow(job, now)), 'id');
     const matches = relevant.map((job) => deterministicScore(job, profile));
     await upsert('job_matches', matches, 'job_id');
     await insertIgnore('applications', relevant.map((job) => ({ job_id: job.id, status: 'discovered', updated_at: now })), 'job_id');
