@@ -3,7 +3,7 @@ import test from 'node:test';
 import { aiProviderConfigured, aiStatus, selectedAIProvider } from './ai';
 
 function env(values: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
-  return { ...values };
+  return { NODE_ENV: 'test', ...values } as NodeJS.ProcessEnv;
 }
 
 test('Gemini is the default provider', () => {
