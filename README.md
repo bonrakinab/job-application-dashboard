@@ -1,5 +1,7 @@
 # Job Application Dashboard
 
+[![CI](https://github.com/bonrakinab/job-application-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/bonrakinab/job-application-dashboard/actions/workflows/ci.yml)
+
 A private, human-in-the-loop job intelligence system for discovering public job postings, filtering hard eligibility constraints, ranking opportunities, preparing truthful application materials, researching companies/hiring teams, and tracking outcomes.
 
 ## What is implemented
