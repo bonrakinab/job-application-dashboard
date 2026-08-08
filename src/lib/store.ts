@@ -1,4 +1,4 @@
-import type { ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CompanyIntelligence, DashboardStats, Job, JobWithMatch, MatchScore } from './types';
+import type { ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobWithMatch, MatchScore } from './types';
 import { demoJobs, demoProfile } from './demo';
 import { jsonEnv } from './utils';
 import { insertIgnoreRows, patchRows, supabaseConfigured, supabaseRequest, upsertRows } from './supabase-rest';
@@ -191,6 +191,18 @@ export async function getCompanyIntelligence(company: string): Promise<CompanyIn
   if (!supabaseConfigured) return null;
   const rows = await supabaseRequest<Array<{ intelligence: CompanyIntelligence | null }>>(`companies?name=eq.${encodeURIComponent(company)}&select=intelligence&limit=1`);
   return rows[0]?.intelligence ?? null;
+}
+
+export async function listCompanyWatchlist(): Promise<CompanyWatch[]> {
+  if (!supabaseConfigured) return [];
+  const rows = await supabaseRequest<Array<{ company: string; sector: string; careers_url: string | null; priority: number; enabled: boolean }>>('company_watchlist?enabled=eq.true&select=company,sector,careers_url,priority,enabled&order=priority.asc,company.asc');
+  return rows.map((row) => ({
+    company: row.company,
+    sector: row.sector,
+    careersUrl: row.careers_url ?? undefined,
+    priority: Math.max(1, Math.min(3, row.priority)) as 1 | 2 | 3,
+    enabled: row.enabled,
+  }));
 }
 
 export async function saveJobSource(kind: 'greenhouse' | 'lever' | 'ashby', sourceKey: string, company: string) {
