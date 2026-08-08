@@ -1,3 +1,5 @@
+import { getStoredGmailRefreshToken, hasStoredGmailConnection } from './google-oauth';
+
 function base64Url(value: string) {
   return Buffer.from(value, 'utf8').toString('base64url');
 }
@@ -6,10 +8,20 @@ function present(value: string | undefined) {
   return Boolean(value?.trim());
 }
 
+async function refreshTokenValue() {
+  const envToken = process.env.GOOGLE_REFRESH_TOKEN?.trim();
+  if (envToken) return envToken;
+  try {
+    return await getStoredGmailRefreshToken();
+  } catch {
+    return null;
+  }
+}
+
 async function accessToken() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
+  const refreshToken = await refreshTokenValue();
   if (!clientId || !clientSecret || !refreshToken) return null;
 
   const body = new URLSearchParams({
@@ -22,6 +34,7 @@ async function accessToken() {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body,
+    cache: 'no-store',
   });
   if (!response.ok) throw new Error(`Google OAuth ${response.status}: ${(await response.text()).slice(0, 500)}`);
   const json = await response.json() as { access_token?: string };
@@ -45,23 +58,42 @@ export function gmailConfigStatus(env: NodeJS.ProcessEnv = process.env) {
   };
 }
 
-export function gmailConfigured() {
-  return gmailConfigStatus().oauth;
+export async function gmailRuntimeStatus() {
+  const env = gmailConfigStatus();
+  let storedRefreshToken = false;
+  if (!env.refreshToken) {
+    try {
+      storedRefreshToken = await hasStoredGmailConnection();
+    } catch {
+      storedRefreshToken = false;
+    }
+  }
+  const oauth = env.clientId && env.clientSecret && (env.refreshToken || storedRefreshToken);
+  return {
+    ...env,
+    oauth,
+    digest: oauth && env.digestTo,
+    storedRefreshToken,
+  };
 }
 
-export function gmailDigestConfigured() {
-  return gmailConfigStatus().digest;
+export async function gmailConfigured() {
+  return (await gmailRuntimeStatus()).oauth;
+}
+
+export async function gmailDigestConfigured() {
+  return (await gmailRuntimeStatus()).digest;
 }
 
 export async function validateGmailOAuth() {
   const token = await accessToken();
   if (!token) throw new Error('Gmail OAuth is not configured.');
 
-  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts?maxResults=1', {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
   });
-  if (!response.ok) throw new Error(`Gmail profile ${response.status}: ${(await response.text()).slice(0, 600)}`);
+  if (!response.ok) throw new Error(`Gmail authorization ${response.status}: ${(await response.text()).slice(0, 600)}`);
   return { ok: true };
 }
 

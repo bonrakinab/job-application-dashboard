@@ -1,4 +1,4 @@
-import { createOutreachDraft, gmailConfigStatus, validateGmailOAuth } from '@/lib/gmail';
+import { createOutreachDraft, gmailRuntimeStatus, validateGmailOAuth } from '@/lib/gmail';
 import { verifyGitHubActionsOidc } from '@/lib/github-actions-oidc';
 import { getApplicationPack, listJobs, logActivity } from '@/lib/store';
 
@@ -11,8 +11,8 @@ export async function POST(request: Request) {
   try {
     await verifyGitHubActionsOidc(request);
 
-    const config = gmailConfigStatus();
-    if (!config.oauth) throw new Error('Gmail OAuth environment variables are not fully configured.');
+    const config = await gmailRuntimeStatus();
+    if (!config.oauth) throw new Error('Gmail OAuth is not connected.');
 
     await validateGmailOAuth();
 
