@@ -23,14 +23,28 @@ export function opportunityStage(job: Pick<Job, 'title' | 'description' | 'emplo
 }
 
 export function roleFamily(job: Pick<Job, 'title' | 'description'>) {
-  const text = normalizeText(`${job.title} ${job.description}`);
-  if (/\b(oracle fusion|oracle erp|erp|enterprise applications|business systems)\b/.test(text)) return 'ERP & enterprise systems';
-  if (/\b(machine learning|artificial intelligence|ai engineer|ml engineer|data scientist|computer vision|nlp)\b/.test(text)) return 'AI & machine learning';
-  if (/\b(data analyst|data analytics|business intelligence|bi analyst|analytics engineer|data engineer)\b/.test(text)) return 'Data & analytics';
-  if (/\b(solution engineer|solutions engineer|cloud engineer|cloud analyst|technical consultant|implementation consultant)\b/.test(text)) return 'Cloud & solutions';
-  if (/\b(software engineer|software developer|full stack|full-stack|backend|frontend|application developer)\b/.test(text)) return 'Software engineering';
-  if (/\b(it analyst|systems analyst|business analyst|technical support|application support|information technology)\b/.test(text)) return 'IT & business systems';
-  return 'Target technical role';
+  const title = normalizeText(job.title);
+  const description = normalizeText(job.description);
+
+  // High-precision recommendations: these remain visible in All Jobs but should not
+  // be promoted merely because generic words such as "analyst" or "engineer" overlap.
+  if (/\b(sales|account executive|marketing|recruiter|human resources|financial analyst|finance analyst|accounting|product manager|customer success)\b/.test(title)) return 'Other';
+
+  if (/\b(oracle fusion|oracle erp|erp|enterprise applications|business systems)\b/.test(title)) return 'ERP & enterprise systems';
+  if (/\b(machine learning|artificial intelligence|ai engineer|ml engineer|data scientist|computer vision|nlp)\b/.test(title)) return 'AI & machine learning';
+  if (/\b(data analyst|data analytics|business intelligence|bi analyst|analytics engineer|data engineer)\b/.test(title)) return 'Data & analytics';
+  if (/\b(solution engineer|solutions engineer|cloud engineer|cloud analyst|technical consultant|implementation consultant)\b/.test(title)) return 'Cloud & solutions';
+  if (/\b(software engineer|software engineering|software developer|full stack|full-stack|backend|frontend|application developer)\b/.test(title)) return 'Software engineering';
+  if (/\b(it analyst|it systems|systems analyst|business analyst|technical support|application support|information technology)\b/.test(title)) return 'IT & business systems';
+
+  // Some employers use generic titles such as "Applications Analyst" while the
+  // description explicitly identifies Oracle/ERP responsibilities.
+  if (/\b(applications? analyst|applications? engineer|systems? engineer)\b/.test(title)
+      && /\b(oracle fusion|oracle erp|erp|enterprise applications|business systems)\b/.test(description)) {
+    return 'ERP & enterprise systems';
+  }
+
+  return 'Other';
 }
 
 function recommendationReasons(job: JobWithMatch, profile: CandidateProfile, match: MatchScore, stage: OpportunityStage, family: string) {
@@ -56,7 +70,7 @@ export function rankRecommendedJobs(jobs: JobWithMatch[], profile: CandidateProf
     const stageBoost = stage === 'internship' ? 8 : stage === 'new-grad' ? 7 : stage === 'entry-level' ? 5 : 0;
     const targetBoost = titleMatchesTarget(job.title, profile.targetTitles) ? 2 : 0;
     const priority = match.blockers.length ? match.overall : clamp(match.overall + stageBoost + targetBoost);
-    const highlySuitable = match.blockers.length === 0 && (
+    const highlySuitable = family !== 'Other' && match.blockers.length === 0 && (
       match.recommendation === 'exceptional'
       || match.recommendation === 'strong'
       || (earlyCareer && match.overall >= 70)
@@ -71,6 +85,8 @@ export function rankRecommendedJobs(jobs: JobWithMatch[], profile: CandidateProf
       reasons: recommendationReasons(job, profile, match, stage, family),
     };
   })
-    .filter((item) => item.match.blockers.length === 0 && (item.highlySuitable || item.match.recommendation === 'reasonable'))
+    .filter((item) => item.family !== 'Other'
+      && item.match.blockers.length === 0
+      && (item.highlySuitable || item.match.recommendation === 'reasonable'))
     .sort((a, b) => b.priority - a.priority || b.match.overall - a.match.overall);
 }
