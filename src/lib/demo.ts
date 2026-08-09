@@ -15,7 +15,7 @@ export const demoProfile: CandidateProfile = {
 
 export const demoJobs: JobWithMatch[] = [
   {
-    id: 'demo-1', externalId: '1', source: 'ashby', sourceKey: 'demo', url: '#', applyUrl: '#', title: 'AI Engineer', company: 'Northstar AI', location: 'Toronto, Canada', description: 'Python SQL machine learning cloud LLM systems.', remote: false,
+    id: 'demo-1', externalId: '1', source: 'ashby', sourceKey: 'demo', url: '#', applyUrl: '#', title: 'AI Engineer', company: 'Northstar AI', location: 'Toronto, Canada', description: '&lt;p&gt;Build machine learning systems with Python, SQL and cloud LLM tooling.&lt;/p&gt;&lt;h3&gt;Our ideal candidate&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Hands-on experience with Python, SQL and machine learning&lt;/li&gt;&lt;li&gt;Comfortable with cloud platforms and LLM systems&lt;/li&gt;&lt;/ul&gt;', remote: false,
     postedAt: new Date(Date.now() - 3 * 3600_000).toISOString(), discoveredAt: new Date().toISOString(),
     match: { overall: 93, skills: 96, experience: 84, education: 95, domain: 94, location: 100, recommendation: 'exceptional', blockers: [], strengths: ['Python','Machine Learning','SQL','Cloud'], gaps: ['Kubernetes'], mustHave: ['Python','ML'], preferred: ['Kubernetes'], matchedSkills: ['Python','SQL','Machine Learning','Cloud','LLM'], missingSkills: ['Kubernetes'], explanation: 'Strong overlap with configured AI/ML profile.', model: 'demo' },
     application: { jobId: 'demo-1', status: 'reviewing' },
