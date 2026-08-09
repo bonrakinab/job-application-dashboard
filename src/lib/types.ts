@@ -31,6 +31,7 @@ export interface ExperienceItem {
   title: string;
   start?: string;
   end?: string;
+  location?: string;
   bullets: string[];
   skills?: string[];
 }
@@ -40,13 +41,23 @@ export interface ProjectItem {
   description: string;
   bullets?: string[];
   skills?: string[];
+  url?: string;
+  linkLabel?: string;
 }
 
 export interface EducationItem {
   institution: string;
   degree: string;
   field?: string;
+  start?: string;
   end?: string;
+  location?: string;
+  gpa?: string;
+}
+
+export interface SkillGroup {
+  label: string;
+  skills: string[];
 }
 
 export interface CandidateProfile {
@@ -59,6 +70,7 @@ export interface CandidateProfile {
   targetTitles: string[];
   preferredLocations: string[];
   skills: string[];
+  skillGroups?: SkillGroup[];
   yearsExperience?: number;
   degrees?: EducationItem[];
   experience?: ExperienceItem[];
