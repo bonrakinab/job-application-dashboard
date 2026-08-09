@@ -56,10 +56,18 @@ function pack(skills: string[]): ApplicationPack {
 
 test('ATS estimate rewards JD-aligned selected skills and evidence', () => {
   const strong = scoreTailoredResume(job, profile, pack(['TypeScript', 'React', 'PostgreSQL', 'Python']), match);
-  const weak = scoreTailoredResume(job, profile, pack(['Machine Learning']), match);
+  const weakPack = {
+    ...pack(['Machine Learning']),
+    resumeHeadline: 'Applied AI Candidate',
+    resumeSummary: 'Candidate with machine learning experience.',
+    experience: [],
+    projects: [],
+  };
+  const weak = scoreTailoredResume(job, profile, weakPack, match);
   assert.ok(strong.overall > weak.overall);
   assert.ok(strong.skillCoverage >= 90);
   assert.deepEqual(strong.missingKeywords, []);
+  assert.ok(weak.missingKeywords.includes('TypeScript'));
 });
 
 test('cover letter normalizes generated prose into professional template blocks', () => {
