@@ -37,7 +37,7 @@ type Job = {
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 const MAX_RELEVANT_PER_SOURCE = 120;
 const STOP_WORDS = new Set(['and', 'the', 'for', 'with', 'role', 'senior', 'junior', 'associate']);
 const DOMAIN_ACRONYMS = new Set(['ai', 'ml', 'it', 'bi']);
@@ -178,7 +178,7 @@ function workdayConfig(source: EnterpriseSource) {
   const host = String(source.config.host ?? '').trim();
   const tenant = String(source.config.tenant ?? '').trim();
   const site = String(source.config.site ?? '').trim();
-  const maxPages = Math.max(1, Math.min(8, Number(source.config.maxPages ?? 5) || 5));
+  const maxPages = Math.max(1, Math.min(12, Number(source.config.maxPages ?? 5) || 5));
   if (!host || !tenant || !site) throw new Error('Workday source is missing host, tenant or site configuration.');
   return { host, tenant, site, maxPages };
 }
@@ -202,6 +202,7 @@ async function fetchWorkday(source: EnterpriseSource, profile: CandidateProfile)
       method: 'POST',
       headers: {
         Accept: 'application/json',
+        'Accept-Language': 'en-US',
         'Content-Type': 'application/json',
         'User-Agent': 'JobAgent/1.0 personal-job-search',
       },
@@ -227,8 +228,8 @@ async function fetchWorkday(source: EnterpriseSource, profile: CandidateProfile)
   for (let index = 0; index < broad.length; index += 8) {
     const group = broad.slice(index, index + 8);
     const settled = await Promise.allSettled(group.map(async (item) => {
-      const detailResponse = await fetch(`${base}${item.externalPath}`, {
-        headers: { Accept: 'application/json', 'User-Agent': 'JobAgent/1.0 personal-job-search' },
+      const detailResponse = await fetch(`${base}/job${item.externalPath}`, {
+        headers: { Accept: 'application/json', 'Accept-Language': 'en-US', 'User-Agent': 'JobAgent/1.0 personal-job-search' },
         signal: AbortSignal.timeout(12_000),
       });
       let info: any = {};
