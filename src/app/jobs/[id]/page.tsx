@@ -1,7 +1,8 @@
 import { JobActions } from '@/components/JobActions';
 import { StatusPill } from '@/components/StatusPill';
 import { aiStatus } from '@/lib/ai';
-import { getApplicationPackState } from '@/lib/application-pack-state';
+import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
+import { scoreTailoredResume } from '@/lib/ats-score';
 import { getCompanyIntelligence, getJob } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 import { notFound } from 'next/navigation';
@@ -12,9 +13,14 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const { id } = await params;
   const job = await getJob(id);
   if (!job) notFound();
-  const [packState, research] = await Promise.all([getApplicationPackState(id), getCompanyIntelligence(job.company)]);
+  const profileState = await getCandidateProfileState();
+  const [packState, research] = await Promise.all([
+    getApplicationPackState(id, profileState.updatedAt),
+    getCompanyIntelligence(job.company),
+  ]);
   const pack = packState.pack;
   const match = job.match;
+  const ats = pack && !packState.stale ? scoreTailoredResume(job, profileState.profile, pack, match) : null;
   const ai = aiStatus();
   const canResearch = ai.provider === 'openai' && ai.openai;
 
@@ -69,7 +75,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <div className="kicker">Selected resume evidence</div>
           <div className="tag-list">{pack.skills.slice(0, 20).map((item) => <span className="tag" key={item}>{item}</span>)}</div>
           <div className="divider"/>
-          <div className="kicker">Cover letter</div>
+          <div className="kicker">Cover letter body</div>
           <p className="small" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{pack.coverLetter}</p>
           <div className="divider"/>
           <div className="kicker">Outreach draft</div>
@@ -86,6 +92,24 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
       </div>
 
       <div className="grid" style={{ alignContent: 'start' }}>
+        {ats ? <div className="card">
+          <div className="kicker">ATS match estimate · tailored resume vs this JD</div>
+          <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
+            <div><span className="score">{ats.overall}/100</span> <StatusPill value={ats.label === 'strong' ? 'strong' : ats.label === 'good' ? 'reasonable' : ats.label === 'moderate' ? 'stretch' : 'skip'}/></div>
+          </div>
+          <p className="small muted" style={{ lineHeight: 1.55 }}>{ats.explanation}</p>
+          <div className="grid score-grid">
+            {[
+              ['JD skills', ats.skillCoverage],
+              ['Requirements', ats.requirementCoverage],
+              ['Evidence', ats.evidenceRelevance],
+              ['ATS format', ats.formatHygiene],
+            ].map(([label, value]) => <div className="score-box" key={String(label)}><b>{value}</b><span>{label}</span><div className="progress"><span style={{ width: `${value}%` }}/></div></div>)}
+          </div>
+          {ats.matchedKeywords.length ? <><div className="divider"/><div className="kicker">Matched JD terms</div><div className="tag-list">{ats.matchedKeywords.map((item) => <span className="tag" key={item}>{item}</span>)}</div></> : null}
+          {ats.missingKeywords.length ? <><div className="divider"/><div className="kicker">Missing / gap terms</div><div className="tag-list">{ats.missingKeywords.map((item) => <span className="tag" key={item}>{item}</span>)}</div><p className="small muted">These are not automatically inserted. They remain gaps unless the master profile contains truthful evidence for them.</p></> : null}
+        </div> : packState.stale ? <div className="notice"><b>ATS score pending.</b> Regenerate the outdated pack first so the score reflects the current resume and JD.</div> : null}
+
         <JobActions id={id} applyUrl={job.applyUrl || job.url} hasPack={Boolean(pack)} packStale={packState.stale} status={job.application?.status || 'discovered'} canResearch={canResearch}/>
         <div className="card"><div className="kicker">Requirements extracted</div><h3>Must-have</h3><div className="tag-list">{match?.mustHave?.length ? match.mustHave.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">Run AI analysis to extract.</span>}</div><div className="divider"/><h3>Preferred</h3><div className="tag-list">{match?.preferred?.length ? match.preferred.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">No preferred requirements extracted.</span>}</div></div>
         <div className="card"><div className="kicker">Source</div><div className="small"><b>{job.source}</b> · {job.sourceKey}</div><div className="divider"/><a className="btn ghost" target="_blank" rel="noreferrer" href={job.url}>Open original posting ↗</a></div>
