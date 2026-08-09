@@ -11,12 +11,20 @@ function stageLabel(stage: TargetCompanyOpportunity['stage']) {
   return 'Experienced';
 }
 
-export function TargetCompanyJobsClient({ items }: { items: TargetCompanyOpportunity[] }) {
+export function TargetCompanyJobsClient({
+  items,
+  initialGroup = 'all',
+  initialCompany = 'all',
+}: {
+  items: TargetCompanyOpportunity[];
+  initialGroup?: string;
+  initialCompany?: string;
+}) {
   const [q, setQ] = useState('');
   const [fit, setFit] = useState('best');
   const [stage, setStage] = useState('all');
-  const [group, setGroup] = useState('all');
-  const [company, setCompany] = useState('all');
+  const [group, setGroup] = useState(initialGroup || 'all');
+  const [company, setCompany] = useState(initialCompany || 'all');
   const [source, setSource] = useState('all');
 
   const companies = useMemo(() => [...new Set(items.map((item) => item.watchedCompany))].sort(), [items]);
@@ -42,6 +50,13 @@ export function TargetCompanyJobsClient({ items }: { items: TargetCompanyOpportu
   }), [company, fit, group, items, q, source, stage]);
 
   if (!items.length) return <div className="notice">No imported jobs currently belong to a watched target employer. The company watchlist remains active and the daily discovery workers will populate this page as safe feeds return matching jobs.</div>;
+
+  const selectedGroupLabel = groups.find(([id]) => id === group)?.[1];
+  const selectedLabel = company !== 'all'
+    ? company
+    : selectedGroupLabel
+      ? selectedGroupLabel
+      : 'Target-company';
 
   return <>
     <div className="searchbar recommendation-filters">
@@ -73,7 +88,7 @@ export function TargetCompanyJobsClient({ items }: { items: TargetCompanyOpportu
       </select>
     </div>
 
-    <div className="section-head"><h2>{visible.length} jobs shown</h2><span className="small muted">Sorted by profile fit first, then recency.</span></div>
+    <div className="section-head"><h2>{selectedLabel} jobs · {visible.length} shown</h2><span className="small muted">Sorted by profile fit first, then recency.</span></div>
     <div className="recommendation-grid">
       {visible.map((item) => <article className="card recommendation-card" key={item.job.id}>
         <div className="row recommendation-card-head">
@@ -96,7 +111,7 @@ export function TargetCompanyJobsClient({ items }: { items: TargetCompanyOpportu
           {item.job.location ? <span className="tag">{item.job.location}</span> : null}
         </div>
 
-        {item.groups.length ? <div className="company-group-tags">{item.groups.slice(0, 4).map((candidate) => <span className="company-group-tag" key={candidate.id}>{candidate.label}</span>)}</div> : null}
+        {item.groups.length ? <div className="company-group-tags">{item.groups.slice(0, 4).map((candidate) => <button type="button" className="company-group-tag" key={candidate.id} onClick={() => { setCompany('all'); setGroup(candidate.id); }}>{candidate.label}</button>)}</div> : null}
 
         <div className="recommendation-reasons">
           {item.reasons.map((reason) => <div className="small" key={reason}>• {reason}</div>)}
@@ -109,6 +124,6 @@ export function TargetCompanyJobsClient({ items }: { items: TargetCompanyOpportu
         </div>
       </article>)}
     </div>
-    {!visible.length ? <div className="notice">No target-company jobs match these filters. Try “All target-company jobs” or another company group.</div> : null}
+    {!visible.length ? <div className="notice">No {selectedLabel} jobs match the current fit/stage filters yet. Try “All eligible” or “All target-company jobs”; if the group has no imported jobs, the careers connectors will keep checking it daily.</div> : null}
   </>;
 }
