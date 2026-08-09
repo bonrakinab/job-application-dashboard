@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ApplicationStatus } from '@/lib/types';
 
-export function JobActions({ id, applyUrl, hasPack, status, canResearch }: { id: string; applyUrl?: string; hasPack: boolean; status: ApplicationStatus; canResearch: boolean }) {
+export function JobActions({ id, applyUrl, hasPack, packStale = false, status, canResearch }: { id: string; applyUrl?: string; hasPack: boolean; packStale?: boolean; status: ApplicationStatus; canResearch: boolean }) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
   const router = useRouter();
+  const usablePack = hasPack && !packStale;
 
   async function action(path: string, label: string) {
     setBusy(label);
@@ -50,8 +51,11 @@ export function JobActions({ id, applyUrl, hasPack, status, canResearch }: { id:
       <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Re-analyze</button>
       <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
       {!canResearch ? <span className="small muted">Grounded company web research is disabled in Gemini free-tier mode.</span> : null}
-      <button className="btn primary" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>{hasPack ? 'Regenerate application pack' : 'Generate application pack'}</button>
-      {hasPack ? <>
+      <button className="btn primary" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
+        {packStale ? 'Regenerate outdated application pack' : hasPack ? 'Regenerate application pack' : 'Generate application pack'}
+      </button>
+      {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, or resume template. Regenerate it before downloading.</span> : null}
+      {usablePack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
         <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download cover letter PDF</a>
         <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/draft-outreach`, 'Gmail outreach draft')}>Create Gmail outreach draft</button>

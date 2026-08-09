@@ -1,10 +1,12 @@
 import type { ApplicationPack, CandidateProfile, Job } from './types';
 import { normalizeText } from './utils';
+import { RESUME_LAYOUT_ATTEMPTS, RESUME_PAGE } from './resume-template';
 
-const A4_WIDTH = 595.28;
-const A4_HEIGHT = 841.89;
-const MARGIN = 33;
+const A4_WIDTH = RESUME_PAGE.width;
+const A4_HEIGHT = RESUME_PAGE.height;
+const MARGIN = RESUME_PAGE.margin;
 const RIGHT = A4_WIDTH - MARGIN;
+const BOTTOM = RESUME_PAGE.bottom;
 
 type FontName = 'TR' | 'TB' | 'TI' | 'TBI' | 'HR' | 'HB';
 
@@ -25,7 +27,7 @@ function escapePdf(text: string) {
 }
 
 function width(text: string, size: number, font: FontName = 'TR') {
-  const factor = font === 'TB' || font === 'TBI' || font === 'HB' ? 0.49 : 0.455;
+  const factor = font === 'TB' || font === 'TBI' || font === 'HB' ? 0.47 : 0.44;
   return ascii(text).length * size * factor;
 }
 
@@ -48,21 +50,35 @@ function wrapWidth(text: string, maxWidth: number, size: number, font: FontName 
 
 function fmtDate(value?: string) {
   if (!value) return '';
-  const match = value.match(/^(\d{4})-(\d{2})$/);
-  if (!match) return value;
-  const months = ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-  return `${months[Number(match[2]) - 1]} ${match[1]}`;
+  return value
+    .replace(/^September\b/i, 'Sept')
+    .replace(/^August\b/i, 'Aug')
+    .replace(/^December\b/i, 'Dec')
+    .replace(/^November\b/i, 'Nov')
+    .replace(/^October\b/i, 'Oct')
+    .replace(/^February\b/i, 'Feb')
+    .replace(/^January\b/i, 'Jan');
 }
 
 function dateRange(start?: string, end?: string) {
-  const left = fmtDate(start);
-  const right = fmtDate(end);
-  return [left, right].filter(Boolean).join(' - ');
+  return [fmtDate(start), fmtDate(end)].filter(Boolean).join(' - ');
 }
+
+type LayoutOptions = {
+  scale: number;
+  maxExperienceBullets: number;
+  maxProjects: number;
+  maxProjectBullets: number;
+};
 
 class ResumeCanvas {
   commands: string[] = [];
-  y = 808;
+  y = 810;
+  overflow = false;
+  constructor(readonly scale: number) {}
+
+  size(value: number) { return value * this.scale; }
+  gap(value: number) { return value * this.scale; }
 
   text(text: string, x: number, y: number, size: number, font: FontName = 'TR') {
     if (!text) return;
@@ -81,55 +97,126 @@ class ResumeCanvas {
     this.commands.push(`0.35 w ${MARGIN.toFixed(2)} ${y.toFixed(2)} m ${RIGHT.toFixed(2)} ${y.toFixed(2)} l S`);
   }
 
-  bullet(x: number, y: number, filled = true) {
-    if (filled) this.commands.push(`${x.toFixed(2)} ${(y - 1.2).toFixed(2)} 2.3 2.3 re f`);
-    else this.text('o', x - 0.5, y - 1.5, 6.2, 'TR');
+  mainBullet(x: number, y: number) {
+    const r = 1.55;
+    const k = r * 0.55228475;
+    const cy = y;
+    this.commands.push(`${(x + r).toFixed(2)} ${cy.toFixed(2)} m ${(x + r).toFixed(2)} ${(cy + k).toFixed(2)} ${(x + k).toFixed(2)} ${(cy + r).toFixed(2)} ${x.toFixed(2)} ${(cy + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(cy + r).toFixed(2)} ${(x - r).toFixed(2)} ${(cy + k).toFixed(2)} ${(x - r).toFixed(2)} ${cy.toFixed(2)} c ${(x - r).toFixed(2)} ${(cy - k).toFixed(2)} ${(x - k).toFixed(2)} ${(cy - r).toFixed(2)} ${x.toFixed(2)} ${(cy - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(cy - r).toFixed(2)} ${(x + r).toFixed(2)} ${(cy - k).toFixed(2)} ${(x + r).toFixed(2)} ${cy.toFixed(2)} c f`);
+  }
+
+  subBullet(x: number, y: number) {
+    this.text('o', x - 0.3, y - 1.2, this.size(6.0), 'TR');
+  }
+
+  consume(amount: number) {
+    this.y -= this.gap(amount);
+    if (this.y < BOTTOM) this.overflow = true;
   }
 
   section(label: string) {
-    this.y -= 1;
-    this.text(label.toUpperCase(), MARGIN, this.y, 10.1, 'TR');
-    this.rule(this.y - 2.2);
-    this.y -= 12.2;
+    this.consume(1.5);
+    this.text(label.toUpperCase(), MARGIN, this.y, this.size(9.5), 'TR');
+    this.rule(this.y - this.gap(2.0));
+    this.consume(11.0);
   }
 
-  paragraph(text: string, size = 7.85, lineHeight = 9.15, left = MARGIN, maxWidth = RIGHT - MARGIN) {
-    for (const line of wrapWidth(text, maxWidth, size)) {
-      this.text(line, left, this.y, size, 'TR');
-      this.y -= lineHeight;
+  paragraph(text: string, baseSize = 8.0, baseLineHeight = 9.25) {
+    const size = this.size(baseSize);
+    for (const line of wrapWidth(text, RIGHT - MARGIN, size, 'TR')) {
+      this.text(line, MARGIN, this.y, size, 'TR');
+      this.consume(baseLineHeight);
     }
   }
 
-  subBullet(text: string, left = MARGIN + 30, size = 7.55) {
-    const maxWidth = RIGHT - left;
-    const lines = wrapWidth(text, maxWidth, size);
+  subBulletText(text: string, left = MARGIN + 30, baseSize = 7.55, baseLineHeight = 8.3) {
+    const size = this.size(baseSize);
+    const lines = wrapWidth(text, RIGHT - left, size, 'TR');
     if (!lines.length) return;
-    this.bullet(left - 11, this.y + 1, false);
-    lines.forEach((line, index) => {
+    this.subBullet(left - 12, this.y + this.gap(0.8));
+    for (const line of lines) {
       this.text(line, left, this.y, size, 'TR');
-      this.y -= 8.45;
-      if (index === 0) return;
+      this.consume(baseLineHeight);
+    }
+  }
+}
+
+function roleSource(profile: CandidateProfile, organization: string, title: string) {
+  return (profile.experience ?? []).find((item) => normalizeText(item.organization) === normalizeText(organization) && normalizeText(item.title) === normalizeText(title));
+}
+
+function addRole(canvas: ResumeCanvas, profile: CandidateProfile, item: ApplicationPack['experience'][number], maxBullets: number) {
+  const source = roleSource(profile, item.organization, item.title);
+  canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
+  canvas.text(item.organization, MARGIN + 11, canvas.y, canvas.size(8.7), 'TB');
+  if (source?.location) canvas.right(source.location, canvas.y, canvas.size(7.65), 'TR');
+  canvas.consume(8.7);
+  canvas.text(item.title, MARGIN + 11, canvas.y, canvas.size(7.85), 'TI');
+  const dates = dateRange(source?.start, source?.end);
+  if (dates) canvas.right(dates, canvas.y, canvas.size(7.65), 'TI');
+  canvas.consume(8.1);
+  for (const bullet of item.bullets.slice(0, maxBullets)) canvas.subBulletText(bullet);
+  canvas.consume(1.0);
+}
+
+function renderSkillGroups(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack) {
+  const selected = new Set(pack.skills.map(normalizeText));
+  const rendered = new Set<string>();
+  for (const group of profile.skillGroups ?? []) {
+    const skills = group.skills.filter((skill) => selected.has(normalizeText(skill)));
+    if (!skills.length) continue;
+    skills.forEach((skill) => rendered.add(normalizeText(skill)));
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.7));
+    const label = `${group.label}:`;
+    const labelSize = canvas.size(7.7);
+    canvas.text(label, MARGIN + 11, canvas.y, labelSize, 'TB');
+    const left = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
+    const bodySize = canvas.size(7.45);
+    const lines = wrapWidth(skills.join(', '), RIGHT - left, bodySize, 'TR');
+    lines.forEach((line, index) => {
+      canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize, 'TR');
+      canvas.consume(8.0);
+    });
+  }
+  const extras = pack.skills.filter((skill) => !rendered.has(normalizeText(skill)));
+  if (extras.length) {
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.7));
+    const label = 'Additional:';
+    const labelSize = canvas.size(7.7);
+    canvas.text(label, MARGIN + 11, canvas.y, labelSize, 'TB');
+    const left = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
+    const bodySize = canvas.size(7.45);
+    const lines = wrapWidth(extras.join(', '), RIGHT - left, bodySize, 'TR');
+    lines.forEach((line, index) => {
+      canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize, 'TR');
+      canvas.consume(8.0);
     });
   }
 }
 
-function addRole(canvas: ResumeCanvas, profileItem: NonNullable<CandidateProfile['experience']>[number], bullets: string[]) {
-  canvas.bullet(MARGIN + 1, canvas.y + 2, true);
-  canvas.text(profileItem.organization, MARGIN + 10, canvas.y, 8.8, 'TB');
-  if (profileItem.location) canvas.right(profileItem.location, canvas.y, 8.0, 'TR');
-  canvas.y -= 9.4;
-  canvas.text(profileItem.title, MARGIN + 10, canvas.y, 8.0, 'TI');
-  const dates = dateRange(profileItem.start, profileItem.end);
-  if (dates) canvas.right(dates, canvas.y, 8.0, 'TI');
-  canvas.y -= 8.8;
-  for (const bullet of bullets.slice(0, 3)) canvas.subBullet(bullet);
-  canvas.y -= 1.5;
+function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
+  const sourceProjects = new Map((profile.projects ?? []).map((project) => [normalizeText(project.name), project]));
+  for (const item of pack.projects.slice(0, options.maxProjects)) {
+    const source = sourceProjects.get(normalizeText(item.name));
+    if (!source) continue;
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
+    canvas.text(source.name, MARGIN + 11, canvas.y, canvas.size(8.1), 'TB');
+    const tech = (source.skills ?? []).filter((skill) => pack.skills.some((selected) => normalizeText(selected) === normalizeText(skill))).slice(0, 6);
+    const technology = tech.length ? ` / ${tech.join(', ')}` : '';
+    const projectWidth = width(source.name, canvas.size(8.1), 'TB');
+    if (technology && projectWidth + width(technology, canvas.size(7.0), 'TI') < RIGHT - (MARGIN + 11)) {
+      canvas.text(technology, MARGIN + 11 + projectWidth + 3, canvas.y, canvas.size(7.0), 'TI');
+    }
+    if (source.linkLabel) canvas.right(source.linkLabel, canvas.y, canvas.size(7.0), 'TI');
+    canvas.consume(8.7);
+    for (const bullet of item.bullets.slice(0, options.maxProjectBullets)) canvas.subBulletText(bullet);
+    canvas.consume(0.8);
+  }
 }
 
-function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack) {
-  const canvas = new ResumeCanvas();
-  canvas.center(profile.name, canvas.y, 20.5, 'TB');
-  canvas.y -= 16.5;
+function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
+  const canvas = new ResumeCanvas(options.scale);
+  canvas.center(profile.name, canvas.y, canvas.size(24.5), 'TB');
+  canvas.consume(17.0);
 
   const contactParts = [
     profile.phone,
@@ -138,96 +225,47 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack) {
     profile.links?.github ? 'GitHub' : undefined,
     profile.links?.portfolio ? 'Portfolio' : undefined,
   ].filter(Boolean) as string[];
-  canvas.center(contactParts.join('   |   '), canvas.y, 7.45, 'TR');
-  canvas.y -= 9.5;
+  canvas.center(contactParts.join('   |   '), canvas.y, canvas.size(7.25), 'TR');
+  canvas.consume(9.0);
 
   canvas.section('Professional Summary');
-  canvas.paragraph(pack.resumeSummary, 7.75, 9.0);
+  canvas.paragraph(pack.resumeSummary, 7.85, 8.9);
 
   canvas.section('Experience');
-  const packExperience = new Map(pack.experience.map((item) => [
-    `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
-    item,
-  ]));
-  for (const source of profile.experience ?? []) {
-    const selected = packExperience.get(`${normalizeText(source.organization)}|${normalizeText(source.title)}`);
-    addRole(canvas, source, selected?.bullets?.length ? selected.bullets : source.bullets.slice(0, 2));
-  }
+  for (const item of pack.experience) addRole(canvas, profile, item, options.maxExperienceBullets);
 
   canvas.section('Skills');
-  const selectedSkills = new Set(pack.skills.map(normalizeText));
-  const rendered = new Set<string>();
-  const groups = profile.skillGroups ?? [];
-  for (const group of groups) {
-    const skills = group.skills.filter((skill) => selectedSkills.has(normalizeText(skill)));
-    if (!skills.length) continue;
-    skills.forEach((skill) => rendered.add(normalizeText(skill)));
-    canvas.bullet(MARGIN + 1, canvas.y + 2, true);
-    const label = `${group.label}:`;
-    canvas.text(label, MARGIN + 10, canvas.y, 7.8, 'TB');
-    const left = MARGIN + 10 + width(label, 7.8, 'TB') + 4;
-    const lines = wrapWidth(skills.join(', '), RIGHT - left, 7.55);
-    lines.forEach((line, index) => {
-      canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, 7.55, 'TR');
-      canvas.y -= 8.6;
-    });
-  }
-  const extras = pack.skills.filter((skill) => !rendered.has(normalizeText(skill)));
-  if (extras.length) {
-    canvas.bullet(MARGIN + 1, canvas.y + 2, true);
-    canvas.text('Additional:', MARGIN + 10, canvas.y, 7.8, 'TB');
-    const left = MARGIN + 10 + width('Additional:', 7.8, 'TB') + 4;
-    const lines = wrapWidth(extras.join(', '), RIGHT - left, 7.55);
-    lines.forEach((line, index) => {
-      canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, 7.55, 'TR');
-      canvas.y -= 8.6;
-    });
-  }
-  canvas.y -= 1;
+  renderSkillGroups(canvas, profile, pack);
 
-  canvas.section('Projects');
-  const sourceProjects = new Map((profile.projects ?? []).map((project) => [normalizeText(project.name), project]));
-  for (const selected of pack.projects.slice(0, 4)) {
-    const source = sourceProjects.get(normalizeText(selected.name));
-    if (!source) continue;
-    canvas.bullet(MARGIN + 1, canvas.y + 2, true);
-    canvas.text(source.name, MARGIN + 10, canvas.y, 8.25, 'TB');
-    const projectSkills = (source.skills ?? []).filter((skill) => selectedSkills.has(normalizeText(skill))).slice(0, 7);
-    const tech = projectSkills.length ? projectSkills : (source.skills ?? []).slice(0, 5);
-    if (tech.length) {
-      const prefixWidth = width(source.name, 8.25, 'TB') + 5;
-      const technology = `/ ${tech.join(', ')}`;
-      if (prefixWidth + width(technology, 7.15, 'TI') < RIGHT - (MARGIN + 10)) {
-        canvas.text(technology, MARGIN + 10 + prefixWidth, canvas.y, 7.15, 'TI');
-      }
-    }
-    canvas.y -= 9.2;
-    for (const bullet of selected.bullets.slice(0, 2)) canvas.subBullet(bullet);
-    canvas.y -= 1.2;
+  if (pack.projects.length) {
+    canvas.section('Projects');
+    renderProjects(canvas, profile, pack, options);
   }
 
   canvas.section('Education');
   for (const degree of profile.degrees ?? []) {
-    canvas.bullet(MARGIN + 1, canvas.y + 2, true);
-    canvas.text(degree.institution, MARGIN + 10, canvas.y, 8.6, 'TB');
-    if (degree.location) canvas.right(degree.location, canvas.y, 7.8, 'TR');
-    canvas.y -= 9.2;
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
+    canvas.text(degree.institution, MARGIN + 11, canvas.y, canvas.size(8.45), 'TB');
+    if (degree.location) canvas.right(degree.location, canvas.y, canvas.size(7.4), 'TR');
+    canvas.consume(8.6);
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    canvas.text(degreeText, MARGIN + 10, canvas.y, 7.8, 'TI');
+    canvas.text(degreeText, MARGIN + 11, canvas.y, canvas.size(7.55), 'TI');
     const dates = dateRange(degree.start, degree.end);
-    if (dates) canvas.right(dates, canvas.y, 7.8, 'TI');
-    canvas.y -= 9.2;
+    if (dates) canvas.right(dates, canvas.y, canvas.size(7.4), 'TI');
+    canvas.consume(8.5);
   }
 
-  canvas.section('Certifications');
-  for (const certification of profile.certifications ?? []) {
-    canvas.bullet(MARGIN + 1, canvas.y + 2, true);
-    canvas.text(certification, MARGIN + 10, canvas.y, 7.45, 'TR');
-    canvas.y -= 8.25;
+  if ((profile.certifications ?? []).length) {
+    canvas.section('Certifications');
+    for (const certification of profile.certifications ?? []) {
+      canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.6));
+      canvas.text(certification, MARGIN + 11, canvas.y, canvas.size(7.15), 'TR');
+      canvas.consume(7.7);
+    }
   }
 
-  canvas.center('1', 18, 7.2, 'TR');
-  return canvas.commands.join('\n');
+  canvas.center('1', 16, canvas.size(6.8), 'TR');
+  return { stream: canvas.commands.join('\n'), overflow: canvas.overflow, bottomY: canvas.y };
 }
 
 function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Record<FontName, string>) {
@@ -259,8 +297,14 @@ function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Re
 }
 
 export function resumePdf(profile: CandidateProfile, _job: Job, pack: ApplicationPack): Buffer {
-  const stream = buildResumeStream(profile, pack);
-  return pdfFromStreams([stream], [A4_WIDTH, A4_HEIGHT], {
+  const attempts: LayoutOptions[] = RESUME_LAYOUT_ATTEMPTS.map((attempt) => ({ ...attempt }));
+  let rendered = buildResumeStream(profile, pack, attempts[attempts.length - 1]);
+  for (const attempt of attempts) {
+    const candidate = buildResumeStream(profile, pack, attempt);
+    rendered = candidate;
+    if (!candidate.overflow && candidate.bottomY >= BOTTOM) break;
+  }
+  return pdfFromStreams([rendered.stream], [A4_WIDTH, A4_HEIGHT], {
     TR: 'Times-Roman',
     TB: 'Times-Bold',
     TI: 'Times-Italic',

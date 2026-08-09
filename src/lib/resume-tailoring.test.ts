@@ -1,7 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import type { ApplicationPack, CandidateProfile, Job } from './types';
-import { sanitizeApplicationPack } from './resume-tailoring';
+import type { CandidateProfile, Job } from './types';
+import {
+  APPLICATION_PACK_TAILORING_VERSION,
+  RESUME_TEMPLATE_VERSION,
+  applicationPackStaleness,
+  attachApplicationPackGenerationMeta,
+  deterministicTailoringPlan,
+  materializeApplicationPack,
+  type ApplicationPackPlan,
+} from './resume-tailoring';
 import { resumePdf } from './pdf';
 
 const profile: CandidateProfile = {
@@ -11,57 +19,122 @@ const profile: CandidateProfile = {
   location: 'Windsor, Ontario, Canada',
   links: { linkedin: 'https://linkedin.com/in/example', github: 'https://github.com/example', portfolio: 'https://example.com' },
   headline: 'MSc Computer Science (AI)',
-  summary: 'Technical professional currently completing an MSc in Computer Science (AI) with enterprise IT and applied AI experience.',
-  targetTitles: ['Software Engineer'],
+  summary: 'Technical professional with enterprise IT, full-stack software development, and applied AI experience.',
+  targetTitles: ['Software Engineer', 'Machine Learning Engineer', 'Oracle ERP Analyst'],
   preferredLocations: ['Canada'],
-  skills: ['Python', 'TypeScript', 'GitHub Actions/CI', 'Machine Learning', 'Oracle Fusion ERP Cloud'],
+  skills: ['Python', 'TypeScript', 'JavaScript', 'SQL', 'Next.js', 'React', 'REST APIs', 'PostgreSQL', 'Supabase', 'Machine Learning', 'BERT', 'CLIP', 'HNSW', 'Oracle Fusion ERP Cloud', 'JIRA', 'ISO 27001'],
   skillGroups: [
-    { label: 'Languages', skills: ['Python', 'TypeScript'] },
-    { label: 'Applied AI & ML', skills: ['Machine Learning'] },
-    { label: 'Cloud, DevOps & Enterprise', skills: ['GitHub Actions/CI', 'Oracle Fusion ERP Cloud'] },
+    { label: 'Languages', skills: ['Python', 'TypeScript', 'JavaScript', 'SQL'] },
+    { label: 'Full-Stack & APIs', skills: ['Next.js', 'React', 'REST APIs'] },
+    { label: 'Data & Backend', skills: ['PostgreSQL', 'Supabase'] },
+    { label: 'Applied AI & ML', skills: ['Machine Learning', 'BERT', 'CLIP', 'HNSW'] },
+    { label: 'Cloud, DevOps & Enterprise', skills: ['Oracle Fusion ERP Cloud', 'JIRA', 'ISO 27001'] },
   ],
   degrees: [{ institution: 'University of Windsor', degree: 'Master of Science in Computer Science', field: 'Artificial Intelligence Specialization', start: 'Sept 2024', end: 'Aug 2026 (Expected)', location: 'Windsor, Ontario, Canada' }],
-  experience: [{ organization: 'Banglalink', title: 'Specialist Engineer', start: 'Sept 2023', end: 'June 2024', location: 'Dhaka, Bangladesh', bullets: ['Reduced approximately 15,000 tax conditions to 460 maintainable rules.', 'Supported Oracle Fusion ERP Cloud Financials and Procurement workflows.'], skills: ['Oracle Fusion ERP Cloud'] }],
-  projects: [{ name: 'Job Application Intelligence Dashboard', description: 'Human-in-the-loop job intelligence system.', bullets: ['Implemented GitHub Actions/CI and deterministic eligibility safeguards.', 'Built the dashboard with TypeScript and AI integrations.'], skills: ['TypeScript', 'GitHub Actions/CI', 'Python'] }],
-  certifications: ['Google IT Support'],
+  experience: [
+    {
+      organization: 'Banglalink', title: 'Enterprise Solutions and Services Specialist Engineer, IT', start: 'Sept 2023', end: 'June 2024', location: 'Dhaka, Bangladesh', skills: ['Oracle Fusion ERP Cloud', 'JIRA', 'ISO 27001'],
+      bullets: [
+        'Consolidated approximately 15,000 Oracle ERP tax conditions into 460 maintainable rules.',
+        'Supported Oracle Fusion ERP Cloud Financials and Procurement workflows.',
+        'Prepared ISO 27001 audit artifacts across risk management and access control.',
+      ],
+    },
+    {
+      organization: 'GAOTek Inc.', title: 'Software Development Intern - Team Leader', start: 'Dec 2022', end: 'March 2023', location: 'Remote', skills: ['JavaScript'],
+      bullets: ['Led a remote intern team delivering web application components in JavaScript and coordinating defect resolution.'],
+    },
+  ],
+  projects: [
+    {
+      name: 'Flowdesk - Full-Stack Family CRM', description: 'Production family CRM.', skills: ['Next.js', 'React', 'TypeScript', 'PostgreSQL', 'REST APIs'], linkLabel: 'Live',
+      bullets: ['Designed and shipped a production household CRM with authenticated API routes and multi-user data isolation.', 'Built task, calendar, finance, medication, and notification workflows.'],
+    },
+    {
+      name: 'MSc Thesis - Color-Aware Composed Image Retrieval', description: 'Efficient multimodal retrieval research.', skills: ['Python', 'Machine Learning', 'CLIP', 'HNSW'],
+      bullets: ['Developed a color-aware composed image retrieval framework using CLIP and HNSW.', 'Evaluated prefiltering and postfiltering designs using retrieval-efficiency measures.'],
+    },
+    {
+      name: 'Phishing URL Detection Using Artificial Intelligence', description: 'BERT and ML phishing detection.', skills: ['Python', 'Machine Learning', 'BERT'],
+      bullets: ['Trained machine-learning and BERT-family models for phishing URL detection.'],
+    },
+  ],
+  certifications: ['Google IT Support', 'Oracle Cloud Infrastructure Foundations'],
 };
 
-const basePack: ApplicationPack = {
-  summary: 'pack',
-  resumeHeadline: 'Software Engineer | AI Tooling',
-  resumeSummary: 'Technical professional currently completing an MSc in Computer Science (AI), with TypeScript and GitHub Actions/CI experience.',
-  skills: ['TypeScript', 'GitHub Actions/CI', 'Go'],
-  experience: [{ organization: 'Banglalink', title: 'Specialist Engineer', bullets: ['Invented a Kubernetes microservice platform.', 'Reduced approximately 15,000 tax conditions to 460 maintainable rules.'] }],
-  projects: [{ name: 'Job Application Intelligence Dashboard', bullets: ['Implemented GitHub Actions/CI and deterministic eligibility safeguards.', 'Added Kafka and Kubernetes.'] }],
-  coverLetter: 'Hello',
-  outreachMessage: 'Hello',
-  interviewThemes: [],
-  claimsAudit: [],
-};
+function job(title: string, description: string): Job {
+  return { externalId: title, source: 'test', sourceKey: 'test', url: 'https://example.com', title, company: 'Example', location: 'Canada', description };
+}
 
-const job: Job = { externalId: '1', source: 'test', sourceKey: 'test', url: 'https://example.com', title: 'Software Engineer', company: 'Example', description: 'TypeScript and CI' };
+const softwareJob = job('Software Engineer', 'Build production web applications with TypeScript, Next.js, React, REST APIs and PostgreSQL.');
+const mlJob = job('Machine Learning Engineer', 'Develop Python machine learning systems using BERT, vector search, CLIP and HNSW.');
+const erpJob = job('Oracle ERP Analyst', 'Support Oracle Fusion ERP Cloud Financials and Procurement, JIRA workflows, access controls and ISO 27001 documentation.');
 
-test('sanitizer only keeps exact master skills and source bullets', () => {
-  const pack = sanitizeApplicationPack(basePack, profile);
-  assert.deepEqual(pack.skills, ['TypeScript', 'GitHub Actions/CI']);
-  assert.deepEqual(pack.experience[0].bullets, ['Reduced approximately 15,000 tax conditions to 460 maintainable rules.']);
-  assert.deepEqual(pack.projects[0].bullets, ['Implemented GitHub Actions/CI and deterministic eligibility safeguards.']);
+test('deterministic evidence ranking changes materially with the JD', () => {
+  const software = deterministicTailoringPlan(softwareJob, profile);
+  const ml = deterministicTailoringPlan(mlJob, profile);
+  const erp = deterministicTailoringPlan(erpJob, profile);
+
+  assert.ok(software.skills.slice(0, 10).includes('TypeScript'));
+  assert.ok(software.skills.slice(0, 10).includes('Next.js'));
+  assert.equal(software.projects[0]?.name, 'Flowdesk - Full-Stack Family CRM');
+
+  assert.ok(ml.skills.slice(0, 10).includes('Machine Learning'));
+  assert.ok(ml.skills.slice(0, 10).includes('BERT'));
+  assert.equal(ml.projects[0]?.name, 'MSc Thesis - Color-Aware Composed Image Retrieval');
+
+  assert.ok(erp.skills.slice(0, 10).includes('Oracle Fusion ERP Cloud'));
+  assert.ok(erp.skills.slice(0, 10).includes('ISO 27001'));
+  assert.notDeepEqual(software.skills.slice(0, 8), ml.skills.slice(0, 8));
+  assert.notDeepEqual(ml.skills.slice(0, 8), erp.skills.slice(0, 8));
 });
 
-test('sanitizer rejects completed-degree wording when the degree is expected', () => {
-  const pack = sanitizeApplicationPack({ ...basePack, resumeSummary: 'Computer Science graduate with strong software experience.' }, profile);
-  assert.equal(pack.resumeSummary, profile.summary);
+test('materializer rejects invented skills, invented evidence IDs, and completed-degree wording', () => {
+  const plan: ApplicationPackPlan = {
+    summary: 'software pack',
+    resumeHeadline: 'Software Engineer | Kubernetes',
+    resumeSummary: 'MSc Computer Science graduate with Kubernetes and TypeScript experience.',
+    skills: ['TypeScript', 'Kubernetes', 'Next.js'],
+    experience: [{ organization: 'GAOTek Inc.', title: 'Software Development Intern - Team Leader', evidenceIds: ['EXP:99:99'] }],
+    projects: [{ name: 'Flowdesk - Full-Stack Family CRM', evidenceIds: ['PROJ:0:0'] }],
+    coverLetter: 'Dear Hiring Manager, I am an MSc graduate with Kubernetes experience and would like to join your software team. Thank you for considering my application. Sincerely, Arnob Banik',
+    outreachMessage: 'MSc graduate with Kubernetes experience interested in the role.',
+    interviewThemes: ['TypeScript application development'],
+    claimsAudit: [{ claim: 'Built Kubernetes systems.', evidenceIds: ['PROJ:99:1'] }],
+  };
+  const pack = materializeApplicationPack(plan, profile, softwareJob);
+
+  assert.ok(pack.skills.includes('TypeScript'));
+  assert.ok(pack.skills.includes('Next.js'));
+  assert.ok(!pack.skills.includes('Kubernetes'));
+  assert.ok(!/graduate/i.test(pack.resumeSummary));
+  assert.ok(!/kubernetes/i.test(pack.resumeSummary));
+  assert.ok(!/kubernetes/i.test(pack.coverLetter));
+  assert.deepEqual(pack.projects[0]?.bullets, ['Designed and shipped a production household CRM with authenticated API routes and multi-user data isolation.']);
+  assert.equal(pack.claimsAudit.length, 0);
+  assert.ok(pack.experience.find((item) => item.organization === 'GAOTek Inc.')?.bullets.length);
 });
 
-test('resume PDF follows template sections and omits generic tailored-for footer', () => {
-  const pack = sanitizeApplicationPack(basePack, profile);
-  const pdfText = resumePdf(profile, job, pack).toString('utf8');
-  assert.match(pdfText, /PROFESSIONAL SUMMARY/);
-  assert.match(pdfText, /EXPERIENCE/);
-  assert.match(pdfText, /SKILLS/);
-  assert.match(pdfText, /PROJECTS/);
-  assert.match(pdfText, /EDUCATION/);
-  assert.match(pdfText, /CERTIFICATIONS/);
-  assert.match(pdfText, /University of Windsor/);
+test('pack versions mark old profile/template generations as stale', () => {
+  const base = materializeApplicationPack(deterministicTailoringPlan(softwareJob, profile), profile, softwareJob);
+  assert.equal(applicationPackStaleness(base, '2026-08-09T06:24:00Z').stale, true);
+
+  const current = attachApplicationPackGenerationMeta(base, {
+    model: 'gpt-5.6-sol', provider: 'openai', profileUpdatedAt: '2026-08-09T06:24:00Z', generatedAt: '2026-08-09T07:00:00Z',
+  });
+  assert.equal(current.generationMeta?.tailoringVersion, APPLICATION_PACK_TAILORING_VERSION);
+  assert.equal(current.generationMeta?.templateVersion, RESUME_TEMPLATE_VERSION);
+  assert.equal(applicationPackStaleness(current, '2026-08-09T06:24:00Z').stale, false);
+  assert.equal(applicationPackStaleness(current, '2026-08-09T08:00:00Z').stale, true);
+});
+
+test('resume PDF preserves the reference-template section order on one page', () => {
+  const pack = materializeApplicationPack(deterministicTailoringPlan(softwareJob, profile), profile, softwareJob);
+  const pdfText = resumePdf(profile, softwareJob, pack).toString('utf8');
+  const sections = ['PROFESSIONAL SUMMARY', 'EXPERIENCE', 'SKILLS', 'PROJECTS', 'EDUCATION', 'CERTIFICATIONS'];
+  const positions = sections.map((section) => pdfText.indexOf(section));
+  assert.ok(positions.every((position) => position >= 0));
+  assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+  assert.equal((pdfText.match(/\/Type \/Page\b/g) ?? []).length, 1);
   assert.doesNotMatch(pdfText, /Tailored for/);
 });
