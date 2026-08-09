@@ -119,6 +119,15 @@ export interface ApplicationRecord {
   updatedAt?: string;
 }
 
+export interface ApplicationPackGenerationMeta {
+  generatedAt: string;
+  profileUpdatedAt?: string;
+  tailoringVersion: string;
+  templateVersion: string;
+  model: string;
+  provider: 'gemini' | 'openai';
+}
+
 export interface ApplicationPack {
   summary: string;
   resumeHeadline: string;
@@ -140,6 +149,7 @@ export interface ApplicationPack {
     claim: string;
     evidence: string;
   }>;
+  generationMeta?: ApplicationPackGenerationMeta;
 }
 
 export interface DashboardStats {
