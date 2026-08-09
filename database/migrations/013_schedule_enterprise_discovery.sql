@@ -9,7 +9,7 @@ select cron.schedule(
       'Authorization','Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name='job_dashboard_anon_jwt')
     ),
     body := jsonb_build_object('trigger','cron','time',now()),
-    timeout_milliseconds := 30000
+    timeout_milliseconds := 60000
   ) as request_id;
   $$
 );
