@@ -99,3 +99,5 @@ npm run build
 ```
 
 The app falls back to non-persistent demo data when Supabase is absent, so the UI can render before credentials are configured.
+
+<!-- deployment retry: resume-tailoring -->
