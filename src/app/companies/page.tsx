@@ -5,7 +5,7 @@ import { sameCompany } from '@/lib/target-company-jobs';
 export const dynamic = 'force-dynamic';
 
 export default async function CompaniesPage() {
-  const [companies, jobs] = await Promise.all([listCompanyWatchlist(), listJobs(500)]);
+  const [companies, jobs] = await Promise.all([listCompanyWatchlist(), listJobs(2000)]);
   const coverage = companies.map((company) => {
     const matchingJobs = jobs.filter((job) => sameCompany(company.company, job.company));
     return {
@@ -37,7 +37,7 @@ export default async function CompaniesPage() {
       <div className="metric"><div className="label">Jobs in database</div><div className="value">{jobs.length}</div></div>
     </div>
 
-    <div className="notice">Company groups are overlapping labels, not exclusive buckets. For example, Amazon can appear in MANG, FAANG/MAANG, Magnificent Seven and Fortune 5. “Watching” still means the employer is in your search universe even when a safe machine-readable careers feed is not available.</div>
+    <div className="notice">Company groups now open their actual target-job feed. Automated coverage uses public company career/ATS endpoints such as Greenhouse, Lever, Ashby, Workday and Amazon Jobs; no logged-in job-portal account is scraped.</div>
 
     <CompanyWatchlistClient companies={coverage} />
   </>;
