@@ -36,3 +36,40 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  production-http-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify public health
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error https://job-application-dashboard-fx6j.vercel.app/api/health -o /tmp/health.json
+          node - <<'NODE'
+          const fs = require('fs');
+          const h = JSON.parse(fs.readFileSync('/tmp/health.json', 'utf8'));
+          console.log(JSON.stringify(h, null, 2));
+          if (!h.ok || h.mode !== 'persistent' || h.aiProvider !== 'gemini') process.exit(1);
+          if (!h.checks?.supabase || !h.checks?.dashboardAuth || !h.checks?.gemini || !h.checks?.gmailOauth) process.exit(1);
+          NODE
+
+      - name: Verify private API remains protected
+        run: |
+          set -euo pipefail
+          code=$(curl --silent --show-error -o /tmp/profile.json -w '%{http_code}' https://job-application-dashboard-fx6j.vercel.app/api/profile)
+          echo "profile_http=$code"
+          cat /tmp/profile.json
+          test "$code" = "401"
+
+      - name: Verify target jobs route exists behind login
+        run: |
+          set -euo pipefail
+          for url in \
+            'https://job-application-dashboard-fx6j.vercel.app/target-jobs?group=canadian-banks' \
+            'https://job-application-dashboard-fx6j.vercel.app/companies'; do
+            curl --silent --show-error --head "$url" -o /tmp/headers
+            cat /tmp/headers
+            status=$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END {print code}' /tmp/headers)
+            case "$status" in 200|302|303|307|308) ;; *) exit 1 ;; esac
+            if grep -qi '^location:' /tmp/headers; then grep -qi '/login' /tmp/headers; fi
+          done
