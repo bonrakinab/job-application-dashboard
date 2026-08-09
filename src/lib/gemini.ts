@@ -18,14 +18,24 @@ function modelProfile(profile: CandidateProfile) {
   return safe;
 }
 
-function outputText(payload: any): string {
-  for (const step of [...(payload.steps ?? [])].reverse()) {
+export function outputText(payload: any): string {
+  const parts: string[] = [];
+  for (const step of payload.steps ?? []) {
     if (step.type !== 'model_output') continue;
     for (const content of step.content ?? []) {
-      if (content.type === 'text' && typeof content.text === 'string') return content.text;
+      if (content.type === 'text' && typeof content.text === 'string') parts.push(content.text);
     }
   }
+  if (parts.length) return parts.join('');
   throw new Error('Gemini response did not include output text.');
+}
+
+function parseStructuredJson<T>(text: string): T {
+  const trimmed = text.trim();
+  const cleaned = trimmed.startsWith('```')
+    ? trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
+    : trimmed;
+  return JSON.parse(cleaned) as T;
 }
 
 async function structuredInteraction<T>(options: {
@@ -39,36 +49,47 @@ async function structuredInteraction<T>(options: {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('GEMINI_API_KEY is not configured.');
 
-  const response = await fetch(GEMINI_INTERACTIONS_URL, {
-    method: 'POST',
-    headers: {
-      'x-goog-api-key': key,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: options.model,
-      input: options.user,
-      system_instruction: options.system,
-      store: false,
-      generation_config: {
-        thinking_level: options.thinkingLevel ?? 'low',
-        max_output_tokens: options.maxOutputTokens ?? 2400,
+  let lastParseError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const response = await fetch(GEMINI_INTERACTIONS_URL, {
+      method: 'POST',
+      headers: {
+        'x-goog-api-key': key,
+        'Content-Type': 'application/json',
       },
-      response_format: [{
-        type: 'text',
-        mime_type: 'application/json',
-        schema: options.schema,
-      }],
-    }),
-  });
+      body: JSON.stringify({
+        model: options.model,
+        input: options.user,
+        system_instruction: attempt === 0
+          ? options.system
+          : `${options.system}\n\nOUTPUT RECOVERY: The previous structured response could not be parsed. Return exactly one complete valid JSON object matching the supplied schema. Do not use markdown fences or commentary. Ensure every string, array, and object is fully closed.`,
+        store: false,
+        generation_config: {
+          thinking_level: options.thinkingLevel ?? 'low',
+          max_output_tokens: options.maxOutputTokens ?? 2400,
+        },
+        response_format: [{
+          type: 'text',
+          mime_type: 'application/json',
+          schema: options.schema,
+        }],
+      }),
+    });
 
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Gemini ${response.status}: ${errorBody.slice(0, 800)}`);
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Gemini ${response.status}: ${errorBody.slice(0, 800)}`);
+    }
+
+    const payload = await response.json();
+    try {
+      return parseStructuredJson<T>(outputText(payload));
+    } catch (error) {
+      lastParseError = error;
+    }
   }
 
-  const payload = await response.json();
-  return JSON.parse(outputText(payload)) as T;
+  throw new Error(`Gemini returned malformed structured JSON after retry: ${lastParseError instanceof Error ? lastParseError.message : String(lastParseError)}`);
 }
 
 const matchSchema = {
@@ -136,7 +157,7 @@ export async function createApplicationPackWithGemini(job: Job, profile: Candida
     schema: applicationPackPlanSchema,
     system: applicationPackSystemPrompt,
     user: applicationPackUserPrompt(job, profile, match),
-    maxOutputTokens: 5200,
+    maxOutputTokens: 6500,
     thinkingLevel: 'high',
   });
 
