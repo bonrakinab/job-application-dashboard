@@ -3,7 +3,7 @@
  * The PDF renderer consumes this module so template changes are versioned and
  * can invalidate previously generated application packs.
  */
-export const RESUME_TEMPLATE_VERSION = 'arnob-latex-reference.v3';
+export const RESUME_TEMPLATE_VERSION = 'arnob-latex-reference.v4-full-page';
 
 export const RESUME_PAGE = {
   width: 595.28,
@@ -12,6 +12,9 @@ export const RESUME_PAGE = {
   bottom: 24,
 } as const;
 
+// Kept for backwards compatibility with the legacy renderer. The active
+// application renderer now expands the largest safe content-preserving layout
+// before pruning bullets/projects.
 export const RESUME_LAYOUT_ATTEMPTS = [
   { scale: 1, maxExperienceBullets: 3, maxProjects: 4, maxProjectBullets: 2 },
   { scale: 0.94, maxExperienceBullets: 3, maxProjects: 4, maxProjectBullets: 2 },

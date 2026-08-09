@@ -54,10 +54,10 @@ export function JobActions({ id, applyUrl, hasPack, packStale = false, status, c
       <button className="btn primary" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
         {packStale ? 'Regenerate outdated application pack' : hasPack ? 'Regenerate application pack' : 'Generate application pack'}
       </button>
-      {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, or resume template. Regenerate it before downloading.</span> : null}
+      {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, or document template. Regenerate it before downloading or applying.</span> : null}
       {usablePack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
-        <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download cover letter PDF</a>
+        <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download professional cover letter PDF</a>
         <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/draft-outreach`, 'Gmail outreach draft')}>Create Gmail outreach draft</button>
       </> : null}
       <select className="select" value={status} disabled={busy === 'status'} onChange={(event) => changeStatus(event.target.value as ApplicationStatus)}>
@@ -70,7 +70,7 @@ export function JobActions({ id, applyUrl, hasPack, packStale = false, status, c
         <option value="offer">Offer</option>
         <option value="withdrawn">Withdrawn</option>
       </select>
-      {applyUrl && applyUrl !== '#' ? <a className="btn" target="_blank" rel="noreferrer" href={applyUrl}>Open official application ↗</a> : null}
+      {usablePack && applyUrl && applyUrl !== '#' ? <a className="btn" target="_blank" rel="noreferrer" href={applyUrl}>Open official application ↗</a> : <span className="small muted">Generate a fresh tailored pack first. The ATS match estimate will appear above before the application link is unlocked.</span>}
       {busy ? <span className="small muted">{busy}…</span> : null}
       {msg ? <span className="small muted">{msg}</span> : null}
     </div>

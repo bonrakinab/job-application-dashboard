@@ -1,6 +1,6 @@
 import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
 import { getJob } from '@/lib/store';
-import { resumePdf } from '@/lib/pdf';
+import { resumePdf } from '@/lib/application-pdf';
 import { slug } from '@/lib/utils';
 
 export const runtime = 'nodejs';
