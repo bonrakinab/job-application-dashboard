@@ -1,4 +1,5 @@
 import { JobActions } from '@/components/JobActions';
+import { JobDescription } from '@/components/JobDescription';
 import { StatusPill } from '@/components/StatusPill';
 import { aiStatus } from '@/lib/ai';
 import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
@@ -88,7 +89,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           {pack.claimsAudit.length ? pack.claimsAudit.slice(0, 10).map((item, index) => <div className="small" style={{ marginBottom: 9 }} key={index}><b>{item.claim}</b><br/><span className="muted">Evidence: {item.evidence}</span></div>) : <span className="small muted">No authored claims required additional evidence entries.</span>}
         </div> : null}
 
-        <div className="card"><div className="kicker">Job description</div><div className="job-description">{job.description || 'No description supplied by source.'}</div></div>
+        <div className="card"><div className="kicker">Job description</div><JobDescription description={job.description}/></div>
       </div>
 
       <div className="grid" style={{ alignContent: 'start' }}>
