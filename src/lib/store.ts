@@ -127,9 +127,17 @@ export async function saveMatch(jobId: string, match: MatchScore) {
 
 export async function listJobs(limit = 100): Promise<JobWithMatch[]> {
   if (!supabaseConfigured) return demoJobs;
-  const path = `jobs?select=*,job_matches(*),applications(*)&order=discovered_at.desc&limit=${Math.min(limit, 500)}`;
-  const rows = await supabaseRequest<any[]>(path);
-  return rows.map(rowToJob);
+  const requested = Math.max(1, Math.min(limit, 3000));
+  const pageSize = 500;
+  const rows: any[] = [];
+  for (let offset = 0; offset < requested; offset += pageSize) {
+    const size = Math.min(pageSize, requested - offset);
+    const path = `jobs?select=*,job_matches(*),applications(*)&order=discovered_at.desc&limit=${size}&offset=${offset}`;
+    const page = await supabaseRequest<any[]>(path);
+    rows.push(...page);
+    if (page.length < size) break;
+  }
+  return [...new Map(rows.map((row) => [row.id, row])).values()].map(rowToJob);
 }
 
 export async function getJob(id: string): Promise<JobWithMatch | null> {

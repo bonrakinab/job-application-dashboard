@@ -4,9 +4,14 @@ import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
 
 export const dynamic = 'force-dynamic';
 
-export default async function TargetCompanyJobsPage() {
+export default async function TargetCompanyJobsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ group?: string; company?: string }>;
+}) {
+  const params = await searchParams;
   const [jobs, profile, watchlist] = await Promise.all([
-    listJobs(500),
+    listJobs(2000),
     getCandidateProfile(),
     listCompanyWatchlist(),
   ]);
@@ -37,8 +42,12 @@ export default async function TargetCompanyJobsPage() {
     </div>
 
     {internships ? <div className="success">{internships} internship/co-op target-company role{internships === 1 ? '' : 's'} currently in the imported pool.</div> : null}
-    <div className="notice">This page does not scrape your logged-in LinkedIn, Indeed, Monster or Wellfound sessions. Automated ingestion uses company career/ATS endpoints and approved/public job feeds; portal links remain manual when no safe machine-readable feed is available.</div>
+    <div className="notice">This page does not scrape your logged-in LinkedIn, Indeed, Monster or Wellfound sessions. Automated ingestion uses public company career/ATS endpoints and public job feeds; portal links remain manual when no safe machine-readable feed is available.</div>
 
-    <TargetCompanyJobsClient items={items} />
+    <TargetCompanyJobsClient
+      items={items}
+      initialGroup={params.group ?? 'all'}
+      initialCompany={params.company ?? 'all'}
+    />
   </>;
 }

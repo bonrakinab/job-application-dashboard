@@ -38,13 +38,14 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
   }), [companies, coverage, group, q, sector]);
 
   return <>
-    <div className="section-head"><h2>Company groups</h2><span className="small muted">Groups overlap: one company can belong to several.</span></div>
+    <div className="section-head"><h2>Company groups</h2><span className="small muted">Click a group to open its jobs. Use the dropdown below if you only want to filter company cards.</span></div>
     <div className="company-group-grid">
-      {groupSummaries.map((item) => <button type="button" className={`company-group-card ${group === item.id ? 'active' : ''}`} key={item.id} onClick={() => setGroup(group === item.id ? 'all' : item.id)}>
+      {groupSummaries.map((item) => <a className="company-group-card" key={item.id} href={`/target-jobs?group=${encodeURIComponent(item.id)}`}>
         <b>{item.label}</b>
         <span>{item.description}</span>
         <div className="row small"><strong>{item.count}</strong> companies · {item.live} live · {item.recommended} recommended</div>
-      </button>)}
+        <div className="company-group-open">View {item.label} jobs →</div>
+      </a>)}
     </div>
 
     <div className="section-head"><h2>{group === 'all' ? 'All target companies' : COMPANY_GROUPS.find((item) => item.id === group)?.label}</h2><span className="small muted">{visible.length} companies shown</span></div>
@@ -76,12 +77,13 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
             </div>
             <span className={`pill ${company.jobs > 0 ? 'strong' : ''}`}>{company.jobs > 0 ? `${company.jobs} jobs` : 'watching'}</span>
           </div>
-          {groups.length ? <div className="company-group-tags">{groups.map((item) => <button type="button" className="company-group-tag" key={item.id} onClick={() => setGroup(item.id)}>{item.label}</button>)}</div> : null}
+          {groups.length ? <div className="company-group-tags">{groups.map((item) => <a className="company-group-tag" key={item.id} href={`/target-jobs?group=${encodeURIComponent(item.id)}`}>{item.label}</a>)}</div> : null}
           <div className="company-coverage">
             <span><b>{company.recommended}</b> recommended</span>
             <span><b>{company.jobs}</b> imported</span>
           </div>
           <div className="row company-actions">
+            <a className={company.jobs > 0 ? 'btn primary' : 'btn ghost'} href={`/target-jobs?company=${encodeURIComponent(company.company)}`}>Jobs →</a>
             {company.careersUrl ? <a className="btn ghost" href={company.careersUrl} target="_blank" rel="noreferrer">Careers ↗</a> : null}
             <a className="btn ghost" href={queryUrl('https://www.linkedin.com/jobs/search/?location=Canada&keywords=', `${company.company} AI data software ERP`)} target="_blank" rel="noreferrer">LinkedIn ↗</a>
             <a className="btn ghost" href={queryUrl('https://ca.indeed.com/jobs?q=', `${company.company} AI data software ERP`)} target="_blank" rel="noreferrer">Indeed ↗</a>
