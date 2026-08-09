@@ -10,7 +10,7 @@ const links = [
 function NavigationLinks({ className }: { className: string }) {
   return <nav className={className} aria-label="Primary navigation">
     {links.map((link) => <a href={link.href} key={link.href}>
-      <span aria-hidden="true">{link.icon}</span>
+      <span aria-hidden="true">{link.icon}</span>{' '}
       <span>{link.label}</span>
     </a>)}
   </nav>;
