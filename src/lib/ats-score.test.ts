@@ -3,7 +3,8 @@ import test from 'node:test';
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
 import { scoreTailoredResume } from './ats-score';
 import { coverLetterBodyParagraphs, coverLetterText } from './cover-letter';
-import { coverLetterPdf, resumePdf } from './application-pdf';
+import { resumePdf } from './application-pdf';
+import { coverLetterPdf } from './indeed-cover-letter-pdf';
 
 const profile: CandidateProfile = {
   name: 'Arnob Banik',
@@ -49,7 +50,7 @@ function pack(skills: string[]): ApplicationPack {
     skills,
     experience: [{ organization: 'Example Co', title: 'Software Development Intern', bullets: ['Built TypeScript application components and integrated PostgreSQL-backed APIs.'] }],
     projects: [{ name: 'Dashboard', bullets: ['Built a React and TypeScript dashboard backed by PostgreSQL.'] }],
-    coverLetter: 'Dear Hiring Manager,\n\nI am applying for the Software Engineer role because my TypeScript and React work aligns with the position.\n\nIn my recent work, I built application components and PostgreSQL-backed APIs, giving me practical experience relevant to the team.\n\nI would welcome the opportunity to discuss how I can contribute to Example.\n\nSincerely,\nArnob Banik',
+    coverLetter: 'Dear Hiring Manager,\n\nI am applying for the Software Engineer role because my TypeScript and React work aligns with the position.\n\nIn my recent work, I built application components and PostgreSQL-backed APIs, giving me practical experience relevant to the team.\n\nI would welcome the opportunity to discuss how I can contribute to Example. Thank you for your consideration.\n\nSincerely,\nArnob Banik',
     outreachMessage: 'Hello', interviewThemes: [], claimsAudit: [],
   };
 }
@@ -70,18 +71,36 @@ test('ATS estimate rewards JD-aligned selected skills and evidence', () => {
   assert.ok(weak.missingKeywords.includes('TypeScript'));
 });
 
-test('cover letter normalizes generated prose into professional template blocks', () => {
+test('cover letter normalizes generated prose into Indeed-style template blocks', () => {
   const p = pack(['TypeScript', 'React', 'PostgreSQL']);
   assert.equal(coverLetterBodyParagraphs(p).length, 3);
   const text = coverLetterText(profile, job, p, new Date('2026-08-09T12:00:00-04:00'));
-  assert.match(text, /Arnob Banik/);
-  assert.match(text, /Hiring Manager\nExample/);
-  assert.match(text, /Re: Software Engineer/);
+  assert.match(text, /^Arnob Banik\n\+1 555 0100\narnob@example.com\nWindsor, Ontario, Canada/m);
+  assert.match(text, /August 9, 2026/);
   assert.match(text, /Dear Hiring Manager,/);
-  assert.match(text, /Sincerely,/);
+  assert.doesNotMatch(text, /Re: Software Engineer/);
+  assert.doesNotMatch(text, /Hiring Manager\nExample/);
+  assert.match(text, /Sincerely,\nArnob Banik$/);
 });
 
-test('resume and cover-letter PDFs remain single-page template documents', () => {
+test('cover letter collapses extra model paragraphs into three focused body paragraphs', () => {
+  const p = pack(['TypeScript']);
+  p.coverLetter = [
+    'Dear Hiring Manager,',
+    'I am applying for the Software Engineer role at Example.',
+    'My TypeScript work aligns with the role.',
+    'I also built PostgreSQL-backed APIs.',
+    'I would welcome an opportunity to discuss the position. Thank you for your consideration.',
+    'Sincerely,',
+    'Arnob Banik',
+  ].join('\n\n');
+  const paragraphs = coverLetterBodyParagraphs(p);
+  assert.equal(paragraphs.length, 3);
+  assert.match(paragraphs[1], /TypeScript/);
+  assert.match(paragraphs[1], /PostgreSQL/);
+});
+
+test('resume and Indeed-style cover-letter PDFs remain single-page documents', () => {
   const p = pack(['TypeScript', 'React', 'PostgreSQL', 'Python']);
   const resume = resumePdf(profile, job, p).toString('utf8');
   const cover = coverLetterPdf(profile, job, p).toString('utf8');
@@ -89,7 +108,8 @@ test('resume and cover-letter PDFs remain single-page template documents', () =>
   assert.equal((cover.match(/\/Type \/Page\b/g) ?? []).length, 1);
   assert.match(resume, /PROFESSIONAL SUMMARY/);
   assert.match(resume, /CERTIFICATIONS/);
+  assert.match(cover, /Times-Roman/);
   assert.match(cover, /Dear Hiring Manager/);
-  assert.match(cover, /Re: Software Engineer/);
+  assert.doesNotMatch(cover, /Re: Software Engineer/);
   assert.match(cover, /Sincerely/);
 });

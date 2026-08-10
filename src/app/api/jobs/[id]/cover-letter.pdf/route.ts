@@ -1,5 +1,5 @@
 import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
-import { coverLetterPdf } from '@/lib/application-pdf';
+import { coverLetterPdf } from '@/lib/indeed-cover-letter-pdf';
 import { getJob } from '@/lib/store';
 import { slug } from '@/lib/utils';
 
