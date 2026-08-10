@@ -3,6 +3,8 @@ import test from 'node:test';
 import type { CandidateProfile } from './types';
 import { externalApplicationProfile, isExternalApplicationProject } from './application-visibility';
 
+type Project = NonNullable<CandidateProfile['projects']>[number];
+
 function profile(): CandidateProfile {
   return {
     name: 'Arnob Banik',
@@ -28,7 +30,7 @@ function profile(): CandidateProfile {
         bullets: ['Private evidence.'],
         skills: ['TypeScript'],
         externalApplicationEligible: false,
-      } as CandidateProfile['projects'][number] & { externalApplicationEligible: boolean },
+      } as Project & { externalApplicationEligible: boolean },
     ],
   };
 }
