@@ -16,6 +16,8 @@ type TaggedProject = ProjectItem & {
   roleFamilies?: ProjectRoleFamily[];
 };
 
+const DEFAULT_THESIS_PROJECT = 'MSc Thesis - Color-Aware Composed Image Retrieval';
+
 const TITLE_SIGNALS: Array<[ProjectRoleFamily, RegExp[]]> = [
   ['ai-ml', [
     /\bmachine learning\b/, /\bml engineer/, /\bml(?:\s+\w+){0,2}\s+engineer\b/,
@@ -78,6 +80,14 @@ function descriptionHits(text: string, family: ProjectRoleFamily) {
   return DESCRIPTION_SIGNALS[family].filter((signal) => text.includes(signal)).length;
 }
 
+function isDefaultThesisProject(project: ProjectItem) {
+  const name = normalizeText(project.name);
+  const canonical = normalizeText(DEFAULT_THESIS_PROJECT);
+  return name === canonical
+    || name.includes('color-aware composed image retrieval')
+    || name.includes('color aware composed image retrieval');
+}
+
 export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' | 'department'>): ProjectRoleFamily[] {
   const title = normalizeText(`${job.title} ${job.department ?? ''}`);
   const description = normalizeText(job.description ?? '');
@@ -137,25 +147,51 @@ function lexicalProjectScore(project: ProjectItem, job: Job) {
 }
 
 export function selectProjectsForJob(profile: CandidateProfile, job: Job, maxProjects = 3): ProjectItem[] {
-  const families = new Set(inferProjectRoleFamilies(job));
-  if (!families.size) return [];
+  const limit = Math.max(0, maxProjects);
+  if (!limit) return [];
 
-  return (profile.projects ?? [])
-    .map((project, index) => {
-      const projectFamilies = (project as TaggedProject).roleFamilies ?? [];
-      const familyHits = projectFamilies.filter((family) => families.has(family)).length;
-      const lexical = lexicalProjectScore(project, job);
-      return { project, index, familyHits, lexical, score: familyHits * 100 + lexical };
-    })
-    .filter((item) => item.familyHits > 0)
-    .sort((a, b) => b.score - a.score || a.index - b.index)
-    .slice(0, Math.max(0, maxProjects))
-    .map((item) => item.project);
+  const projects = profile.projects ?? [];
+  const defaultThesis = projects.find(isDefaultThesisProject);
+  const families = new Set(inferProjectRoleFamilies(job));
+  const remainingSlots = Math.max(0, limit - (defaultThesis ? 1 : 0));
+
+  const relevant = families.size && remainingSlots
+    ? projects
+      .filter((project) => project !== defaultThesis)
+      .map((project, index) => {
+        const projectFamilies = (project as TaggedProject).roleFamilies ?? [];
+        const familyHits = projectFamilies.filter((family) => families.has(family)).length;
+        const lexical = lexicalProjectScore(project, job);
+        return { project, index, familyHits, lexical, score: familyHits * 100 + lexical };
+      })
+      .filter((item) => item.familyHits > 0)
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .slice(0, remainingSlots)
+      .map((item) => item.project)
+    : [];
+
+  return defaultThesis ? [defaultThesis, ...relevant] : relevant;
+}
+
+function mergeSelectedProjectSkills(profile: CandidateProfile, projects: ProjectItem[]) {
+  const skills = [...profile.skills];
+  const seen = new Set(skills.map(normalizeText));
+  for (const project of projects) {
+    for (const skill of project.skills ?? []) {
+      const normalized = normalizeText(skill);
+      if (!normalized || seen.has(normalized)) continue;
+      seen.add(normalized);
+      skills.push(skill);
+    }
+  }
+  return skills;
 }
 
 export function projectTailoredApplicationProfile(profile: CandidateProfile, job: Job): CandidateProfile {
+  const projects = selectProjectsForJob(profile, job, 3);
   return {
     ...profile,
-    projects: selectProjectsForJob(profile, job, 3),
+    skills: mergeSelectedProjectSkills(profile, projects),
+    projects,
   };
 }
