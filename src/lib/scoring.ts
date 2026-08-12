@@ -27,16 +27,36 @@ export function titleMatchesTarget(title: string, targets: string[]) {
   });
 }
 
+function remoteRegionMatches(location: string, preferred: string[]) {
+  if (!location) return true;
+  if (
+    location === 'remote'
+    || location === 'anywhere'
+    || location === 'worldwide'
+    || location === 'global'
+    || location.includes('anywhere in the world')
+    || location.includes('remote worldwide')
+    || location.includes('remote anywhere')
+    || location.includes('probably worldwide')
+  ) return true;
+
+  const preferenceText = preferred.join(' ');
+  const wantsCanada = preferenceText.includes('canada');
+  if (wantsCanada && (
+    location === 'canada'
+    || location.includes('canada only')
+    || location.includes('north america only')
+    || location === 'north america'
+    || location.includes('americas only')
+  )) return true;
+
+  return false;
+}
+
 export function locationMatchesPreference(job: Job, profile: CandidateProfile) {
   const location = normalizeText(job.location ?? '');
   const preferred = profile.preferredLocations.map(normalizeText).filter(Boolean);
-  const globallyRemote = !location
-    || location === 'remote'
-    || location === 'anywhere'
-    || location === 'worldwide'
-    || location.includes('remote worldwide')
-    || location.includes('remote anywhere');
-  if (job.remote && globallyRemote) return true;
+  if (job.remote && remoteRegionMatches(location, preferred)) return true;
   if (!location) return Boolean(job.remote);
   if (preferred.some((place) => location.includes(place) || place.includes(location))) return true;
   return false;
