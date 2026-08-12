@@ -19,7 +19,7 @@ const profile: CandidateProfile = {
   preferredLocations: ['Canada'],
   skills: [],
   projects: [
-    project('Color-Aware Composed Image Retrieval', ['ai-ml'], ['Python', 'CLIP', 'HNSW']),
+    project('MSc Thesis - Color-Aware Composed Image Retrieval', ['ai-ml'], ['Python', 'CLIP', 'HNSW', 'Computer Vision', 'Multimodal Retrieval']),
     project('Phishing URL Detection', ['ai-ml', 'cybersecurity'], ['Python', 'BERT', 'Machine Learning']),
     project('Student Dropout Analysis', ['ai-ml', 'data-analytics'], ['Python', 'Pandas', 'Scikit-learn']),
     project('Flowdesk Family CRM', ['software', 'cloud-devops', 'business-analysis'], ['Next.js', 'TypeScript', 'PostgreSQL']),
@@ -43,85 +43,107 @@ function job(title: string, description: string): Job {
   };
 }
 
-test('machine-learning roles receive only AI/ML project evidence', () => {
+test('thesis is always the default project and its skills become resume evidence', () => {
+  const tailored = projectTailoredApplicationProfile(profile, job(
+    'Full-Stack Software Engineer',
+    'Build React and Next.js applications, REST APIs, TypeScript services, and PostgreSQL-backed product features.',
+  ));
+  assert.equal(tailored.projects?.[0]?.name, 'MSc Thesis - Color-Aware Composed Image Retrieval');
+  assert.ok(tailored.skills.includes('CLIP'));
+  assert.ok(tailored.skills.includes('HNSW'));
+  assert.ok(tailored.skills.includes('Computer Vision'));
+  assert.ok(tailored.skills.includes('Multimodal Retrieval'));
+});
+
+test('machine-learning roles receive thesis plus only AI/ML project evidence', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Machine Learning Engineer',
     'Build Python machine-learning systems using embeddings, deep learning, retrieval, and model evaluation.',
   ));
   const names = tailored.projects?.map((item) => item.name) ?? [];
-  assert.ok(names.includes('Color-Aware Composed Image Retrieval'));
+  assert.equal(names[0], 'MSc Thesis - Color-Aware Composed Image Retrieval');
   assert.ok(names.includes('Phishing URL Detection') || names.includes('Student Dropout Analysis'));
   assert.ok(!names.includes('Flowdesk Family CRM'));
   assert.ok(!names.includes('ESS Tax Engine Revamp'));
   assert.ok(names.length <= 3);
 });
 
-test('ML titles stay ML-only even when production JDs mention APIs and software practices', () => {
+test('ML titles stay ML-only after the default thesis even when production JDs mention APIs and software practices', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Machine Learning Platform Engineer',
     'Build production Python services and REST APIs, follow software development practices, deploy machine learning and deep learning models, and maintain model inference pipelines.',
   ));
   const names = tailored.projects?.map((item) => item.name) ?? [];
   assert.ok(names.length > 0);
-  assert.ok(names.every((name) => ['Color-Aware Composed Image Retrieval', 'Phishing URL Detection', 'Student Dropout Analysis'].includes(name)));
+  assert.ok(names.every((name) => ['MSc Thesis - Color-Aware Composed Image Retrieval', 'Phishing URL Detection', 'Student Dropout Analysis'].includes(name)));
   assert.ok(!names.includes('Flowdesk Family CRM'));
 });
 
-test('explicit ERP roles do not pad projects with generic business-analysis work', () => {
+test('explicit ERP roles keep thesis by default and otherwise use ERP projects only', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Oracle Fusion ERP Analyst',
     'Support Oracle Fusion Financials, Procurement, tax configuration, requirements, workflows, and business-process improvements.',
   ));
-  assert.deepEqual(tailored.projects?.map((item) => item.name), ['ESS Tax Engine Revamp']);
+  assert.deepEqual(tailored.projects?.map((item) => item.name), [
+    'MSc Thesis - Color-Aware Composed Image Retrieval',
+    'ESS Tax Engine Revamp',
+  ]);
 });
 
-test('software roles select software projects rather than unrelated academic ML work', () => {
+test('software roles keep thesis and select only software projects for remaining slots', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Full-Stack Software Engineer',
     'Build React and Next.js applications, REST APIs, TypeScript services, and PostgreSQL-backed product features.',
   ));
   const names = tailored.projects?.map((item) => item.name) ?? [];
+  assert.equal(names[0], 'MSc Thesis - Color-Aware Composed Image Retrieval');
   assert.ok(names.includes('Flowdesk Family CRM'));
   assert.ok(names.includes('Inventory Management System'));
   assert.ok(!names.includes('ESS Tax Engine Revamp'));
   assert.ok(!names.includes('FAT File System'));
 });
 
-test('cloud roles do not admit generic software projects just because the JD mentions APIs', () => {
+test('cloud roles keep thesis and do not admit unrelated generic projects', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Cloud Engineer',
     'Build cloud services, APIs and TypeScript automation; support deployments and platform reliability.',
   ));
-  assert.deepEqual(tailored.projects?.map((item) => item.name), ['Flowdesk Family CRM']);
+  assert.deepEqual(tailored.projects?.map((item) => item.name), [
+    'MSc Thesis - Color-Aware Composed Image Retrieval',
+    'Flowdesk Family CRM',
+  ]);
 });
 
-test('data analyst roles stay on data projects even when the JD mentions predictive models', () => {
+test('data analyst roles keep thesis and use data projects for remaining slots', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Data Analyst',
     'Analyze data with SQL and Python, build reports and visualizations, and support predictive machine learning models with stakeholders.',
   ));
   const names = tailored.projects?.map((item) => item.name) ?? [];
+  assert.equal(names[0], 'MSc Thesis - Color-Aware Composed Image Retrieval');
   assert.ok(names.includes('Student Dropout Analysis'));
   assert.ok(names.includes('Inventory Management System'));
-  assert.ok(!names.includes('Color-Aware Composed Image Retrieval'));
   assert.ok(!names.includes('Phishing URL Detection'));
 });
 
-test('IT infrastructure roles select systems projects', () => {
+test('IT infrastructure roles keep thesis and select systems projects', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'IT Systems Analyst',
     'Support Windows Server, IIS, SQL Server, infrastructure, application support, and production systems.',
   ));
   const names = tailored.projects?.map((item) => item.name) ?? [];
-  assert.deepEqual(names, ['EDMS Server Migration']);
+  assert.deepEqual(names, [
+    'MSc Thesis - Color-Aware Composed Image Retrieval',
+    'EDMS Server Migration',
+  ]);
 });
 
-test('unknown role families do not pad the resume with unrelated projects', () => {
+test('unknown role families keep only the default thesis instead of unrelated filler', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Corporate Communications Coordinator',
     'Write internal communications, coordinate events, and manage editorial calendars.',
   ));
-  assert.deepEqual(tailored.projects, []);
+  assert.deepEqual(tailored.projects?.map((item) => item.name), ['MSc Thesis - Color-Aware Composed Image Retrieval']);
 });
 
 test('untagged projects are not admitted through accidental keyword overlap', () => {
