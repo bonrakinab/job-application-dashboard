@@ -5,7 +5,7 @@ const SENIORITY_BLOCKERS = ['principal', 'staff', 'director', 'manager', 'vp ', 
 const CLEARANCE_PATTERNS = ['active security clearance', 'top secret clearance', 'secret clearance required'];
 const COUNTRY_BLOCKERS = ['us citizens only', 'u.s. citizens only', 'must be a us citizen', 'must be a u.s. citizen'];
 const STOP_WORDS = new Set(['and', 'the', 'for', 'with', 'role', 'senior', 'junior']);
-const DOMAIN_ACRONYMS = new Set(['ai', 'ml']);
+const DOMAIN_ACRONYMS = new Set(['ai', 'ml', 'bi', 'it']);
 const SKILL_EVIDENCE_CURVE = [20, 45, 62, 74, 82, 88, 93, 96, 98, 100];
 
 function scoreSkillEvidence(haystack: string, configuredSkills: string[]) {
