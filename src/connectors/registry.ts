@@ -7,6 +7,7 @@ import { fetchHimalayasJobs } from './himalayas';
 import { fetchJobicyJobs } from './jobicy';
 import { fetchRemoteOkJobs } from './remoteok';
 import { fetchRemotiveJobs } from './remotive';
+import { fetchWeWorkRemotelyJobs } from './weworkremotely';
 import type { JobSourceAdapter } from './job-source';
 
 const adapters: Record<SourceKind, JobSourceAdapter> = {
@@ -64,6 +65,7 @@ export async function discoverJobs() {
     fetchRemotiveJobs(),
     fetchRemoteOkJobs(),
     fetchHimalayasJobs(),
+    fetchWeWorkRemotelyJobs(),
   ]);
   const jobs: Job[] = [];
   const errors: string[] = [];
@@ -78,5 +80,5 @@ export async function discoverJobs() {
   }
 
   const deduped = new Map(jobs.map((job) => [job.id ?? `${job.source}:${job.sourceKey}:${job.externalId}`, job]));
-  return { jobs: [...deduped.values()], errors, sources: sources.length + 4 };
+  return { jobs: [...deduped.values()], errors, sources: sources.length + 5 };
 }
