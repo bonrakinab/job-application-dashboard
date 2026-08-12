@@ -26,10 +26,7 @@ export function roleFamily(job: Pick<Job, 'title' | 'description'>) {
   const title = normalizeText(job.title);
   const description = normalizeText(job.description);
 
-  // High-precision recommendations: these remain visible in All Jobs but should not
-  // be promoted merely because generic words such as "analyst" or "engineer" overlap.
   if (/\b(sales|account executive|marketing|recruiter|human resources|financial analyst|finance analyst|accounting|product manager|customer success)\b/.test(title)) return 'Other';
-
   if (/\b(oracle fusion|oracle erp|erp|enterprise applications|business systems)\b/.test(title)) return 'ERP & enterprise systems';
   if (/\b(machine learning|artificial intelligence|ai engineer|ml engineer|data scientist|computer vision|nlp)\b/.test(title)) return 'AI & machine learning';
   if (/\b(data analyst|data analytics|business intelligence|bi analyst|analytics engineer|data engineer)\b/.test(title)) return 'Data & analytics';
@@ -37,8 +34,6 @@ export function roleFamily(job: Pick<Job, 'title' | 'description'>) {
   if (/\b(software engineer|software engineering|software developer|full stack|full-stack|backend|frontend|application developer)\b/.test(title)) return 'Software engineering';
   if (/\b(it analyst|it systems|systems analyst|business analyst|technical support|application support|information technology)\b/.test(title)) return 'IT & business systems';
 
-  // Some employers use generic titles such as "Applications Analyst" while the
-  // description explicitly identifies Oracle/ERP responsibilities.
   if (/\b(applications? analyst|applications? engineer|systems? engineer)\b/.test(title)
       && /\b(oracle fusion|oracle erp|erp|enterprise applications|business systems)\b/.test(description)) {
     return 'ERP & enterprise systems';
@@ -47,8 +42,20 @@ export function roleFamily(job: Pick<Job, 'title' | 'description'>) {
   return 'Other';
 }
 
+function healthAdjustment(job: JobWithMatch) {
+  if (job.validityStatus === 'active') return 3;
+  if (job.validityStatus === 'likely_active') return 1;
+  if (job.validityStatus === 'unknown' || !job.validityStatus) return -4;
+  if (job.validityStatus === 'likely_closed') return -30;
+  return -100;
+}
+
 function recommendationReasons(job: JobWithMatch, profile: CandidateProfile, match: MatchScore, stage: OpportunityStage, family: string) {
   const reasons: string[] = [];
+  if (job.validityStatus === 'active') reasons.push('Posting was verified active from the source/job page.');
+  else if (job.validityStatus === 'likely_active') reasons.push('Posting currently looks applyable, but verification is not as strong as a direct ATS confirmation.');
+  else if (!job.validityStatus || job.validityStatus === 'unknown') reasons.push('Posting is not yet verified; priority is reduced until it is checked.');
+
   if (stage === 'internship') reasons.push('Internship/co-op opportunity: intentionally included in your search.');
   else if (stage === 'new-grad') reasons.push('New-graduate / early-career opportunity.');
   else if (stage === 'entry-level') reasons.push('Entry-level or junior opportunity aligned with an early-career profile.');
@@ -69,8 +76,8 @@ export function rankRecommendedJobs(jobs: JobWithMatch[], profile: CandidateProf
     const earlyCareer = stage !== 'experienced';
     const stageBoost = stage === 'internship' ? 8 : stage === 'new-grad' ? 7 : stage === 'entry-level' ? 5 : 0;
     const targetBoost = titleMatchesTarget(job.title, profile.targetTitles) ? 2 : 0;
-    const priority = match.blockers.length ? match.overall : clamp(match.overall + stageBoost + targetBoost);
-    const highlySuitable = family !== 'Other' && match.blockers.length === 0 && (
+    const priority = match.blockers.length ? match.overall : clamp(match.overall + stageBoost + targetBoost + healthAdjustment(job));
+    const highlySuitable = family !== 'Other' && match.blockers.length === 0 && !['closed','likely_closed'].includes(job.validityStatus ?? 'unknown') && (
       match.recommendation === 'exceptional'
       || match.recommendation === 'strong'
       || (earlyCareer && match.overall >= 70)
@@ -87,6 +94,7 @@ export function rankRecommendedJobs(jobs: JobWithMatch[], profile: CandidateProf
   })
     .filter((item) => item.family !== 'Other'
       && item.match.blockers.length === 0
+      && !['closed','likely_closed'].includes(item.job.validityStatus ?? 'unknown')
       && (item.highlySuitable || item.match.recommendation === 'reasonable'))
     .sort((a, b) => b.priority - a.priority || b.match.overall - a.match.overall);
 }

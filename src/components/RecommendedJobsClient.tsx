@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import type { JobValidityStatus } from '@/lib/types';
 import type { RecommendedOpportunity } from '@/lib/recommendations';
 import { StatusPill } from './StatusPill';
 
@@ -9,6 +10,12 @@ function stageLabel(stage: RecommendedOpportunity['stage']) {
   if (stage === 'entry-level') return 'Entry level';
   if (stage === 'internship') return 'Internship';
   return 'Experienced';
+}
+
+function healthLabel(status?: JobValidityStatus) {
+  if (status === 'active') return 'Verified active';
+  if (status === 'likely_active') return 'Likely active';
+  return 'Unverified';
 }
 
 export function RecommendedJobsClient({ items }: { items: RecommendedOpportunity[] }) {
@@ -24,7 +31,7 @@ export function RecommendedJobsClient({ items }: { items: RecommendedOpportunity
       && (source === 'all' || item.job.source === source);
   }), [items, q, stage, source]);
 
-  if (!items.length) return <div className="notice">No recommendation currently clears the fit and eligibility thresholds. The all-jobs dashboard still contains every discovered role.</div>;
+  if (!items.length) return <div className="notice">No recommendation currently clears the fit, eligibility and posting-health thresholds. The all-jobs dashboard still contains every discovered role.</div>;
 
   return <>
     <div className="searchbar recommendation-filters">
@@ -60,6 +67,7 @@ export function RecommendedJobsClient({ items }: { items: RecommendedOpportunity
           {item.highlySuitable ? <span className="tag">Highly suitable</span> : null}
           <span className="tag">{stageLabel(item.stage)}</span>
           <StatusPill value={item.match.recommendation} />
+          <span className="tag">{healthLabel(item.job.validityStatus)} · {item.job.healthScore ?? 50}/100</span>
           {item.job.location ? <span className="tag">{item.job.location}</span> : null}
         </div>
 
@@ -68,8 +76,7 @@ export function RecommendedJobsClient({ items }: { items: RecommendedOpportunity
         </div>
 
         <div className="row recommendation-actions">
-          <a className="btn primary" href={`/jobs/${item.job.id}`}>Review & prepare →</a>
-          <a className="btn ghost" href={item.job.applyUrl || item.job.url} target="_blank" rel="noreferrer">Open listing ↗</a>
+          <a className="btn primary" href={`/jobs/${item.job.id}`}>Review, verify & prepare →</a>
           <span className="small muted">Match {item.match.overall}/100</span>
         </div>
       </article>)}

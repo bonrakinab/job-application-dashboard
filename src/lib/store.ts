@@ -1,4 +1,4 @@
-import type { ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobWithMatch, MatchScore } from './types';
+import type { ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobValidityVerification, JobWithMatch, MatchScore } from './types';
 import { demoJobs, demoProfile } from './demo';
 import { jsonEnv } from './utils';
 import { insertIgnoreRows, patchRows, supabaseConfigured, supabaseRequest, upsertRows } from './supabase-rest';
@@ -25,6 +25,13 @@ function jobToRow(job: Job) {
     remote: job.remote,
     workplace_type: job.workplaceType,
     department: job.department,
+    validity_status: job.validityStatus,
+    health_score: job.healthScore,
+    last_verified_at: job.lastVerifiedAt,
+    apply_url_status: job.applyUrlStatus,
+    verification_signals: job.verificationSignals,
+    closure_reason: job.closureReason,
+    verification_method: job.verificationMethod,
     raw: job.raw,
   };
 }
@@ -68,6 +75,7 @@ function rowToJob(row: any): JobWithMatch {
     description: row.description,
     postedAt: row.posted_at,
     discoveredAt: row.discovered_at,
+    lastSeenAt: row.last_seen_at,
     salaryMin: row.salary_min == null ? undefined : Number(row.salary_min),
     salaryMax: row.salary_max == null ? undefined : Number(row.salary_max),
     currency: row.currency,
@@ -76,6 +84,14 @@ function rowToJob(row: any): JobWithMatch {
     remote: row.remote,
     workplaceType: row.workplace_type,
     department: row.department,
+    validityStatus: row.validity_status ?? 'unknown',
+    healthScore: row.health_score == null ? 50 : Number(row.health_score),
+    lastVerifiedAt: row.last_verified_at,
+    applyUrlStatus: row.apply_url_status == null ? undefined : Number(row.apply_url_status),
+    verificationSignals: row.verification_signals ?? [],
+    closureReason: row.closure_reason,
+    verificationMethod: row.verification_method,
+    raw: row.raw,
     match,
     application,
   };
@@ -123,6 +139,19 @@ export async function saveMatch(jobId: string, match: MatchScore) {
     model: match.model,
     analyzed_at: new Date().toISOString(),
   }], 'job_id');
+}
+
+export async function saveJobValidity(jobId: string, verification: JobValidityVerification) {
+  if (!supabaseConfigured) return;
+  await patchRows(`jobs?id=eq.${encodeURIComponent(jobId)}`, {
+    validity_status: verification.validityStatus,
+    health_score: verification.healthScore,
+    last_verified_at: verification.lastVerifiedAt,
+    apply_url_status: verification.applyUrlStatus ?? null,
+    verification_signals: verification.verificationSignals,
+    closure_reason: verification.closureReason ?? null,
+    verification_method: verification.verificationMethod ?? null,
+  });
 }
 
 export async function listJobs(limit = 100): Promise<JobWithMatch[]> {
@@ -178,7 +207,7 @@ export async function getDashboardStats(jobs?: JobWithMatch[]): Promise<Dashboar
   const list = jobs ?? await listJobs();
   return {
     discovered: list.length,
-    recommended: list.filter((j) => j.match && ['exceptional','strong'].includes(j.match.recommendation)).length,
+    recommended: list.filter((j) => j.match && !['closed','likely_closed'].includes(j.validityStatus ?? 'unknown') && ['exceptional','strong'].includes(j.match.recommendation)).length,
     applied: list.filter((j) => ['applied','interview','rejected','offer'].includes(j.application?.status ?? '')).length,
     interviews: list.filter((j) => j.application?.status === 'interview').length,
     offers: list.filter((j) => j.application?.status === 'offer').length,

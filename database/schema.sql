@@ -54,6 +54,14 @@ create table if not exists jobs (
   remote boolean,
   workplace_type text,
   department text,
+  validity_status text not null default 'unknown'
+    check (validity_status in ('active','likely_active','unknown','likely_closed','closed')),
+  health_score integer not null default 50 check (health_score between 0 and 100),
+  last_verified_at timestamptz,
+  apply_url_status integer,
+  verification_signals jsonb not null default '[]'::jsonb,
+  closure_reason text,
+  verification_method text,
   raw jsonb,
   unique(source, source_key, external_id)
 );
@@ -61,6 +69,9 @@ create table if not exists jobs (
 create index if not exists jobs_posted_at_idx on jobs(posted_at desc);
 create index if not exists jobs_discovered_at_idx on jobs(discovered_at desc);
 create index if not exists jobs_company_idx on jobs(company);
+create index if not exists jobs_validity_status_idx on jobs(validity_status);
+create index if not exists jobs_last_verified_at_idx on jobs(last_verified_at asc nulls first);
+create index if not exists jobs_health_score_idx on jobs(health_score desc);
 
 create table if not exists job_matches (
   job_id text primary key references jobs(id) on delete cascade,
@@ -166,7 +177,8 @@ from jobs j
 join job_matches m on m.job_id = j.id
 left join applications a on a.job_id = j.id
 where m.recommendation <> 'skip'
-order by m.overall desc, j.posted_at desc nulls last;
+  and j.validity_status not in ('closed','likely_closed')
+order by m.overall desc, j.health_score desc, j.posted_at desc nulls last;
 
 -- Personal dashboard: no browser/anon table access. Server secret keys bypass RLS.
 alter table candidate_profiles enable row level security;

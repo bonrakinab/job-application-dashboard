@@ -1,6 +1,17 @@
 export type Recommendation = 'exceptional' | 'strong' | 'reasonable' | 'stretch' | 'skip';
 export type ApplicationStatus = 'discovered' | 'reviewing' | 'approved' | 'applied' | 'interview' | 'rejected' | 'offer' | 'withdrawn';
 export type SourceKind = 'greenhouse' | 'lever' | 'ashby';
+export type JobValidityStatus = 'active' | 'likely_active' | 'unknown' | 'likely_closed' | 'closed';
+
+export interface JobValidityVerification {
+  validityStatus: JobValidityStatus;
+  healthScore: number;
+  lastVerifiedAt: string;
+  applyUrlStatus?: number;
+  verificationSignals: string[];
+  closureReason?: string;
+  verificationMethod?: string;
+}
 
 export interface Job {
   id?: string;
@@ -15,6 +26,7 @@ export interface Job {
   description: string;
   postedAt?: string;
   discoveredAt?: string;
+  lastSeenAt?: string;
   salaryMin?: number;
   salaryMax?: number;
   currency?: string;
@@ -23,6 +35,13 @@ export interface Job {
   remote?: boolean;
   workplaceType?: string;
   department?: string;
+  validityStatus?: JobValidityStatus;
+  healthScore?: number;
+  lastVerifiedAt?: string;
+  applyUrlStatus?: number;
+  verificationSignals?: string[];
+  closureReason?: string;
+  verificationMethod?: string;
   raw?: unknown;
 }
 
