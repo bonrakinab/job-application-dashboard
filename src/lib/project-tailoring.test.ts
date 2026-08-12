@@ -67,15 +67,12 @@ test('ML titles stay ML-only even when production JDs mention APIs and software 
   assert.ok(!names.includes('Flowdesk Family CRM'));
 });
 
-test('ERP and business-systems roles prefer enterprise projects and exclude ML projects', () => {
+test('explicit ERP roles do not pad projects with generic business-analysis work', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Oracle Fusion ERP Analyst',
-    'Support Oracle Fusion Financials, Procurement, tax configuration, requirements, and business-process improvements.',
+    'Support Oracle Fusion Financials, Procurement, tax configuration, requirements, workflows, and business-process improvements.',
   ));
-  const names = tailored.projects?.map((item) => item.name) ?? [];
-  assert.ok(names.includes('ESS Tax Engine Revamp'));
-  assert.ok(!names.includes('Color-Aware Composed Image Retrieval'));
-  assert.ok(!names.includes('Phishing URL Detection'));
+  assert.deepEqual(tailored.projects?.map((item) => item.name), ['ESS Tax Engine Revamp']);
 });
 
 test('software roles select software projects rather than unrelated academic ML work', () => {
@@ -88,6 +85,26 @@ test('software roles select software projects rather than unrelated academic ML 
   assert.ok(names.includes('Inventory Management System'));
   assert.ok(!names.includes('ESS Tax Engine Revamp'));
   assert.ok(!names.includes('FAT File System'));
+});
+
+test('cloud roles do not admit generic software projects just because the JD mentions APIs', () => {
+  const tailored = projectTailoredApplicationProfile(profile, job(
+    'Cloud Engineer',
+    'Build cloud services, APIs and TypeScript automation; support deployments and platform reliability.',
+  ));
+  assert.deepEqual(tailored.projects?.map((item) => item.name), ['Flowdesk Family CRM']);
+});
+
+test('data analyst roles stay on data projects even when the JD mentions predictive models', () => {
+  const tailored = projectTailoredApplicationProfile(profile, job(
+    'Data Analyst',
+    'Analyze data with SQL and Python, build reports and visualizations, and support predictive machine learning models with stakeholders.',
+  ));
+  const names = tailored.projects?.map((item) => item.name) ?? [];
+  assert.ok(names.includes('Student Dropout Analysis'));
+  assert.ok(names.includes('Inventory Management System'));
+  assert.ok(!names.includes('Color-Aware Composed Image Retrieval'));
+  assert.ok(!names.includes('Phishing URL Detection'));
 });
 
 test('IT infrastructure roles select systems projects', () => {
