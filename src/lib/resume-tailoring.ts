@@ -8,7 +8,7 @@ import type {
 import { normalizeText } from './utils';
 import { RESUME_TEMPLATE_VERSION } from './resume-template';
 
-export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-09.evidence-selection.v3';
+export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-12.role-family-projects.v4';
 export { RESUME_TEMPLATE_VERSION } from './resume-template';
 
 export interface ApplicationPackPlan {
@@ -104,9 +104,9 @@ CRITICAL METHOD
 1. First determine the role family and the 6-10 most important requirements from the JD and match analysis. Distinguish must-have from preferred requirements.
 2. Select candidate evidence for those requirements. Relevance to this exact JD matters more than generic keyword density.
 3. The supplied experience/project bullets have evidence IDs. In experience.evidenceIds and projects.evidenceIds, output ONLY those IDs. Never rewrite a bullet and never invent an ID.
-4. Preserve organization names, job titles, and project names exactly. You may omit weakly relevant projects. Keep professional employment history concise and select only the strongest relevant bullets for each role.
+4. Preserve organization names, job titles, and project names exactly. The supplied projects have already been filtered to the job's relevant role family; select only projects that directly strengthen this JD and never pad the resume just to fill a Projects section. Keep professional employment history concise and select only the strongest relevant bullets for each role.
 5. skills must contain ONLY exact skill strings from the supplied profile, ordered by relevance. Prefer 10-20 strong skills; do not pad with unrelated skills.
-6. resumeSummary must be 2-3 concise sentences and specific to the role. It may use only facts, technologies, domains, degree status, and metrics supported by the master evidence. If a degree is Expected, the candidate is NOT a graduate and does not yet hold that degree.
+6. resumeSummary must be 2-3 concise sentences and specific to the role. It may use only facts, technologies, domains, degree status, and metrics supported by the master evidence. If a degree is Expected, the candidate is NOT yet a graduate and does not yet hold that degree. When an expected graduation month/year is provided, truthful wording such as "MSc candidate graduating Aug 2026" or "upcoming graduate (Aug 2026)" is allowed.
 7. resumeHeadline should position the candidate for the target role without claiming an unsupported current title or missing technology.
 8. Missing JD requirements remain gaps. Never claim a missing technology through adjacent experience. Do not convert ERP/IT work into backend, distributed-systems, cloud-native, ML, or other experience it was not.
 9. Every substantive claim authored for the summary, cover letter, or outreach must be supported. claimsAudit should list the claim and one or more valid evidence IDs. Do not write prose evidence; output IDs only.
@@ -179,326 +179,295 @@ const STOP_WORDS = new Set([
   'experience', 'skills', 'using', 'use', 'including', 'strong', 'preferred', 'required', 'requirements', 'responsibilities',
 ]);
 
-function terms(value: string) {
-  return normalizeText(value)
-    .split(/\s+/)
-    .map((token) => token.replace(/^[-/.]+|[-/.]+$/g, ''))
-    .filter((token) => token.length >= 2 && !STOP_WORDS.has(token));
+function tokens(value: string) {
+  return [...new Set(normalizeText(value).split(/\s+/).filter((token) => token.length > 2 && !STOP_WORDS.has(token)))];
 }
 
-function jobContext(job: Job, match?: MatchScore) {
-  return [
-    job.title,
-    job.department,
-    job.description,
-    ...(match?.mustHave ?? []),
-    ...(match?.preferred ?? []),
-    ...(match?.matchedSkills ?? []),
-    ...(match?.strengths ?? []),
-  ].filter(Boolean).join(' ');
+function termFrequency(value: string, term: string) {
+  if (!term) return 0;
+  let count = 0;
+  let cursor = 0;
+  while ((cursor = value.indexOf(term, cursor)) >= 0) { count += 1; cursor += term.length; }
+  return count;
 }
 
-function relevanceScore(text: string, context: string) {
-  const normalizedText = normalizeText(text);
-  const normalizedContext = normalizeText(context);
-  if (!normalizedText || !normalizedContext) return 0;
-  let score = 0;
-  const uniqueTerms = [...new Set(terms(text))];
-  for (const token of uniqueTerms) {
-    if (normalizedContext.includes(token)) score += token.length >= 7 ? 2.1 : 1;
-  }
-  for (const phrase of normalizedText.split(/[,;|()]/).map((part) => part.trim()).filter((part) => part.length >= 5)) {
-    if (normalizedContext.includes(phrase)) score += 4;
-  }
-  return score;
+function jobContext(job: Job) {
+  return normalizeText(`${job.title} ${job.title} ${job.department ?? ''} ${job.description}`);
 }
 
-function exactAllowedSkills(requested: string[] | undefined, profile: CandidateProfile) {
-  const allowed = new Map(profile.skills.map((skill) => [normalizeText(skill), skill]));
-  return [...new Set((requested ?? [])
-    .map((skill) => allowed.get(normalizeText(skill)))
-    .filter((skill): skill is string => Boolean(skill)))];
+function exactSkillScore(skill: string, context: string) {
+  const normalized = normalizeText(skill);
+  if (!normalized) return 0;
+  const exact = termFrequency(context, normalized);
+  const parts = tokens(normalized);
+  const partial = parts.filter((part) => context.includes(part)).length;
+  return exact * 14 + partial * 2;
 }
 
-function rankedSkills(job: Job, profile: CandidateProfile, match?: MatchScore) {
-  const context = jobContext(job, match);
-  const matched = new Set((match?.matchedSkills ?? []).map(normalizeText));
+function evidenceScore(text: string, job: Job, preferredSkills: string[] = []) {
+  const context = jobContext(job);
+  const normalized = normalizeText(text);
+  const jdTokens = tokens(context);
+  const overlap = jdTokens.filter((term) => normalized.includes(term)).length;
+  const skillHits = preferredSkills.filter((skill) => normalized.includes(normalizeText(skill))).length;
+  return overlap + skillHits * 8;
+}
+
+function rankedSkills(profile: CandidateProfile, job: Job) {
+  const context = jobContext(job);
   return profile.skills
-    .map((skill, index) => {
-      let score = relevanceScore(skill, context);
-      if (matched.has(normalizeText(skill))) score += 12;
-      if (normalizeText(job.title).includes(normalizeText(skill))) score += 4;
-      return { skill, score, index };
-    })
+    .map((skill, index) => ({ skill, index, score: exactSkillScore(skill, context) }))
     .sort((a, b) => b.score - a.score || a.index - b.index);
 }
 
-function rankedExperienceEvidence(job: Job, profile: CandidateProfile, match?: MatchScore) {
-  const context = jobContext(job, match);
-  return (profile.experience ?? []).map((item, experienceIndex) => ({
-    organization: item.organization,
-    title: item.title,
-    evidence: item.bullets
-      .map((text, bulletIndex) => ({ id: `EXP:${experienceIndex}:${bulletIndex}`, score: relevanceScore(`${text} ${(item.skills ?? []).join(' ')}`, context), bulletIndex }))
-      .sort((a, b) => b.score - a.score || a.bulletIndex - b.bulletIndex),
-  }));
+function rankedExperience(profile: CandidateProfile, job: Job, preferredSkills: string[]) {
+  return (profile.experience ?? []).map((item, experienceIndex) => {
+    const bullets = item.bullets.map((text, bulletIndex) => ({
+      id: `EXP:${experienceIndex}:${bulletIndex}`,
+      text,
+      score: evidenceScore(`${item.title} ${text} ${(item.skills ?? []).join(' ')}`, job, preferredSkills),
+    })).sort((a, b) => b.score - a.score);
+    return {
+      item,
+      experienceIndex,
+      score: bullets.reduce((sum, bullet) => sum + Math.max(0, bullet.score), 0),
+      bullets,
+    };
+  }).sort((a, b) => b.score - a.score || a.experienceIndex - b.experienceIndex);
 }
 
-function rankedProjects(job: Job, profile: CandidateProfile, match?: MatchScore) {
-  const context = jobContext(job, match);
-  return (profile.projects ?? []).map((project, projectIndex) => {
-    const projectText = [project.name, project.description, ...(project.skills ?? []), ...(project.bullets ?? [])].join(' ');
-    const evidence = (project.bullets ?? [])
-      .map((text, bulletIndex) => ({ id: `PROJ:${projectIndex}:${bulletIndex}`, score: relevanceScore(`${text} ${(project.skills ?? []).join(' ')}`, context), bulletIndex }))
-      .sort((a, b) => b.score - a.score || a.bulletIndex - b.bulletIndex);
-    return { name: project.name, projectIndex, score: relevanceScore(projectText, context), evidence };
+function rankedProjects(profile: CandidateProfile, job: Job, preferredSkills: string[]) {
+  return (profile.projects ?? []).map((item, projectIndex) => {
+    const bullets = (item.bullets ?? []).map((text, bulletIndex) => ({
+      id: `PROJ:${projectIndex}:${bulletIndex}`,
+      text,
+      score: evidenceScore(`${item.name} ${item.description} ${text} ${(item.skills ?? []).join(' ')}`, job, preferredSkills),
+    })).sort((a, b) => b.score - a.score);
+    return {
+      item,
+      projectIndex,
+      score: evidenceScore(`${item.name} ${item.description} ${(item.skills ?? []).join(' ')}`, job, preferredSkills)
+        + bullets.reduce((sum, bullet) => sum + Math.max(0, bullet.score), 0),
+      bullets,
+    };
   }).sort((a, b) => b.score - a.score || a.projectIndex - b.projectIndex);
 }
 
-function expectedDegree(profile: CandidateProfile) {
-  return (profile.degrees ?? []).some((degree) => /expected|present|current/i.test(degree.end ?? ''));
+function safeExpectedDegree(profile: CandidateProfile) {
+  return (profile.degrees ?? []).some((degree) => /expected|present|current/i.test(`${degree.end ?? ''}`));
 }
 
-function numbers(text: string) {
-  return text.match(/\b\d+(?:[.,]\d+)?(?:%|\+)?\b/g) ?? [];
+function scrubUnsupportedDegreeClaim(value: string, profile: CandidateProfile) {
+  if (!safeExpectedDegree(profile)) return value;
+  return value
+    .replace(/\b(MSc|M\.S\.|Master(?:'s)?(?: degree)?|Master of Science)?\s*(graduate|graduated|holder)\b/gi, 'MSc candidate')
+    .replace(/\bgraduate with\b/gi, 'candidate with');
 }
 
-function claimsCompletedExpectedDegree(text: string, profile: CandidateProfile) {
-  if (!expectedDegree(profile)) return false;
-  const normalized = normalizeText(text);
-  return /\bmsc\b.{0,45}\bgraduate\b/i.test(normalized)
-    || /\bmaster(?:s)?\b.{0,45}\bgraduate\b/i.test(normalized)
-    || /\bwith an? msc\b/i.test(normalized)
-    || /\bcompleted (?:my |an? )?(?:msc|master)/i.test(normalized)
-    || /\bearned (?:an? )?(?:msc|master)/i.test(normalized)
-    || /\bgraduated from\b/i.test(normalized);
+function allAllowedSkills(profile: CandidateProfile) {
+  return new Set(profile.skills.map(normalizeText));
 }
 
-function mentionsMissingSkill(text: string, match?: MatchScore) {
-  const normalized = normalizeText(text);
-  return (match?.missingSkills ?? []).some((skill) => {
-    const needle = normalizeText(skill);
-    return needle.length >= 3 && normalized.includes(needle);
-  });
+function allowedFacts(profile: CandidateProfile) {
+  return normalizeText(JSON.stringify({
+    headline: profile.headline,
+    summary: profile.summary,
+    experience: profile.experience,
+    projects: profile.projects,
+    degrees: profile.degrees,
+    certifications: profile.certifications,
+    skills: profile.skills,
+  }));
 }
 
-function authoredTextLooksSupported(text: string, profile: CandidateProfile, match?: MatchScore, min = 20, max = 1400, allowedNumberText = '') {
-  const trimmed = text.trim();
-  if (trimmed.length < min || trimmed.length > max) return false;
-  const evidence = JSON.stringify(applicationEvidenceProfile(profile));
-  const sourceNumbers = new Set([...numbers(evidence), ...numbers(allowedNumberText)]);
-  if (numbers(trimmed).some((value) => !sourceNumbers.has(value))) return false;
-  if (claimsCompletedExpectedDegree(trimmed, profile)) return false;
-  if (mentionsMissingSkill(trimmed, match)) return false;
-  return true;
+function scrubUnsupportedTechnologyClaims(value: string, profile: CandidateProfile) {
+  const allowed = allowedFacts(profile);
+  const suspicious = [
+    'kubernetes', 'terraform', 'spark', 'pyspark', 'snowflake', 'databricks', 'airflow', 'kafka', 'redis',
+    'golang', ' go ', 'rust', 'pytorch', 'docker', 'azure', 'gcp', 'fastapi', 'django', 'spring boot', '.net',
+  ];
+  let cleaned = value;
+  for (const term of suspicious) {
+    const normalized = normalizeText(term);
+    if (!normalized || allowed.includes(normalized)) continue;
+    cleaned = cleaned.replace(new RegExp(`\\b${normalized.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\b`, 'gi'), '');
+  }
+  return cleaned.replace(/\s+,/g, ',').replace(/,\s*,/g, ',').replace(/\s{2,}/g, ' ').trim();
 }
 
-function fallbackSummary(job: Job, profile: CandidateProfile, skills: string[]) {
-  const degree = expectedDegree(profile)
-    ? 'currently completing an MSc in Computer Science (AI)'
-    : 'with a Computer Science background';
-  const topSkills = skills.slice(0, 6).join(', ');
-  const first = `Technical professional ${degree} with experience spanning enterprise IT, software development, and applied AI.`;
-  return topSkills ? `${first} Hands-on strengths relevant to ${job.title} include ${topSkills}.` : first;
+function safeAuthoredText(value: string, profile: CandidateProfile) {
+  return scrubUnsupportedTechnologyClaims(scrubUnsupportedDegreeClaim(value, profile), profile);
 }
 
-function fallbackHeadline(job: Job, skills: string[]) {
-  return [job.title, ...skills.slice(0, 3)].filter(Boolean).join(' | ').slice(0, 140);
+function fallbackSummary(job: Job, profile: CandidateProfile, selectedSkills: string[]) {
+  const role = job.title || 'the role';
+  const domains = selectedSkills.slice(0, 5).join(', ');
+  const degree = (profile.degrees ?? []).find((item) => /computer science|artificial intelligence/i.test(`${item.degree} ${item.field ?? ''}`));
+  const education = degree ? `Currently completing ${degree.degree}${degree.field ? ` (${degree.field})` : ''} at ${degree.institution}.` : '';
+  return `${profile.summary ?? profile.headline ?? 'Technical professional'} Targeting ${role} with directly relevant experience across ${domains || 'the advertised requirements'}. ${education}`.replace(/\s+/g, ' ').trim();
 }
 
-function fallbackCoverLetter(job: Job, profile: CandidateProfile, skills: string[], experienceBullets: string[], projectNames: string[]) {
-  const degreeSentence = expectedDegree(profile)
-    ? 'I am currently completing an MSc in Computer Science with an Artificial Intelligence specialization at the University of Windsor.'
-    : 'My background combines computer science, enterprise IT, software development, and applied AI.';
-  const skillSentence = skills.length ? `My most relevant technical strengths for this role include ${skills.slice(0, 6).join(', ')}.` : '';
-  const evidenceSentence = experienceBullets[0]
-    ? `Professionally, ${experienceBullets[0].charAt(0).toLowerCase()}${experienceBullets[0].slice(1)}`
-    : '';
-  const projectSentence = projectNames.length ? `My selected project work for this opportunity includes ${projectNames.slice(0, 2).join(' and ')}.` : '';
-  return [
-    'Dear Hiring Manager,',
-    `I am applying for the ${job.title} position at ${job.company}. ${degreeSentence}`,
-    [skillSentence, evidenceSentence, projectSentence].filter(Boolean).join(' '),
-    `I would welcome the opportunity to discuss how this evidence-backed experience could contribute to ${job.company}. Thank you for your consideration.`,
-    'Sincerely,\n' + profile.name,
-  ].filter(Boolean).join('\n\n');
+function fallbackCoverLetter(job: Job, profile: CandidateProfile, selectedSkills: string[], experience: ApplicationPack['experience'], projects: ApplicationPack['projects']) {
+  const evidence = [
+    experience[0]?.bullets[0],
+    projects[0]?.bullets[0],
+  ].filter(Boolean).join(' ');
+  return `Dear Hiring Manager,\n\nI am applying for the ${job.title} role at ${job.company}. My background combines ${selectedSkills.slice(0, 5).join(', ') || 'relevant technical experience'} with hands-on professional and project work.\n\n${evidence || profile.summary || 'I would welcome the opportunity to contribute relevant experience to the team.'}\n\nI am currently completing my MSc in Computer Science at the University of Windsor and would welcome the opportunity to discuss how my background aligns with this role.\n\nThank you for your consideration.\n\nSincerely,\n${profile.name}`;
 }
 
-function fallbackOutreach(job: Job, profile: CandidateProfile, skills: string[]) {
-  const degree = expectedDegree(profile) ? 'currently completing an MSc in Computer Science (AI)' : 'a computer science professional';
-  return `Hi, I am ${degree} and am interested in the ${job.title} role at ${job.company}. My most relevant strengths include ${skills.slice(0, 4).join(', ')}. I would be glad to connect and learn more about the team's priorities. Best, ${profile.name}`.slice(0, 650);
+function fallbackOutreach(job: Job, profile: CandidateProfile, selectedSkills: string[]) {
+  return `Hi — I am interested in the ${job.title} opportunity at ${job.company}. My background includes ${selectedSkills.slice(0, 4).join(', ') || 'relevant technical experience'}, and I am currently completing an MSc in Computer Science (AI) at the University of Windsor. I would be glad to connect and learn more about the team.`;
 }
 
-export function deterministicTailoringPlan(job: Job, profile: CandidateProfile, match?: MatchScore): ApplicationPackPlan {
-  const ranked = rankedSkills(job, profile, match);
-  const relevant = ranked.filter((item) => item.score > 0).map((item) => item.skill);
-  const skills = (relevant.length >= 8 ? relevant : ranked.map((item) => item.skill)).slice(0, 18);
-
-  const experience = rankedExperienceEvidence(job, profile, match).map((item) => ({
+export function deterministicTailoringPlan(job: Job, profile: CandidateProfile): ApplicationPackPlan {
+  const skills = rankedSkills(profile, job);
+  const positiveSkills = skills.filter((item) => item.score > 0);
+  const selected = (positiveSkills.length >= 8 ? positiveSkills : skills).slice(0, 16).map((item) => item.skill);
+  const selectedNormalized = selected.map(normalizeText);
+  const experience = rankedExperience(profile, job, selectedNormalized);
+  const projects = rankedProjects(profile, job, selectedNormalized);
+  const selectedExperience = experience.map(({ item, bullets, score }) => ({
     organization: item.organization,
     title: item.title,
-    evidenceIds: item.evidence.filter((entry) => entry.score > 0).slice(0, 3).map((entry) => entry.id),
+    evidenceIds: (bullets.filter((bullet) => bullet.score > 0).length ? bullets.filter((bullet) => bullet.score > 0) : bullets).slice(0, score > 15 ? 4 : 3).map((bullet) => bullet.id),
   }));
-
-  const rankedProjectItems = rankedProjects(job, profile, match);
-  const positiveProjects = rankedProjectItems.filter((item) => item.score > 0);
-  const chosenProjects = (positiveProjects.length ? positiveProjects : rankedProjectItems.slice(0, 2)).slice(0, 4);
-  const projects = chosenProjects.map((project) => ({
-    name: project.name,
-    evidenceIds: project.evidence.filter((entry) => entry.score > 0).slice(0, 2).map((entry) => entry.id),
+  const positiveProjects = projects.filter((item) => item.score > 0);
+  const selectedProjects = (positiveProjects.length ? positiveProjects : projects.slice(0, 2)).slice(0, 4).map(({ item, bullets }) => ({
+    name: item.name,
+    evidenceIds: (bullets.filter((bullet) => bullet.score > 0).length ? bullets.filter((bullet) => bullet.score > 0) : bullets).slice(0, 2).map((bullet) => bullet.id),
   }));
-
-  const summary = fallbackSummary(job, profile, skills);
-  const experienceText = experience.flatMap((item) => item.evidenceIds).map((id) => evidenceRecords(profile).find((record) => record.id === id)?.text).filter((text): text is string => Boolean(text));
-  const projectNames = projects.map((project) => project.name);
-
+  const materializedExperience = selectedExperience.map((selection) => {
+    const item = profile.experience?.find((entry) => entry.organization === selection.organization && entry.title === selection.title);
+    return { organization: selection.organization, title: selection.title, bullets: selection.evidenceIds.map((id) => evidenceRecords(profile).find((record) => record.id === id)?.text).filter(Boolean) as string[] };
+  });
+  const materializedProjects = selectedProjects.map((selection) => {
+    const item = profile.projects?.find((entry) => entry.name === selection.name);
+    return { name: selection.name, bullets: selection.evidenceIds.map((id) => evidenceRecords(profile).find((record) => record.id === id)?.text).filter(Boolean) as string[] };
+  });
   return {
-    summary: `Evidence-ranked application plan for ${job.title} at ${job.company}.`,
-    resumeHeadline: fallbackHeadline(job, skills),
-    resumeSummary: summary,
-    skills,
-    experience,
-    projects,
-    coverLetter: fallbackCoverLetter(job, profile, skills, experienceText, projectNames),
-    outreachMessage: fallbackOutreach(job, profile, skills),
-    interviewThemes: [
-      ...skills.slice(0, 3).map((skill) => `${skill} evidence relevant to the role`),
-      ...(match?.gaps ?? []).slice(0, 1).map((gap) => `How to address the gap: ${gap}`),
-    ].slice(0, 4),
+    summary: `Deterministic JD-based selection for ${job.title} at ${job.company}.`,
+    resumeHeadline: `${job.title} | ${selected.slice(0, 4).join(' | ')}`,
+    resumeSummary: fallbackSummary(job, profile, selected),
+    skills: selected,
+    experience: selectedExperience,
+    projects: selectedProjects,
+    coverLetter: fallbackCoverLetter(job, profile, selected, materializedExperience, materializedProjects),
+    outreachMessage: fallbackOutreach(job, profile, selected),
+    interviewThemes: selected.slice(0, 6),
     claimsAudit: [],
   };
 }
 
-function validEvidenceIds(ids: string[] | undefined, records: Map<string, EvidenceRecord>, predicate?: (record: EvidenceRecord) => boolean) {
-  return [...new Set(ids ?? [])].filter((id) => {
-    const record = records.get(id);
-    return Boolean(record && (!predicate || predicate(record)));
-  });
+function resolveEvidenceIds(ids: string[], records: EvidenceRecord[], kind: EvidenceRecord['kind'], parentIndex: number, limit: number) {
+  const valid = ids
+    .map((id) => records.find((record) => record.id === id && record.kind === kind && record.parentIndex === parentIndex))
+    .filter((record): record is EvidenceRecord => Boolean(record));
+  return [...new Map(valid.map((record) => [record.id, record])).values()].slice(0, limit);
 }
 
-export function materializeApplicationPack(plan: ApplicationPackPlan, profile: CandidateProfile, job: Job, match?: MatchScore): ApplicationPack {
-  const deterministic = deterministicTailoringPlan(job, profile, match);
-  const recordsList = evidenceRecords(profile);
-  const records = new Map(recordsList.map((record) => [record.id, record]));
+function selectProjectBullets(projectIndex: number, requestedIds: string[], records: EvidenceRecord[], fallbackIds: string[]) {
+  const direct = resolveEvidenceIds(requestedIds, records, 'project', projectIndex, 2);
+  if (direct.length) return direct.map((record) => record.text);
+  return resolveEvidenceIds(fallbackIds, records, 'project', projectIndex, 2).map((record) => record.text);
+}
 
-  const requestedSkills = exactAllowedSkills(plan.skills, profile);
-  const fallbackSkills = deterministic.skills;
-  const skills = [...new Set([...requestedSkills, ...fallbackSkills])].slice(0, 20);
+function selectExperienceBullets(experienceIndex: number, requestedIds: string[], records: EvidenceRecord[], fallbackIds: string[]) {
+  const direct = resolveEvidenceIds(requestedIds, records, 'experience', experienceIndex, 4);
+  if (direct.length) return direct.map((record) => record.text);
+  return resolveEvidenceIds(fallbackIds, records, 'experience', experienceIndex, 4).map((record) => record.text);
+}
 
-  const requestedExperience = new Map((plan.experience ?? []).map((item) => [
-    `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
-    item,
-  ]));
-  const deterministicExperience = new Map(deterministic.experience.map((item) => [
-    `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
-    item,
-  ]));
-  const experience = (profile.experience ?? []).map((source, experienceIndex) => {
-    const key = `${normalizeText(source.organization)}|${normalizeText(source.title)}`;
-    const requested = requestedExperience.get(key);
-    let ids = validEvidenceIds(requested?.evidenceIds, records, (record) => record.kind === 'experience' && record.parentIndex === experienceIndex);
-    if (!ids.length) {
-      ids = validEvidenceIds(deterministicExperience.get(key)?.evidenceIds, records, (record) => record.kind === 'experience' && record.parentIndex === experienceIndex);
-    }
-    return {
-      organization: source.organization,
-      title: source.title,
-      bullets: ids.slice(0, 3).map((id) => records.get(id)!.text),
-    };
+export function materializeApplicationPack(plan: ApplicationPackPlan, profile: CandidateProfile, job: Job): ApplicationPack {
+  const deterministic = deterministicTailoringPlan(job, profile);
+  const records = evidenceRecords(profile);
+  const selectedSkills = [...new Set((plan.skills ?? []).filter((skill) => allAllowedSkills(profile).has(normalizeText(skill))))];
+  const skills = selectedSkills.length >= 6 ? selectedSkills.slice(0, 20) : deterministic.skills;
+
+  const requestedExperience = (plan.experience ?? []).flatMap((selection) => {
+    const experienceIndex = (profile.experience ?? []).findIndex((item) => item.organization === selection.organization && item.title === selection.title);
+    if (experienceIndex < 0) return [];
+    const fallback = deterministic.experience.find((item) => item.organization === selection.organization && item.title === selection.title)?.evidenceIds ?? [];
+    const bullets = selectExperienceBullets(experienceIndex, selection.evidenceIds ?? [], records, fallback);
+    if (!bullets.length) return [];
+    const source = profile.experience![experienceIndex];
+    return [{ organization: source.organization, title: source.title, bullets }];
+  });
+  const experience = requestedExperience.length ? requestedExperience : deterministic.experience.flatMap((selection) => {
+    const experienceIndex = (profile.experience ?? []).findIndex((item) => item.organization === selection.organization && item.title === selection.title);
+    if (experienceIndex < 0) return [];
+    const source = profile.experience![experienceIndex];
+    return [{ organization: source.organization, title: source.title, bullets: selectExperienceBullets(experienceIndex, selection.evidenceIds, records, selection.evidenceIds) }];
   });
 
-  const sourceProjects = new Map((profile.projects ?? []).map((project, index) => [normalizeText(project.name), { project, index }]));
-  const materializedProjects: ApplicationPack['projects'] = [];
-  const seenProjects = new Set<string>();
-  const addProject = (name: string, ids: string[]) => {
-    const source = sourceProjects.get(normalizeText(name));
-    if (!source || seenProjects.has(normalizeText(source.project.name))) return;
-    const valid = validEvidenceIds(ids, records, (record) => record.kind === 'project' && record.parentIndex === source.index);
-    if (!valid.length) return;
-    seenProjects.add(normalizeText(source.project.name));
-    materializedProjects.push({ name: source.project.name, bullets: valid.slice(0, 2).map((id) => records.get(id)!.text) });
-  };
-  for (const requested of plan.projects ?? []) addProject(requested.name, requested.evidenceIds ?? []);
-  for (const fallback of deterministic.projects) {
-    if (materializedProjects.length >= 4) break;
-    addProject(fallback.name, fallback.evidenceIds);
-  }
+  const requestedProjects = (plan.projects ?? []).flatMap((selection) => {
+    const projectIndex = (profile.projects ?? []).findIndex((item) => item.name === selection.name);
+    if (projectIndex < 0) return [];
+    const fallback = deterministic.projects.find((item) => item.name === selection.name)?.evidenceIds ?? [];
+    const bullets = selectProjectBullets(projectIndex, selection.evidenceIds ?? [], records, fallback);
+    if (!bullets.length) return [];
+    return [{ name: profile.projects![projectIndex].name, bullets }];
+  });
+  const fallbackProjects = deterministic.projects.flatMap((selection) => {
+    const projectIndex = (profile.projects ?? []).findIndex((item) => item.name === selection.name);
+    if (projectIndex < 0) return [];
+    const bullets = selectProjectBullets(projectIndex, selection.evidenceIds, records, selection.evidenceIds);
+    return bullets.length ? [{ name: profile.projects![projectIndex].name, bullets }] : [];
+  });
+  const projects = [...requestedProjects, ...fallbackProjects.filter((item) => !requestedProjects.some((selectedProject) => selectedProject.name === item.name))].slice(0, 4);
 
-  const resumeSummary = authoredTextLooksSupported(plan.resumeSummary, profile, match, 40, 700, `${job.title} ${job.company}`)
-    ? plan.resumeSummary.trim()
-    : fallbackSummary(job, profile, skills);
-  const resumeHeadline = authoredTextLooksSupported(plan.resumeHeadline, profile, match, 5, 160, `${job.title} ${job.company}`)
-    ? plan.resumeHeadline.trim().slice(0, 140)
-    : fallbackHeadline(job, skills);
-
-  const evidenceBullets = experience.flatMap((item) => item.bullets);
-  const projectNames = materializedProjects.map((project) => project.name);
-  const coverLetter = authoredTextLooksSupported(plan.coverLetter, profile, match, 80, 4000, `${job.title} ${job.company}`)
-    ? plan.coverLetter.trim()
-    : fallbackCoverLetter(job, profile, skills, evidenceBullets, projectNames);
-  const outreachMessage = authoredTextLooksSupported(plan.outreachMessage, profile, match, 20, 900, `${job.title} ${job.company}`)
-    ? plan.outreachMessage.trim()
-    : fallbackOutreach(job, profile, skills);
-
+  const resumeHeadline = safeAuthoredText(plan.resumeHeadline || deterministic.resumeHeadline, profile);
+  const resumeSummary = safeAuthoredText(plan.resumeSummary || deterministic.resumeSummary, profile);
+  const coverLetter = safeAuthoredText(plan.coverLetter || deterministic.coverLetter, profile);
+  const outreachMessage = safeAuthoredText(plan.outreachMessage || deterministic.outreachMessage, profile);
   const claimsAudit = (plan.claimsAudit ?? []).flatMap((item) => {
-    const ids = validEvidenceIds(item.evidenceIds, records);
-    if (!item.claim?.trim() || !ids.length) return [];
-    return [{
-      claim: item.claim.trim(),
-      evidence: ids.map((id) => `${id}: ${records.get(id)!.text}`).join(' | '),
-    }];
-  }).slice(0, 20);
+    const resolved = (item.evidenceIds ?? []).map((id) => records.find((record) => record.id === id)).filter((record): record is EvidenceRecord => Boolean(record));
+    if (!resolved.length) return [];
+    const safeClaim = safeAuthoredText(item.claim, profile);
+    return safeClaim ? [{ claim: safeClaim, evidence: resolved.map((record) => `${record.id}: ${record.text}`).join(' | ') }] : [];
+  }).slice(0, 12);
 
   return {
-    summary: plan.summary?.trim() || `Tailored application pack for ${job.title} at ${job.company}.`,
+    summary: safeAuthoredText(plan.summary || deterministic.summary, profile),
     resumeHeadline,
     resumeSummary,
     skills,
     experience,
-    projects: materializedProjects.slice(0, 4),
+    projects,
     coverLetter,
     outreachMessage,
-    interviewThemes: [...new Set((plan.interviewThemes ?? []).filter(Boolean))].slice(0, 6),
+    interviewThemes: (plan.interviewThemes?.length ? plan.interviewThemes : deterministic.interviewThemes).map((item) => safeAuthoredText(item, profile)).filter(Boolean).slice(0, 8),
     claimsAudit,
   };
 }
 
-export function attachApplicationPackGenerationMeta(
-  pack: ApplicationPack,
-  options: {
-    model: string;
-    provider: 'gemini' | 'openai';
-    profileUpdatedAt?: string;
-    generatedAt?: string;
-  },
-): ApplicationPack {
-  const generationMeta: ApplicationPackGenerationMeta = {
-    generatedAt: options.generatedAt ?? new Date().toISOString(),
-    profileUpdatedAt: options.profileUpdatedAt,
-    tailoringVersion: APPLICATION_PACK_TAILORING_VERSION,
-    templateVersion: RESUME_TEMPLATE_VERSION,
-    model: options.model,
-    provider: options.provider,
+export function attachApplicationPackGenerationMeta(pack: ApplicationPack, options: {
+  model: string;
+  provider: 'gemini' | 'openai';
+  profileUpdatedAt?: string;
+  generatedAt?: string;
+}): ApplicationPack {
+  return {
+    ...pack,
+    generationMeta: {
+      generatedAt: options.generatedAt ?? new Date().toISOString(),
+      profileUpdatedAt: options.profileUpdatedAt,
+      tailoringVersion: APPLICATION_PACK_TAILORING_VERSION,
+      templateVersion: RESUME_TEMPLATE_VERSION,
+      model: options.model,
+      provider: options.provider,
+    },
   };
-  return { ...pack, generationMeta };
 }
 
-export function applicationPackStaleness(pack: ApplicationPack | null | undefined, profileUpdatedAt?: string) {
+export function applicationPackStaleness(pack: ApplicationPack | null, profileUpdatedAt?: string) {
   if (!pack) return { stale: false, reasons: [] as string[] };
-  const reasons: string[] = [];
   const meta = pack.generationMeta;
-  if (!meta) {
-    reasons.push('Generated before the current evidence-selection and template-versioning pipeline.');
-  } else {
-    if (meta.tailoringVersion !== APPLICATION_PACK_TAILORING_VERSION) reasons.push('Tailoring logic has changed.');
-    if (meta.templateVersion !== RESUME_TEMPLATE_VERSION) reasons.push('Resume template has changed.');
-    if (profileUpdatedAt) {
-      const profileTime = Date.parse(profileUpdatedAt);
-      const generatedProfileTime = Date.parse(meta.profileUpdatedAt ?? meta.generatedAt);
-      if (Number.isFinite(profileTime) && Number.isFinite(generatedProfileTime) && profileTime > generatedProfileTime) {
-        reasons.push('Master candidate profile was updated after this pack was generated.');
-      }
-    }
+  const reasons: string[] = [];
+  if (!meta) reasons.push('This pack predates generation-version tracking.');
+  else {
+    if (meta.tailoringVersion !== APPLICATION_PACK_TAILORING_VERSION) reasons.push('The tailoring logic has changed.');
+    if (meta.templateVersion !== RESUME_TEMPLATE_VERSION) reasons.push('The resume/cover-letter template has changed.');
+    if (profileUpdatedAt && meta.profileUpdatedAt !== profileUpdatedAt) reasons.push('The master candidate profile has changed.');
   }
   return { stale: reasons.length > 0, reasons };
 }
