@@ -18,7 +18,8 @@ type TaggedProject = ProjectItem & {
 
 const TITLE_SIGNALS: Array<[ProjectRoleFamily, RegExp[]]> = [
   ['ai-ml', [
-    /\bmachine learning\b/, /\bml engineer/, /\bai engineer/, /\bartificial intelligence\b/,
+    /\bmachine learning\b/, /\bml engineer/, /\bml(?:\s+\w+){0,2}\s+engineer\b/,
+    /\bai engineer/, /\bai(?:\s+\w+){0,2}\s+engineer\b/, /\bartificial intelligence\b/,
     /\bdata scientist\b/, /\bcomputer vision\b/, /\bnlp\b/, /\bllm/, /\bgenerative ai\b/, /\bgenai\b/,
   ]],
   ['data-analytics', [
@@ -63,7 +64,7 @@ const DESCRIPTION_SIGNALS: Record<ProjectRoleFamily, string[]> = {
   'it-systems': ['application support', 'infrastructure', 'windows server', 'linux', 'iis', 'edms', 'system administration', 'technical support'],
   'cloud-devops': ['aws', 'azure', 'oci', 'cloud', 'devops', 'kubernetes', 'docker', 'terraform', 'ci/cd', 'vercel', 'serverless'],
   cybersecurity: ['cybersecurity', 'security', 'phishing', 'iam', 'soc', 'threat', 'vulnerability'],
-  'systems-algorithms': ['c++', ' c ', 'operating system', 'file system', 'parallel', 'assembly', 'microprocessor', 'algorithm', 'kmp'],
+  'systems-algorithms': ['c++', 'operating system', 'file system', 'parallel', 'assembly', 'microprocessor', 'algorithm', 'kmp'],
   'business-analysis': ['requirements', 'stakeholder', 'business process', 'process improvement', 'implementation', 'functional requirements', 'workflow'],
 };
 
@@ -73,27 +74,50 @@ function addTitleFamilies(text: string, families: Set<ProjectRoleFamily>) {
   }
 }
 
-function addDescriptionFamilies(text: string, families: Set<ProjectRoleFamily>) {
-  for (const [family, signals] of Object.entries(DESCRIPTION_SIGNALS) as Array<[ProjectRoleFamily, string[]]>) {
-    const hits = signals.filter((signal) => text.includes(signal)).length;
-    if (hits >= 2) families.add(family);
-  }
+function descriptionHits(text: string, family: ProjectRoleFamily) {
+  return DESCRIPTION_SIGNALS[family].filter((signal) => text.includes(signal)).length;
+}
+
+function addStrongDescriptionFamily(text: string, families: Set<ProjectRoleFamily>, family: ProjectRoleFamily, minHits = 3) {
+  if (descriptionHits(text, family) >= minHits) families.add(family);
 }
 
 export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' | 'department'>): ProjectRoleFamily[] {
   const title = normalizeText(`${job.title} ${job.department ?? ''}`);
   const description = normalizeText(job.description ?? '');
-  const families = new Set<ProjectRoleFamily>();
-  addTitleFamilies(title, families);
+  const titleFamilies = new Set<ProjectRoleFamily>();
+  addTitleFamilies(title, titleFamilies);
 
-  // Description signals can add a secondary family (for example an Oracle-focused
-  // Business Analyst or an ML-heavy Software Engineer), but require multiple clues
-  // so generic JD boilerplate does not make every project eligible.
-  addDescriptionFamilies(description, families);
+  // Title family is the primary guard. This prevents a Machine Learning Engineer
+  // JD from admitting generic software projects merely because it also mentions
+  // Python, APIs, or software-development practices.
+  const families = new Set<ProjectRoleFamily>(titleFamilies);
 
-  if (families.has('erp-enterprise')) families.add('business-analysis');
-  if (families.has('business-analysis') && /\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
-  if (families.has('cloud-devops') && /\b(api|software|typescript|python|java|react|backend)/.test(description)) families.add('software');
+  if (!titleFamilies.size) {
+    for (const family of Object.keys(DESCRIPTION_SIGNALS) as ProjectRoleFamily[]) {
+      if (descriptionHits(description, family) >= 3) families.add(family);
+    }
+  } else {
+    if (titleFamilies.has('erp-enterprise')) families.add('business-analysis');
+    if (titleFamilies.has('business-analysis') && /\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
+    if (titleFamilies.has('it-systems') && /\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
+
+    // General software/cloud/security roles can legitimately specialize in an
+    // adjacent technical domain, but require strong repeated evidence from the JD.
+    if (titleFamilies.has('software')) {
+      addStrongDescriptionFamily(description, families, 'ai-ml');
+      addStrongDescriptionFamily(description, families, 'data-analytics');
+      addStrongDescriptionFamily(description, families, 'cloud-devops');
+      addStrongDescriptionFamily(description, families, 'cybersecurity');
+    }
+    if (titleFamilies.has('cloud-devops')) {
+      addStrongDescriptionFamily(description, families, 'software');
+      addStrongDescriptionFamily(description, families, 'cybersecurity');
+    }
+    if (titleFamilies.has('cybersecurity')) addStrongDescriptionFamily(description, families, 'ai-ml');
+    if (titleFamilies.has('data-analytics')) addStrongDescriptionFamily(description, families, 'ai-ml');
+  }
+
   return [...families];
 }
 
@@ -122,15 +146,14 @@ export function selectProjectsForJob(profile: CandidateProfile, job: Job, maxPro
 
   return (profile.projects ?? [])
     .map((project, index) => {
-      const tagged = project as TaggedProject;
-      const projectFamilies = tagged.roleFamilies ?? [];
+      const projectFamilies = (project as TaggedProject).roleFamilies ?? [];
       const familyHits = projectFamilies.filter((family) => families.has(family)).length;
       const lexical = lexicalProjectScore(project, job);
       return { project, index, familyHits, lexical, score: familyHits * 100 + lexical };
     })
-    // Explicit family metadata is the primary guard. A legacy project without tags
-    // can still qualify only when it has unusually strong direct JD overlap.
-    .filter((item) => item.familyHits > 0 || (item.lexical >= 24 && !(item.project as TaggedProject).roleFamilies?.length))
+    // The production master profile is explicitly tagged. Untagged projects are
+    // excluded instead of being used as resume padding based on accidental words.
+    .filter((item) => item.familyHits > 0)
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .slice(0, Math.max(0, maxProjects))
     .map((item) => item.project);
