@@ -20,6 +20,30 @@ const portals = [
     href: 'https://remotive.com/remote-canada-jobs',
   },
   {
+    name: 'Remote OK',
+    status: 'Live import',
+    detail: 'Public Remote OK feed is imported, normalized, deduplicated and scored automatically.',
+    href: 'https://remoteok.com/',
+  },
+  {
+    name: 'Himalayas',
+    status: 'Live import',
+    detail: 'Public Himalayas jobs API is imported for Canada and worldwide-compatible remote roles.',
+    href: 'https://himalayas.app/jobs',
+  },
+  {
+    name: 'We Work Remotely',
+    status: 'Live import',
+    detail: 'Official public RSS feed is imported with source attribution and applications routed through the original WWR listing.',
+    href: 'https://weworkremotely.com/',
+  },
+  {
+    name: 'StillHiring.today',
+    status: 'Hiring signal',
+    detail: 'Company-level hiring signal. Use it to identify active employers, then import jobs from their public career or ATS pages; no private Airtable scraping.',
+    href: 'https://stillhiring.today/',
+  },
+  {
     name: 'LinkedIn',
     status: 'Portal search',
     detail: 'Direct search link. We do not use logged-in scraping or pretend LinkedIn offers a public job-search API.',
@@ -36,12 +60,6 @@ const portals = [
     status: 'Portal search',
     detail: 'Direct Canada search link for additional listings outside company ATS feeds.',
     href: `https://www.monster.ca/jobs/search?q=${query}&where=Canada`,
-  },
-  {
-    name: 'Wellfound',
-    status: 'Portal search',
-    detail: 'Startup-focused source, useful for software, AI, data and early-career roles.',
-    href: 'https://wellfound.com/jobs',
   },
 ];
 
