@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/lib/scoring.test.ts src/lib/remote-location.test.ts src/lib/ai.test.ts src/lib/gmail.test.ts src/lib/recommendations.test.ts src/lib/company-groups.test.ts src/lib/target-company-jobs.test.ts src/lib/supabase-rest.test.ts src/lib/resume-tailoring.test.ts src/lib/ats-score.test.ts src/lib/job-description.test.ts src/lib/application-visibility.test.ts src/connectors/himalayas.test.ts src/connectors/weworkremotely.test.ts src/proxy.test.ts"
+    "test": "tsx --test src/lib/scoring.test.ts src/lib/remote-location.test.ts src/lib/ai.test.ts src/lib/gmail.test.ts src/lib/recommendations.test.ts src/lib/company-groups.test.ts src/lib/target-company-jobs.test.ts src/lib/supabase-rest.test.ts src/lib/resume-tailoring.test.ts src/lib/project-tailoring.test.ts src/lib/ats-score.test.ts src/lib/job-description.test.ts src/lib/application-visibility.test.ts src/connectors/himalayas.test.ts src/connectors/weworkremotely.test.ts src/proxy.test.ts"
   },
   "dependencies": {
     "next": "^16.0.0",
