@@ -33,6 +33,13 @@ test('role-family matching preserves AI/ML domain meaning', () => {
   assert.equal(titleMatchesTarget('Machine Learning Engineer', profile.targetTitles), true);
 });
 
+test('short BI and IT role acronyms are not discarded into generic analyst matches', () => {
+  const targets = ['BI Analyst', 'IT Analyst'];
+  assert.equal(titleMatchesTarget('BI Reporting Analyst', targets), true);
+  assert.equal(titleMatchesTarget('IT Operations Analyst', targets), true);
+  assert.equal(titleMatchesTarget('Senior Financial Analyst', targets), false);
+});
+
 test('location matching does not treat Remote US as Remote Canada', () => {
   assert.equal(locationMatchesPreference(job({ location: 'Remote - United States', remote: true }), profile), false);
   assert.equal(locationMatchesPreference(job({ location: 'Remote Canada', remote: true }), profile), true);
