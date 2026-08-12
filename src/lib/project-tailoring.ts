@@ -88,9 +88,17 @@ export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' 
   const titleFamilies = new Set<ProjectRoleFamily>();
   addTitleFamilies(title, titleFamilies);
 
-  // Title family is the primary guard. This prevents a Machine Learning Engineer
-  // JD from admitting generic software projects merely because it also mentions
-  // Python, APIs, or software-development practices.
+  // Explicit AI/ML titles are dominant. A Machine Learning Platform Engineer or
+  // AI Solutions Engineer should still draw from AI/ML projects, not generic
+  // platform/software projects simply because those words also occur in the title.
+  if (titleFamilies.has('ai-ml')) {
+    const dominant = new Set<ProjectRoleFamily>(['ai-ml']);
+    if (titleFamilies.has('cybersecurity')) dominant.add('cybersecurity');
+    return [...dominant];
+  }
+
+  // Title family is the primary guard. Description text may add only a strongly
+  // supported adjacent specialization for otherwise broader role families.
   const families = new Set<ProjectRoleFamily>(titleFamilies);
 
   if (!titleFamilies.size) {
@@ -102,8 +110,6 @@ export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' 
     if (titleFamilies.has('business-analysis') && /\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
     if (titleFamilies.has('it-systems') && /\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
 
-    // General software/cloud/security roles can legitimately specialize in an
-    // adjacent technical domain, but require strong repeated evidence from the JD.
     if (titleFamilies.has('software')) {
       addStrongDescriptionFamily(description, families, 'ai-ml');
       addStrongDescriptionFamily(description, families, 'data-analytics');
