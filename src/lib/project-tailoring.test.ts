@@ -56,6 +56,17 @@ test('machine-learning roles receive only AI/ML project evidence', () => {
   assert.ok(names.length <= 3);
 });
 
+test('ML titles stay ML-only even when production JDs mention APIs and software practices', () => {
+  const tailored = projectTailoredApplicationProfile(profile, job(
+    'Machine Learning Platform Engineer',
+    'Build production Python services and REST APIs, follow software development practices, deploy machine learning and deep learning models, and maintain model inference pipelines.',
+  ));
+  const names = tailored.projects?.map((item) => item.name) ?? [];
+  assert.ok(names.length > 0);
+  assert.ok(names.every((name) => ['Color-Aware Composed Image Retrieval', 'Phishing URL Detection', 'Student Dropout Analysis'].includes(name)));
+  assert.ok(!names.includes('Flowdesk Family CRM'));
+});
+
 test('ERP and business-systems roles prefer enterprise projects and exclude ML projects', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Oracle Fusion ERP Analyst',
@@ -94,6 +105,26 @@ test('unknown role families do not pad the resume with unrelated projects', () =
     'Write internal communications, coordinate events, and manage editorial calendars.',
   ));
   assert.deepEqual(tailored.projects, []);
+});
+
+test('untagged projects are not admitted through accidental keyword overlap', () => {
+  const withLegacyProject: CandidateProfile = {
+    ...profile,
+    projects: [
+      ...(profile.projects ?? []),
+      {
+        name: 'Legacy Generic Project',
+        description: 'Python API software machine learning analytics cloud project',
+        bullets: ['Used Python APIs for machine learning software analytics in the cloud.'],
+        skills: ['Python', 'Machine Learning'],
+      },
+    ],
+  };
+  const tailored = projectTailoredApplicationProfile(withLegacyProject, job(
+    'Machine Learning Engineer',
+    'Build Python APIs for production machine learning systems.',
+  ));
+  assert.ok(!(tailored.projects ?? []).some((item) => item.name === 'Legacy Generic Project'));
 });
 
 test('mixed business-systems titles infer both enterprise and analysis families', () => {
