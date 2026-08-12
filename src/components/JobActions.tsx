@@ -2,9 +2,33 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ApplicationStatus } from '@/lib/types';
+import type { ApplicationStatus, JobValidityStatus } from '@/lib/types';
 
-export function JobActions({ id, applyUrl, hasPack, packStale = false, status, canResearch }: { id: string; applyUrl?: string; hasPack: boolean; packStale?: boolean; status: ApplicationStatus; canResearch: boolean }) {
+function healthLabel(status?: JobValidityStatus) {
+  if (status === 'active') return 'Verified active';
+  if (status === 'likely_active') return 'Likely active';
+  if (status === 'likely_closed') return 'Likely closed';
+  if (status === 'closed') return 'Closed';
+  return 'Unverified';
+}
+
+export function JobActions({
+  id,
+  applyUrl,
+  hasPack,
+  packStale = false,
+  status,
+  canResearch,
+  validityStatus = 'unknown',
+}: {
+  id: string;
+  applyUrl?: string;
+  hasPack: boolean;
+  packStale?: boolean;
+  status: ApplicationStatus;
+  canResearch: boolean;
+  validityStatus?: JobValidityStatus;
+}) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
   const router = useRouter();
@@ -20,6 +44,57 @@ export function JobActions({ id, applyUrl, hasPack, packStale = false, status, c
       setMsg(`${label} complete`);
       router.refresh();
     } catch (error) {
+      setMsg(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function verifyOnly() {
+    setBusy('verification');
+    setMsg('');
+    try {
+      const response = await fetch(`/api/jobs/${id}/verify`, { method: 'POST' });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Verification failed');
+      setMsg(`${healthLabel(json.validityStatus)} · health ${json.healthScore}/100`);
+      router.refresh();
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBusy('');
+    }
+  }
+
+  async function verifyAndOpen() {
+    if (!applyUrl || applyUrl === '#') return;
+    const popup = window.open('about:blank', '_blank');
+    if (popup) popup.opener = null;
+    setBusy('application verification');
+    setMsg('');
+    try {
+      const response = await fetch(`/api/jobs/${id}/verify`, { method: 'POST' });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Verification failed');
+      const verifiedStatus = json.validityStatus as JobValidityStatus;
+      router.refresh();
+
+      if (verifiedStatus === 'closed' || verifiedStatus === 'likely_closed') {
+        popup?.close();
+        setMsg(json.closureReason || 'This posting appears closed, so the application link was not opened.');
+        return;
+      }
+      if (verifiedStatus === 'unknown') {
+        popup?.close();
+        setMsg('The posting could not be confirmed as active. It was not opened automatically; use the original source link if you want to inspect it manually.');
+        return;
+      }
+
+      if (popup) popup.location.href = applyUrl;
+      else window.open(applyUrl, '_blank', 'noopener,noreferrer');
+      setMsg(`${healthLabel(verifiedStatus)} · opening the official application.`);
+    } catch (error) {
+      popup?.close();
       setMsg(error instanceof Error ? error.message : String(error));
     } finally {
       setBusy('');
@@ -48,12 +123,15 @@ export function JobActions({ id, applyUrl, hasPack, packStale = false, status, c
   return <div className="card">
     <div className="kicker">Actions</div>
     <div className="grid" style={{ gap: 9 }}>
+      <button className="btn" disabled={Boolean(busy)} onClick={verifyOnly}>Verify posting now</button>
+      <span className="small muted">Current posting state: {healthLabel(validityStatus)}. Verification runs again before the official application is opened.</span>
       <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Re-analyze</button>
       <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
       {!canResearch ? <span className="small muted">Grounded company web research is disabled in Gemini free-tier mode.</span> : null}
-      <button className="btn primary" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
+      <button className="btn primary" disabled={Boolean(busy) || validityStatus === 'closed' || validityStatus === 'likely_closed'} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
         {packStale ? 'Regenerate outdated application pack' : hasPack ? 'Regenerate application pack' : 'Generate application pack'}
       </button>
+      {validityStatus === 'closed' || validityStatus === 'likely_closed' ? <span className="small muted">Application preparation is disabled while this posting appears closed. Re-verify if you think the source has reopened it.</span> : null}
       {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, or document template. Regenerate it before downloading or applying.</span> : null}
       {usablePack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
@@ -70,7 +148,9 @@ export function JobActions({ id, applyUrl, hasPack, packStale = false, status, c
         <option value="offer">Offer</option>
         <option value="withdrawn">Withdrawn</option>
       </select>
-      {usablePack && applyUrl && applyUrl !== '#' ? <a className="btn" target="_blank" rel="noreferrer" href={applyUrl}>Open official application ↗</a> : <span className="small muted">Generate a fresh tailored pack first. The ATS match estimate will appear above before the application link is unlocked.</span>}
+      {usablePack && applyUrl && applyUrl !== '#'
+        ? <button className="btn" type="button" disabled={Boolean(busy)} onClick={verifyAndOpen}>Verify & open official application ↗</button>
+        : <span className="small muted">Generate a fresh tailored pack first. The ATS match estimate will appear above before the application link is unlocked.</span>}
       {busy ? <span className="small muted">{busy}…</span> : null}
       {msg ? <span className="small muted">{msg}</span> : null}
     </div>
