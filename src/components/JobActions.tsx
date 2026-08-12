@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ApplicationStatus, JobValidityStatus } from '@/lib/types';
 
@@ -31,8 +31,27 @@ export function JobActions({
 }) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
+  const [currentValidity, setCurrentValidity] = useState<JobValidityStatus>(validityStatus);
+  const [currentHealth, setCurrentHealth] = useState<number | null>(null);
   const router = useRouter();
   const usablePack = hasPack && !packStale;
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(`/api/jobs/${id}/verify`, { method: 'POST' });
+        const json = await response.json();
+        if (!cancelled && response.ok) {
+          setCurrentValidity(json.validityStatus as JobValidityStatus);
+          setCurrentHealth(Number(json.healthScore));
+        }
+      } catch {
+        // Background verification is best-effort. Manual verification remains available.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [id]);
 
   async function action(path: string, label: string) {
     setBusy(label);
@@ -41,6 +60,10 @@ export function JobActions({
       const response = await fetch(path, { method: 'POST' });
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || 'Action failed');
+      if (json.verification?.validityStatus) {
+        setCurrentValidity(json.verification.validityStatus as JobValidityStatus);
+        setCurrentHealth(Number(json.verification.healthScore));
+      }
       setMsg(`${label} complete`);
       router.refresh();
     } catch (error) {
@@ -57,6 +80,8 @@ export function JobActions({
       const response = await fetch(`/api/jobs/${id}/verify`, { method: 'POST' });
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || 'Verification failed');
+      setCurrentValidity(json.validityStatus as JobValidityStatus);
+      setCurrentHealth(Number(json.healthScore));
       setMsg(`${healthLabel(json.validityStatus)} · health ${json.healthScore}/100`);
       router.refresh();
     } catch (error) {
@@ -77,6 +102,8 @@ export function JobActions({
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || 'Verification failed');
       const verifiedStatus = json.validityStatus as JobValidityStatus;
+      setCurrentValidity(verifiedStatus);
+      setCurrentHealth(Number(json.healthScore));
       router.refresh();
 
       if (verifiedStatus === 'closed' || verifiedStatus === 'likely_closed') {
@@ -120,18 +147,20 @@ export function JobActions({
     }
   }
 
+  const closed = currentValidity === 'closed' || currentValidity === 'likely_closed';
+
   return <div className="card">
     <div className="kicker">Actions</div>
     <div className="grid" style={{ gap: 9 }}>
       <button className="btn" disabled={Boolean(busy)} onClick={verifyOnly}>Verify posting now</button>
-      <span className="small muted">Current posting state: {healthLabel(validityStatus)}. Verification runs again before the official application is opened.</span>
+      <span className="small muted">Current posting state: {healthLabel(currentValidity)}{currentHealth == null ? '' : ` · ${currentHealth}/100`}. Verification runs again before the official application is opened.</span>
       <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Re-analyze</button>
       <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
       {!canResearch ? <span className="small muted">Grounded company web research is disabled in Gemini free-tier mode.</span> : null}
-      <button className="btn primary" disabled={Boolean(busy) || validityStatus === 'closed' || validityStatus === 'likely_closed'} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
+      <button className="btn primary" disabled={Boolean(busy) || closed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
         {packStale ? 'Regenerate outdated application pack' : hasPack ? 'Regenerate application pack' : 'Generate application pack'}
       </button>
-      {validityStatus === 'closed' || validityStatus === 'likely_closed' ? <span className="small muted">Application preparation is disabled while this posting appears closed. Re-verify if you think the source has reopened it.</span> : null}
+      {closed ? <span className="small muted">Application preparation is disabled while this posting appears closed. Re-verify if you think the source has reopened it.</span> : null}
       {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, or document template. Regenerate it before downloading or applying.</span> : null}
       {usablePack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
@@ -149,7 +178,7 @@ export function JobActions({
         <option value="withdrawn">Withdrawn</option>
       </select>
       {usablePack && applyUrl && applyUrl !== '#'
-        ? <button className="btn" type="button" disabled={Boolean(busy)} onClick={verifyAndOpen}>Verify & open official application ↗</button>
+        ? <button className="btn" type="button" disabled={Boolean(busy) || closed} onClick={verifyAndOpen}>Verify & open official application ↗</button>
         : <span className="small muted">Generate a fresh tailored pack first. The ATS match estimate will appear above before the application link is unlocked.</span>}
       {busy ? <span className="small muted">{busy}…</span> : null}
       {msg ? <span className="small muted">{msg}</span> : null}
