@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type { CandidateProfile, Job, ProjectItem } from './types';
+import type { ApplicationPack, CandidateProfile, Job, MatchScore, ProjectItem } from './types';
+import { buildJdProjectAlignedCoverLetter } from './cover-letter-tailoring';
 import { inferProjectRoleFamilies, projectTailoredApplicationProfile, type ProjectRoleFamily } from './project-tailoring';
 
 function project(name: string, roleFamilies: ProjectRoleFamily[], skills: string[] = []): ProjectItem {
@@ -173,4 +174,88 @@ test('mixed business-systems titles infer both enterprise and analysis families'
   ));
   assert.ok(families.includes('erp-enterprise'));
   assert.ok(families.includes('business-analysis'));
+});
+
+function coverLetterProfile(): CandidateProfile {
+  return {
+    ...profile,
+    name: 'Arnob Banik',
+    skills: ['Python', 'TypeScript', 'Next.js', 'React', 'PostgreSQL', 'CLIP', 'HNSW', 'Oracle Fusion ERP Cloud'],
+    degrees: [{
+      institution: 'University of Windsor',
+      degree: 'Master of Science in Computer Science',
+      field: 'Artificial Intelligence Specialization',
+      start: 'Sept 2024',
+      end: 'Aug 2026 (Expected)',
+    }],
+  };
+}
+
+function coverLetterPack(projects: ApplicationPack['projects'], skills: string[]): ApplicationPack {
+  return {
+    summary: 'test',
+    resumeHeadline: 'test',
+    resumeSummary: 'test',
+    skills,
+    experience: [{
+      organization: 'Banglalink',
+      title: 'Enterprise Solutions and Services Specialist Engineer, IT',
+      bullets: ['Supported Oracle Fusion ERP Cloud Financials and Procurement workflows.'],
+    }],
+    projects,
+    coverLetter: 'old generic cover letter',
+    outreachMessage: 'test',
+    interviewThemes: [],
+    claimsAudit: [],
+  };
+}
+
+test('software cover letters mirror the JD and discuss the matching software project instead of the default thesis', () => {
+  const softwareJob = job(
+    'Software Engineer',
+    'Build production web applications with TypeScript, Next.js, React, REST APIs, PostgreSQL, authentication and multi-user systems.',
+  );
+  const match = {
+    mustHave: ['TypeScript and Next.js', 'REST APIs', 'PostgreSQL'],
+    preferred: [],
+    matchedSkills: ['TypeScript', 'Next.js', 'React', 'PostgreSQL'],
+  } as unknown as MatchScore;
+  const letter = buildJdProjectAlignedCoverLetter(
+    coverLetterPack([
+      { name: 'MSc Thesis - Color-Aware Composed Image Retrieval', bullets: ['Implemented MSc Thesis - Color-Aware Composed Image Retrieval using Python, CLIP, HNSW.'] },
+      { name: 'Flowdesk Family CRM', bullets: ['Implemented Flowdesk Family CRM using Next.js, TypeScript, PostgreSQL.'] },
+    ], ['TypeScript', 'Next.js', 'React', 'PostgreSQL', 'CLIP', 'HNSW']),
+    coverLetterProfile(),
+    softwareJob,
+    match,
+  );
+  assert.match(letter, /TypeScript and Next\.js/i);
+  assert.match(letter, /Flowdesk Family CRM/);
+  assert.doesNotMatch(letter, /Color-Aware Composed Image Retrieval/);
+  assert.match(letter, /graduating in Aug 2026/i);
+});
+
+test('machine-learning cover letters use thesis evidence when the JD matches the thesis', () => {
+  const mlJob = job(
+    'Machine Learning Engineer',
+    'Develop Python machine learning systems using CLIP, vector retrieval, HNSW, computer vision and model evaluation.',
+  );
+  const match = {
+    mustHave: ['Python machine learning', 'vector retrieval', 'computer vision'],
+    preferred: [],
+    matchedSkills: ['Python', 'CLIP', 'HNSW'],
+  } as unknown as MatchScore;
+  const letter = buildJdProjectAlignedCoverLetter(
+    coverLetterPack([
+      { name: 'MSc Thesis - Color-Aware Composed Image Retrieval', bullets: ['Implemented MSc Thesis - Color-Aware Composed Image Retrieval using Python, CLIP, HNSW.'] },
+      { name: 'Flowdesk Family CRM', bullets: ['Implemented Flowdesk Family CRM using Next.js, TypeScript, PostgreSQL.'] },
+    ], ['Python', 'CLIP', 'HNSW', 'TypeScript']),
+    coverLetterProfile(),
+    mlJob,
+    match,
+  );
+  assert.match(letter, /MSc Thesis - Color-Aware Composed Image Retrieval/);
+  assert.match(letter, /CLIP/);
+  assert.match(letter, /HNSW/);
+  assert.doesNotMatch(letter, /Flowdesk Family CRM/);
 });
