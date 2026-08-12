@@ -1,7 +1,20 @@
 import type { Job } from '@/lib/types';
 import { stableJobId, stripHtml } from '@/lib/utils';
 
-const FEED_URL = 'https://weworkremotely.com/remote-jobs.rss';
+const FEED_URLS = [
+  'https://weworkremotely.com/remote-jobs.rss',
+  'https://weworkremotely.com/categories/remote-customer-support-jobs.rss',
+  'https://weworkremotely.com/categories/remote-product-jobs.rss',
+  'https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss',
+  'https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss',
+  'https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss',
+  'https://weworkremotely.com/categories/remote-programming-jobs.rss',
+  'https://weworkremotely.com/categories/remote-sales-and-marketing-jobs.rss',
+  'https://weworkremotely.com/categories/remote-management-and-finance-jobs.rss',
+  'https://weworkremotely.com/categories/remote-design-jobs.rss',
+  'https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss',
+  'https://weworkremotely.com/categories/all-other-remote-jobs.rss',
+];
 
 function decodeXml(value: string) {
   return value
@@ -74,8 +87,8 @@ export function parseWeWorkRemotelyRss(xml: string): Job[] {
   });
 }
 
-export async function fetchWeWorkRemotelyJobs(): Promise<Job[]> {
-  const response = await fetch(FEED_URL, {
+async function fetchFeed(url: string) {
+  const response = await fetch(url, {
     headers: {
       Accept: 'application/rss+xml, application/xml, text/xml',
       'User-Agent': 'JobAgent/1.0 personal-job-search',
@@ -85,4 +98,14 @@ export async function fetchWeWorkRemotelyJobs(): Promise<Job[]> {
   });
   if (!response.ok) throw new Error(`We Work Remotely: ${response.status}`);
   return parseWeWorkRemotelyRss(await response.text());
+}
+
+export async function fetchWeWorkRemotelyJobs(): Promise<Job[]> {
+  const settled = await Promise.allSettled(FEED_URLS.map(fetchFeed));
+  const jobs = settled.flatMap((result) => result.status === 'fulfilled' ? result.value : []);
+  if (!jobs.length && settled.every((result) => result.status === 'rejected')) {
+    const first = settled.find((result): result is PromiseRejectedResult => result.status === 'rejected');
+    throw first?.reason instanceof Error ? first.reason : new Error('We Work Remotely feeds failed.');
+  }
+  return [...new Map(jobs.map((job) => [job.externalId, job])).values()];
 }
