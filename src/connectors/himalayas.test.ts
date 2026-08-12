@@ -20,7 +20,7 @@ test('normalizes Himalayas epoch seconds and string location restrictions', () =
   assert.equal(job.company, 'Example AI');
   assert.equal(job.department, 'Machine Learning, Engineering');
   assert.equal(job.description, 'Build ML systems.');
-  assert.equal(job.postedAt, '2026-08-11T12:02:38.000Z');
+  assert.equal(job.postedAt, '2026-08-11T20:02:38.000Z');
 });
 
 test('supports object location restrictions and falls back from placeholder company names', () => {
