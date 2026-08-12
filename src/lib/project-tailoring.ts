@@ -78,53 +78,43 @@ function descriptionHits(text: string, family: ProjectRoleFamily) {
   return DESCRIPTION_SIGNALS[family].filter((signal) => text.includes(signal)).length;
 }
 
-function addStrongDescriptionFamily(text: string, families: Set<ProjectRoleFamily>, family: ProjectRoleFamily, minHits = 3) {
-  if (descriptionHits(text, family) >= minHits) families.add(family);
-}
-
 export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' | 'department'>): ProjectRoleFamily[] {
   const title = normalizeText(`${job.title} ${job.department ?? ''}`);
   const description = normalizeText(job.description ?? '');
   const titleFamilies = new Set<ProjectRoleFamily>();
   addTitleFamilies(title, titleFamilies);
 
-  // Explicit AI/ML titles are dominant. A Machine Learning Platform Engineer or
-  // AI Solutions Engineer should still draw from AI/ML projects, not generic
-  // platform/software projects simply because those words also occur in the title.
+  // Explicit AI/ML titles are dominant even when words such as platform,
+  // software, APIs, or cloud also appear in the posting.
   if (titleFamilies.has('ai-ml')) {
     const dominant = new Set<ProjectRoleFamily>(['ai-ml']);
     if (titleFamilies.has('cybersecurity')) dominant.add('cybersecurity');
     return [...dominant];
   }
 
-  // Title family is the primary guard. Description text may add only a strongly
-  // supported adjacent specialization for otherwise broader role families.
-  const families = new Set<ProjectRoleFamily>(titleFamilies);
+  const explicitErpTitle = /\b(oracle fusion|oracle erp|erp|sap|enterprise applications?|financial systems?)\b/.test(title);
+  const businessSystemsTitle = /\bbusiness systems?\b/.test(title);
+  if (explicitErpTitle && !businessSystemsTitle) return ['erp-enterprise'];
 
-  if (!titleFamilies.size) {
-    for (const family of Object.keys(DESCRIPTION_SIGNALS) as ProjectRoleFamily[]) {
-      if (descriptionHits(description, family) >= 3) families.add(family);
+  // When the title already identifies a role family, keep that family strict.
+  // Only business/IT roles may add ERP because enterprise-system context changes
+  // the actual work domain rather than merely sharing generic technologies.
+  if (titleFamilies.size) {
+    const families = new Set<ProjectRoleFamily>(titleFamilies);
+    if (businessSystemsTitle) families.add('business-analysis');
+    if ((families.has('business-analysis') || families.has('it-systems'))
+      && /\b(oracle|erp|sap|enterprise application)/.test(description)) {
+      families.add('erp-enterprise');
     }
-  } else {
-    if (titleFamilies.has('erp-enterprise')) families.add('business-analysis');
-    if (titleFamilies.has('business-analysis') && /\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
-    if (titleFamilies.has('it-systems') && /\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
-
-    if (titleFamilies.has('software')) {
-      addStrongDescriptionFamily(description, families, 'ai-ml');
-      addStrongDescriptionFamily(description, families, 'data-analytics');
-      addStrongDescriptionFamily(description, families, 'cloud-devops');
-      addStrongDescriptionFamily(description, families, 'cybersecurity');
-    }
-    if (titleFamilies.has('cloud-devops')) {
-      addStrongDescriptionFamily(description, families, 'software');
-      addStrongDescriptionFamily(description, families, 'cybersecurity');
-    }
-    if (titleFamilies.has('cybersecurity')) addStrongDescriptionFamily(description, families, 'ai-ml');
-    if (titleFamilies.has('data-analytics')) addStrongDescriptionFamily(description, families, 'ai-ml');
+    return [...families];
   }
 
-  return [...families];
+  // Ambiguous titles can fall back to the JD body, but only with several signals.
+  const inferred = new Set<ProjectRoleFamily>();
+  for (const family of Object.keys(DESCRIPTION_SIGNALS) as ProjectRoleFamily[]) {
+    if (descriptionHits(description, family) >= 3) inferred.add(family);
+  }
+  return [...inferred];
 }
 
 function tokenSet(value: string) {
@@ -157,8 +147,6 @@ export function selectProjectsForJob(profile: CandidateProfile, job: Job, maxPro
       const lexical = lexicalProjectScore(project, job);
       return { project, index, familyHits, lexical, score: familyHits * 100 + lexical };
     })
-    // The production master profile is explicitly tagged. Untagged projects are
-    // excluded instead of being used as resume padding based on accidental words.
     .filter((item) => item.familyHits > 0)
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .slice(0, Math.max(0, maxProjects))
