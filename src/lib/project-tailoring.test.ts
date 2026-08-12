@@ -219,7 +219,7 @@ test('software cover letters mirror the JD and discuss the matching software pro
     mustHave: ['TypeScript and Next.js', 'REST APIs', 'PostgreSQL'],
     preferred: [],
     matchedSkills: ['TypeScript', 'Next.js', 'React', 'PostgreSQL'],
-  } as MatchScore;
+  } as unknown as MatchScore;
   const letter = buildJdProjectAlignedCoverLetter(
     coverLetterPack([
       { name: 'MSc Thesis - Color-Aware Composed Image Retrieval', bullets: ['Implemented MSc Thesis - Color-Aware Composed Image Retrieval using Python, CLIP, HNSW.'] },
@@ -244,7 +244,7 @@ test('machine-learning cover letters use thesis evidence when the JD matches the
     mustHave: ['Python machine learning', 'vector retrieval', 'computer vision'],
     preferred: [],
     matchedSkills: ['Python', 'CLIP', 'HNSW'],
-  } as MatchScore;
+  } as unknown as MatchScore;
   const letter = buildJdProjectAlignedCoverLetter(
     coverLetterPack([
       { name: 'MSc Thesis - Color-Aware Composed Image Retrieval', bullets: ['Implemented MSc Thesis - Color-Aware Composed Image Retrieval using Python, CLIP, HNSW.'] },
