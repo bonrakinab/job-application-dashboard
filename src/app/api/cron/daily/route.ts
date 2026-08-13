@@ -1,5 +1,4 @@
 import { sendDigest } from '@/lib/gmail';
-import { runDiscoveryAndAnalysis } from '@/lib/orchestrator';
 import { listJobs, logActivity } from '@/lib/store';
 
 export const runtime = 'nodejs';
@@ -14,7 +13,6 @@ function authorizedCron(request: Request) {
 export async function GET(request: Request) {
   if (!authorizedCron(request)) return new Response('Unauthorized', { status: 401 });
   try {
-    const run = await runDiscoveryAndAnalysis();
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     const recent = (await listJobs(500)).filter((job) => {
       const discovered = job.discoveredAt ? Date.parse(job.discoveredAt) : 0;
@@ -31,15 +29,14 @@ export async function GET(request: Request) {
       'Job Agent daily insights',
       `New viable listings in the last 24 hours: ${recent.length}.`,
       `Recommended new matches: ${jobs.length}. Strong / exceptional among new listings: ${strongCount}.`,
-      `Discovery run fetched ${run.fetched} jobs across ${run.sources} sources; ${run.relevant} passed the first relevance filter.`,
       '',
       ...lines,
       '',
       appUrl ? `Dashboard: ${appUrl}/recommended` : '',
     ].join('\n');
     const mail = await sendDigest(`Job Agent: ${jobs.length} new matches`, text);
-    await logActivity('cron.daily.completed', undefined, { run, newListings: recent.length, digestJobs: jobs.length, strongCount, mailSkipped: mail.skipped });
-    return Response.json({ ok: true, run, newListings: recent.length, digestJobs: jobs.length, strongCount, mail });
+    await logActivity('cron.daily.completed', undefined, { newListings: recent.length, digestJobs: jobs.length, strongCount, mailSkipped: mail.skipped });
+    return Response.json({ ok: true, newListings: recent.length, digestJobs: jobs.length, strongCount, mail });
   } catch (error) {
     await logActivity('cron.daily.failed', undefined, { error: error instanceof Error ? error.message : String(error) });
     return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
