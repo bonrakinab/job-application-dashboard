@@ -1,4 +1,5 @@
 import { createApplicationPack, selectedAIProvider } from '@/lib/ai';
+import { withPersistentApplicationSkills } from '@/lib/application-skill-policy';
 import { getCandidateProfileState } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
 import { withJdProjectAlignedCoverLetter } from '@/lib/cover-letter-tailoring';
@@ -28,7 +29,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
     const { pack: generatedPack, model } = await createApplicationPack(job, applicationProfile, job.match);
     const alignedPack = withJdProjectAlignedCoverLetter(generatedPack, applicationProfile, job, job.match);
-    const pack = attachApplicationPackGenerationMeta(alignedPack, {
+    const skillsPolicyPack = withPersistentApplicationSkills(alignedPack, applicationProfile);
+    const pack = attachApplicationPackGenerationMeta(skillsPolicyPack, {
       model,
       provider: selectedAIProvider(),
       profileUpdatedAt: profileState.updatedAt,
