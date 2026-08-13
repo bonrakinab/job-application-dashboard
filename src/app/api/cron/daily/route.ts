@@ -5,8 +5,14 @@ import { listJobs, logActivity } from '@/lib/store';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
+function authorizedCron(request: Request) {
+  const secret = process.env.CRON_SECRET?.trim();
+  if (secret) return request.headers.get('authorization') === `Bearer ${secret}`;
+  return request.headers.get('user-agent')?.toLowerCase().includes('vercel-cron/1.0') ?? false;
+}
+
 export async function GET(request: Request) {
-  if (!process.env.CRON_SECRET || request.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) return new Response('Unauthorized', { status: 401 });
+  if (!authorizedCron(request)) return new Response('Unauthorized', { status: 401 });
   try {
     const run = await runDiscoveryAndAnalysis();
     const jobs = (await listJobs(200)).filter((j) => j.match && ['exceptional','strong'].includes(j.match.recommendation)).slice(0, 12);
