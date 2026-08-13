@@ -3,12 +3,12 @@ import { normalizeText } from './utils';
 
 /**
  * Projects may remain in the master profile while being explicitly hidden from
- * employer-facing application materials. The legacy-name guard ensures the
- * Job Application Intelligence Dashboard stays private even if an older saved
- * profile does not yet contain the eligibility flag.
+ * employer-facing application materials. Legacy-name guards keep intentionally
+ * suppressed projects out even if an older saved profile lacks the eligibility flag.
  */
 const LEGACY_INTERNAL_PROJECT_NAMES = new Set([
   'job application intelligence dashboard',
+  'inventory management system',
 ]);
 
 type ApplicationProject = ProjectItem & {

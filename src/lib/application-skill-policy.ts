@@ -21,7 +21,11 @@ export const PERSISTENT_APPLICATION_SKILLS = [
   'TensorFlow',
   'Multimodal Retrieval',
   'Vector Search',
+  'Approximate Nearest Neighbor (ANN)',
+  'Image Retrieval',
 ] as const;
+
+const MAX_JD_SELECTED_SKILLS = 11;
 
 function exactProfileSkills(profile: CandidateProfile, requested: readonly string[]) {
   const available = new Map(profile.skills.map((skill) => [normalizeText(skill), skill]));
@@ -36,7 +40,7 @@ export function withPersistentApplicationSkills(
 ): ApplicationPack {
   const persistent = exactProfileSkills(profile, PERSISTENT_APPLICATION_SKILLS);
   const seen = new Set<string>();
-  const skills = [...pack.skills, ...persistent].filter((skill) => {
+  const skills = [...pack.skills.slice(0, MAX_JD_SELECTED_SKILLS), ...persistent].filter((skill) => {
     const normalized = normalizeText(skill);
     if (!normalized || seen.has(normalized)) return false;
     seen.add(normalized);
