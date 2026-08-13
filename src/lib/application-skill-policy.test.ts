@@ -12,6 +12,7 @@ const profile: CandidateProfile = {
     'TypeScript', 'Next.js', 'Python', 'Machine Learning', 'Deep Learning',
     'Computer Vision', 'NLP', 'BERT', 'CLIP', 'HNSW', 'FAISS',
     'scikit-learn', 'TensorFlow', 'Multimodal Retrieval', 'Vector Search',
+    'Approximate Nearest Neighbor (ANN)', 'Image Retrieval',
   ],
   projects: [
     { name: 'MSc Thesis - Color-Aware Composed Image Retrieval', description: 'Thesis', bullets: ['Built retrieval system.'] },
@@ -37,7 +38,11 @@ function pack(): ApplicationPack {
 
 test('persistent MSc/ML skills remain in non-ML application packs', () => {
   const result = withPersistentApplicationSkills(pack(), profile);
-  for (const skill of ['Python', 'Machine Learning', 'Deep Learning', 'Computer Vision', 'NLP', 'BERT', 'CLIP', 'HNSW', 'FAISS', 'scikit-learn', 'TensorFlow', 'Multimodal Retrieval', 'Vector Search']) {
+  for (const skill of [
+    'Python', 'Machine Learning', 'Deep Learning', 'Computer Vision', 'NLP', 'BERT',
+    'CLIP', 'HNSW', 'FAISS', 'scikit-learn', 'TensorFlow', 'Multimodal Retrieval',
+    'Vector Search', 'Approximate Nearest Neighbor (ANN)', 'Image Retrieval',
+  ]) {
     assert.ok(result.skills.includes(skill), `${skill} should remain visible`);
   }
   assert.deepEqual(result.skills.slice(0, 2), ['TypeScript', 'Next.js'], 'JD-relevant skills should stay first');
