@@ -147,6 +147,16 @@ export interface ApplicationPackGenerationMeta {
   provider: 'gemini' | 'openai';
 }
 
+export interface AtsOptimizationMeta {
+  passScore: number;
+  initialScore: number;
+  finalScore: number;
+  attempts: number;
+  status: 'pass' | 'conditional';
+  truthfulCeilingReached: boolean;
+  notes: string[];
+}
+
 export interface ApplicationPack {
   summary: string;
   resumeHeadline: string;
@@ -168,6 +178,7 @@ export interface ApplicationPack {
     claim: string;
     evidence: string;
   }>;
+  atsOptimization?: AtsOptimizationMeta;
   generationMeta?: ApplicationPackGenerationMeta;
 }
 

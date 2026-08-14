@@ -2,6 +2,7 @@ import { createApplicationPack, researchCompanyAndHiringTeam, selectedAIProvider
 import { withPersistentApplicationSkills } from '@/lib/application-skill-policy';
 import { getCandidateProfileState } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
+import { optimizeApplicationPackForAts } from '@/lib/ats-optimizer';
 import { hasUsableJobDescription } from '@/lib/cover-letter-tailoring';
 import { isJobClosed, verifyJobAvailability } from '@/lib/job-validity';
 import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-ai';
@@ -29,6 +30,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const employerProfile = externalApplicationProfile(profileState.profile);
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
     const { pack: generatedPack, model } = await createApplicationPack(job, applicationProfile, job.match);
+    const skillsPolicyPack = withPersistentApplicationSkills(generatedPack, applicationProfile);
+    const optimized = optimizeApplicationPackForAts(job, applicationProfile, skillsPolicyPack, job.match);
 
     let research = await getCompanyIntelligence(job.company);
     if (!research && !hasUsableJobDescription(job) && process.env.OPENAI_API_KEY) {
@@ -41,15 +44,17 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       }
     }
 
-    const professionalPack = await withProfessionalCoverLetterAI(generatedPack, applicationProfile, job, job.match, research);
-    const skillsPolicyPack = withPersistentApplicationSkills(professionalPack, applicationProfile);
-    const pack = attachApplicationPackGenerationMeta(skillsPolicyPack, {
+    const coverLetterInput = optimized.pack.atsOptimization?.attempts
+      ? { ...optimized.pack, coverLetter: '' }
+      : optimized.pack;
+    const professionalPack = await withProfessionalCoverLetterAI(coverLetterInput, applicationProfile, job, job.match, research);
+    const pack = attachApplicationPackGenerationMeta(professionalPack, {
       model,
       provider: selectedAIProvider(),
       profileUpdatedAt: profileState.updatedAt,
     });
     await saveApplicationPack(id, pack, model);
-    return Response.json({ pack, model, verification });
+    return Response.json({ pack, model, verification, ats: optimized.score });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 400 });
   }

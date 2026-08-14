@@ -22,6 +22,9 @@ export async function getApplicationPackState(jobId: string, profileUpdatedAt?: 
   if (pack && job && coverLetterQualityIssues(pack.coverLetter ?? '', job).length) {
     reasons.push('The stored cover letter does not meet the current professional writing standard.');
   }
+  if (pack && !pack.atsOptimization) {
+    reasons.push('The stored resume predates the current 90-point ATS pass standard and automatic truthful optimization.');
+  }
 
   return {
     pack,

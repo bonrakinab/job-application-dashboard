@@ -20,6 +20,9 @@ export function JobActions({
   status,
   canResearch,
   validityStatus = 'unknown',
+  atsEligible = false,
+  atsScore,
+  atsPassScore = 90,
 }: {
   id: string;
   applyUrl?: string;
@@ -28,6 +31,9 @@ export function JobActions({
   status: ApplicationStatus;
   canResearch: boolean;
   validityStatus?: JobValidityStatus;
+  atsEligible?: boolean;
+  atsScore?: number;
+  atsPassScore?: number;
 }) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
@@ -35,6 +41,7 @@ export function JobActions({
   const [currentHealth, setCurrentHealth] = useState<number | null>(null);
   const router = useRouter();
   const usablePack = hasPack && !packStale;
+  const applicationReady = usablePack && atsEligible;
 
   useEffect(() => {
     let cancelled = false;
@@ -64,7 +71,13 @@ export function JobActions({
         setCurrentValidity(json.verification.validityStatus as JobValidityStatus);
         setCurrentHealth(Number(json.verification.healthScore));
       }
-      setMsg(`${label} complete`);
+      if (label === 'Application pack' && typeof json.ats?.overall === 'number') {
+        setMsg(json.ats.eligibleToApply
+          ? `Application pack complete · ATS ${json.ats.overall}/100 · PASS`
+          : `Application pack complete · ATS ${json.ats.overall}/100 · CONDITIONAL`);
+      } else {
+        setMsg(`${label} complete`);
+      }
       router.refresh();
     } catch (error) {
       setMsg(error instanceof Error ? error.message : String(error));
@@ -92,6 +105,10 @@ export function JobActions({
   }
 
   async function verifyAndOpen() {
+    if (!applicationReady) {
+      setMsg(`Application is locked until the tailored resume reaches the ATS pass standard of ${atsPassScore}/100.`);
+      return;
+    }
     if (!applyUrl || applyUrl === '#') return;
     const popup = window.open('about:blank', '_blank');
     if (popup) popup.opener = null;
@@ -119,7 +136,7 @@ export function JobActions({
 
       if (popup) popup.location.href = applyUrl;
       else window.open(applyUrl, '_blank', 'noopener,noreferrer');
-      setMsg(`${healthLabel(verifiedStatus)} · opening the official application.`);
+      setMsg(`${healthLabel(verifiedStatus)} · ATS PASS confirmed · opening the official application.`);
     } catch (error) {
       popup?.close();
       setMsg(error instanceof Error ? error.message : String(error));
@@ -158,10 +175,11 @@ export function JobActions({
       <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
       {!canResearch ? <span className="small muted">Grounded company web research requires the OpenAI connection.</span> : null}
       <button className="btn primary" disabled={Boolean(busy) || closed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
-        {packStale ? 'Regenerate outdated application pack' : hasPack ? 'Regenerate application pack' : 'Generate application pack'}
+        {packStale ? 'Regenerate + ATS optimize application pack' : hasPack ? 'Regenerate + ATS optimize application pack' : 'Generate + ATS optimize application pack'}
       </button>
+      <span className="small muted">Generation automatically retargets verified resume evidence toward the {atsPassScore}+ ATS pass standard. Unsupported experience is never inserted to force a pass.</span>
       {closed ? <span className="small muted">Application preparation is disabled while this posting appears closed. Re-verify if you think the source has reopened it.</span> : null}
-      {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, document template, or cover-letter standard. Regenerate it before downloading or applying.</span> : null}
+      {packStale ? <span className="small muted">The stored pack was generated from an older profile or quality standard. Regenerate it before downloading or applying.</span> : null}
       {usablePack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
         <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download professional cover letter PDF</a>
@@ -177,9 +195,11 @@ export function JobActions({
         <option value="offer">Offer</option>
         <option value="withdrawn">Withdrawn</option>
       </select>
-      {usablePack && applyUrl && applyUrl !== '#'
+      {applicationReady && applyUrl && applyUrl !== '#'
         ? <button className="btn" type="button" disabled={Boolean(busy) || closed} onClick={verifyAndOpen}>Verify & open official application ↗</button>
-        : <span className="small muted">Generate a fresh tailored pack first. The ATS match estimate will appear above before the application link is unlocked.</span>}
+        : usablePack
+          ? <span className="notice"><b>Application locked.</b> ATS readiness is {atsScore ?? 'pending'}/100; {atsPassScore}+ is required for PASS and application eligibility. A conditional resume can still be downloaded for review, but the dashboard will not recommend opening the application until it passes.</span>
+          : <span className="small muted">Generate a fresh tailored pack first. The ATS pass decision will appear above before the application link is unlocked.</span>}
       {busy ? <span className="small muted">{busy}…</span> : null}
       {msg ? <span className="small muted">{msg}</span> : null}
     </div>
