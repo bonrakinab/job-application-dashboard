@@ -1,7 +1,9 @@
 import type { AnswerBankEntry, Job } from './types';
 import { normalizeText } from './utils';
 
-const STOP = new Set(['the','a','an','and','or','to','of','for','in','on','with','this','that','us','you','your','our','is','are','be','about','tell','describe']);
+const STOP = new Set(['the','a','an','and','or','to','of','for','in','on','with','this','that','us','you','your','our','is','are','be','about','tell','describe','why']);
+
+type QuestionIntent = 'authorization' | 'salary' | 'why-company' | 'why-role' | 'introduction' | 'technical-challenge' | 'experience' | 'unknown';
 
 function tokens(value: string) {
   return normalizeText(value).split(' ').filter((token) => token.length > 2 && !STOP.has(token));
@@ -12,18 +14,47 @@ function overlapScore(a: string[], b: string[]) {
   return a.reduce((score, token) => score + (set.has(token) ? 1 : 0), 0);
 }
 
-export function rankAnswerBankEntries(entries: AnswerBankEntry[], question: string, job?: Job | null) {
+function questionIntent(value: string): QuestionIntent {
+  const text = normalizeText(value);
+  if (/\b(work authorization|authorized to work|work permit|sponsorship|visa status|require sponsorship|eligible to work)\b/.test(text)) return 'authorization';
+  if (/\b(salary|compensation|pay range|salary expectation|salary expectations|remuneration)\b/.test(text)) return 'salary';
+  if (/\b(about yourself|introduce yourself|your background|professional background)\b/.test(text)) return 'introduction';
+  if (/\b(technical problem|technical challenge|difficult problem|difficult challenge|challenging project|complex problem)\b/.test(text)) return 'technical-challenge';
+  if (/\b(experience with|experience using|experience in|familiar with|worked with)\b/.test(text)) return 'experience';
+  if (/\b(company|organization|organisation|work here|work for us|join us)\b/.test(text) && /\b(why|interested|interest|motivat|want|join|work)\b/.test(text)) return 'why-company';
+  if (/\b(role|position|job|opportunity)\b/.test(text) && /\b(why|interested|interest|motivat|want|apply)\b/.test(text)) return 'why-role';
+  return 'unknown';
+}
+
+function entryScore(entry: AnswerBankEntry, question: string, job?: Job | null) {
+  const normalizedQuestion = normalizeText(question);
+  const normalizedEntry = normalizeText(entry.question);
   const questionTokens = tokens(question);
+  const tokenOverlap = overlapScore(questionTokens, tokens(entry.question));
+  const requestedIntent = questionIntent(question);
+  const entryIntent = questionIntent(entry.question);
+  const exactIntent = normalizedEntry.includes(normalizedQuestion) || normalizedQuestion.includes(normalizedEntry);
+  const sameKnownIntent = requestedIntent !== 'unknown' && requestedIntent === entryIntent;
+  const conflictingKnownIntent = requestedIntent !== 'unknown' && entryIntent !== 'unknown' && requestedIntent !== entryIntent;
+
+  // Job tags improve ordering only after the application question itself is relevant.
+  const questionRelevant = exactIntent || sameKnownIntent || tokenOverlap > 0;
+  if (!questionRelevant || conflictingKnownIntent) return null;
+
   const jobText = normalizeText(`${job?.title ?? ''} ${job?.description ?? ''}`);
-  return [...entries].sort((left, right) => {
-    function score(entry: AnswerBankEntry) {
-      const questionScore = overlapScore(questionTokens, tokens(entry.question)) * 5;
-      const tagScore = entry.tags.reduce((total, tag) => total + (jobText.includes(normalizeText(tag)) ? 2 : 0), 0);
-      const exactIntent = normalizeText(entry.question).includes(normalizeText(question)) || normalizeText(question).includes(normalizeText(entry.question)) ? 8 : 0;
-      return questionScore + tagScore + exactIntent;
-    }
-    return score(right) - score(left);
-  });
+  const tagScore = entry.tags.reduce((total, tag) => {
+    const normalizedTag = normalizeText(tag);
+    return total + (normalizedTag && jobText.includes(normalizedTag) ? 2 : 0);
+  }, 0);
+  return tokenOverlap * 5 + (sameKnownIntent ? 15 : 0) + (exactIntent ? 10 : 0) + tagScore;
+}
+
+export function rankAnswerBankEntries(entries: AnswerBankEntry[], question: string, job?: Job | null) {
+  return entries
+    .map((entry) => ({ entry, score: entryScore(entry, question, job) }))
+    .filter((item): item is { entry: AnswerBankEntry; score: number } => item.score !== null)
+    .sort((left, right) => right.score - left.score)
+    .map((item) => item.entry);
 }
 
 function geminiOutputText(payload: any) {
