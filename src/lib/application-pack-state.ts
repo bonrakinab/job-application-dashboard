@@ -1,5 +1,6 @@
 import type { CandidateProfile } from './types';
-import { getApplicationPack, getCandidateProfile } from './store';
+import { coverLetterQualityIssues } from './cover-letter-tailoring';
+import { getApplicationPack, getCandidateProfile, getJob } from './store';
 import { supabaseConfigured, supabaseRequest } from './supabase-rest';
 import { applicationPackStaleness } from './resume-tailoring';
 
@@ -13,8 +14,19 @@ export async function getCandidateProfileState(): Promise<{ profile: CandidatePr
 }
 
 export async function getApplicationPackState(jobId: string, profileUpdatedAt?: string) {
-  const pack = await getApplicationPack(jobId);
+  const [pack, job] = await Promise.all([getApplicationPack(jobId), getJob(jobId)]);
   const effectiveProfileUpdatedAt = profileUpdatedAt ?? (await getCandidateProfileState()).updatedAt;
   const freshness = applicationPackStaleness(pack, effectiveProfileUpdatedAt);
-  return { pack, ...freshness, profileUpdatedAt: effectiveProfileUpdatedAt };
+  const reasons = [...freshness.reasons];
+
+  if (pack && job && coverLetterQualityIssues(pack.coverLetter ?? '', job).length) {
+    reasons.push('The stored cover letter does not meet the current professional writing standard.');
+  }
+
+  return {
+    pack,
+    stale: reasons.length > 0,
+    reasons: [...new Set(reasons)],
+    profileUpdatedAt: effectiveProfileUpdatedAt,
+  };
 }

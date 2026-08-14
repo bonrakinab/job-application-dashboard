@@ -27,7 +27,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const ats = pack && !packState.stale ? scoreTailoredResume(job, profileState.profile, pack, match) : null;
   const interviewPrep = buildInterviewPrep(job, pack && !packState.stale ? pack : null);
   const ai = aiStatus();
-  const canResearch = ai.provider === 'openai' && ai.openai;
+  const canResearch = ai.openai;
 
   return <>
     <div className="topbar">
