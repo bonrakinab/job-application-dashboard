@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { JobValidityStatus, SearchProfile } from '@/lib/types';
 import type { RecommendedOpportunity } from '@/lib/recommendations';
 import { jobMatchesType, jobTypeLabels, type JobTypeFilter } from '@/lib/job-type';
+import { applicationLabel, matchesApplicationFilter, type ApplicationFilter } from '@/lib/application-state';
 import { StatusPill } from './StatusPill';
 
 function stageLabel(stage: RecommendedOpportunity['stage']) {
@@ -31,6 +32,7 @@ export function RecommendedJobsClient({
   const [q, setQ] = useState('');
   const [stage, setStage] = useState('all');
   const [jobType, setJobType] = useState<JobTypeFilter>('all');
+  const [applicationState, setApplicationState] = useState<ApplicationFilter>('all');
   const [source, setSource] = useState('all');
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -40,8 +42,9 @@ export function RecommendedJobsClient({
     return (!q || text.includes(q.toLowerCase()))
       && (stage === 'all' || item.stage === stage)
       && jobMatchesType(item.job, jobType)
+      && matchesApplicationFilter(item.job.application, applicationState)
       && (source === 'all' || item.job.source === source);
-  }), [items, q, stage, jobType, source]);
+  }), [items, q, stage, jobType, applicationState, source]);
 
   function toggle(id?: string) {
     if (!id) return;
@@ -81,6 +84,11 @@ export function RecommendedJobsClient({
         <option value="hybrid">Hybrid</option>
         <option value="on-site">On-site / non-remote</option>
       </select>
+      <select className="select" aria-label="Application state" value={applicationState} onChange={(event) => setApplicationState(event.target.value as ApplicationFilter)}>
+        <option value="all">Applied + not applied</option>
+        <option value="applied">Applied only</option>
+        <option value="not-applied">Not applied only</option>
+      </select>
       <select className="select" value={source} onChange={(event) => setSource(event.target.value)}>
         <option value="all">All sources</option>
         {sources.map((value) => <option value={value} key={value}>{value}</option>)}
@@ -88,20 +96,21 @@ export function RecommendedJobsClient({
     </div>
 
     <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
-      <div className="small muted">Showing {visible.length} of {items.length} recommendations · select up to five for comparison.</div>
+      <div className="small muted">Showing {visible.length} of {items.length} recommendations · every card shows whether you already applied.</div>
       <div className="row">
         <span className="small muted">{selected.length} selected</span>
         <a className={`btn ${selected.length >= 2 ? 'primary' : 'ghost'}`} aria-disabled={selected.length < 2} href={selected.length >= 2 ? `/compare?ids=${selected.join(',')}` : '#'} onClick={(event) => { if (selected.length < 2) event.preventDefault(); }}>Compare selected →</a>
       </div>
     </div>
 
-    {!visible.length ? <div className="notice">No recommended jobs match the selected filters. Try another job type, career stage, source, or search term.</div> : null}
+    {!visible.length ? <div className="notice">No recommended jobs match the selected filters. Try another application state, job type, career stage, source, or search term.</div> : null}
 
     <div className="recommendation-grid">
       {visible.map((item) => {
         const id = item.job.id;
         const checked = Boolean(id && selected.includes(id));
         const typeLabels = jobTypeLabels(item.job);
+        const appLabel = applicationLabel(item.job.application);
         return <article className="card recommendation-card" key={id ?? `${item.job.source}-${item.job.externalId}`}>
           <div className="row recommendation-card-head">
             <div style={{ flex: 1 }}>
@@ -119,6 +128,7 @@ export function RecommendedJobsClient({
           </div>
 
           <div className="tag-list recommendation-tags">
+            <span className="tag"><b>{appLabel}</b></span>
             {item.highlySuitable ? <span className="tag">Highly suitable</span> : null}
             <span className="tag">{stageLabel(item.stage)}</span>
             {typeLabels.map((label) => <span className="tag" key={label}>{label}</span>)}

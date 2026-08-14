@@ -1,5 +1,6 @@
 import { DiscoverButton } from '@/components/DiscoverButton';
 import { MetricCard } from '@/components/MetricCard';
+import { applicationLabel } from '@/lib/application-state';
 import { rankRecommendedJobs } from '@/lib/recommendations';
 import { getCandidateProfile, getDashboardStats, isLiveMode, listJobs } from '@/lib/store';
 
@@ -46,7 +47,7 @@ export default async function DashboardPage() {
     <div className="section-head"><h2>Top matches right now</h2><a className="small muted" href="/recommended">See all recommended →</a></div>
     <div className="card compact-list">
       {recommended.length ? recommended.map((item) => <a className="compact-job" href={`/jobs/${item.job.id}`} key={item.job.id}>
-        <div><b>{item.job.title}</b><span>{item.job.company} · {item.job.location || 'Location not listed'}</span></div>
+        <div><b>{item.job.title}</b><span>{item.job.company} · {item.job.location || 'Location not listed'}</span><span><b>{applicationLabel(item.job.application)}</b></span></div>
         <div className="compact-score"><b>{item.match.overall}</b><span>{item.family}</span></div>
       </a>) : <div className="small muted">No recommended listings currently clear the ranking and eligibility thresholds.</div>}
     </div>
