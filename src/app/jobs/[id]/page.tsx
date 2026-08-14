@@ -5,8 +5,10 @@ import { JobDescription } from '@/components/JobDescription';
 import { StatusPill } from '@/components/StatusPill';
 import { aiStatus } from '@/lib/ai';
 import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
+import { externalApplicationProfile } from '@/lib/application-visibility';
 import { scoreTailoredResume } from '@/lib/ats-score';
 import { buildInterviewPrep } from '@/lib/interview-prep';
+import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { getCompanyIntelligence, getJob } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 import { notFound } from 'next/navigation';
@@ -24,7 +26,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   ]);
   const pack = packState.pack;
   const match = job.match;
-  const ats = pack && !packState.stale ? scoreTailoredResume(job, profileState.profile, pack, match) : null;
+  const applicationProfile = projectTailoredApplicationProfile(externalApplicationProfile(profileState.profile), job);
+  const ats = pack && !packState.stale ? scoreTailoredResume(job, applicationProfile, pack, match) : null;
   const interviewPrep = buildInterviewPrep(job, pack && !packState.stale ? pack : null);
   const ai = aiStatus();
   const canResearch = ai.openai;
@@ -78,7 +81,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <p className="small" style={{ lineHeight: 1.7 }}>{pack.resumeSummary}</p>
           <div className="divider"/>
           <div className="kicker">Selected resume evidence</div>
-          <div className="tag-list">{pack.skills.slice(0, 20).map((item) => <span className="tag" key={item}>{item}</span>)}</div>
+          <div className="tag-list">{pack.skills.slice(0, 24).map((item) => <span className="tag" key={item}>{item}</span>)}</div>
           <div className="divider"/>
           <div className="kicker">Cover letter body</div>
           <p className="small" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{pack.coverLetter}</p>
@@ -90,7 +93,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <div className="tag-list">{pack.interviewThemes.map((item) => <span className="tag" key={item}>{item}</span>)}</div>
           <div className="divider"/>
           <div className="kicker">Claims audit</div>
-          {pack.claimsAudit.length ? pack.claimsAudit.slice(0, 10).map((item, index) => <div className="small" style={{ marginBottom: 9 }} key={index}><b>{item.claim}</b><br/><span className="muted">Evidence: {item.evidence}</span></div>) : <span className="small muted">No authored claims required additional evidence entries.</span>}
+          {pack.claimsAudit.length ? pack.claimsAudit.slice(0, 10).map((item, index) => <div className="small" style={{ marginBottom: 9 }} key={index}><b>{item.claim}</b><br/><span className="muted">Evidence: {item.evidence}</span></div>) : <span className="small muted">Resume tailoring is restricted to verified profile evidence; no unsupported claims are inserted to raise ATS score.</span>}
         </div> : null}
 
         <div className="card"><div className="kicker">Job description</div><JobDescription description={job.description}/></div>
@@ -98,24 +101,42 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
 
       <div className="grid" style={{ alignContent: 'start' }}>
         {ats ? <div className="card">
-          <div className="kicker">ATS match estimate · tailored resume vs this JD</div>
+          <div className="kicker">ATS readiness · internal pass standard {ats.passScore}+</div>
           <div className="row" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
-            <div><span className="score">{ats.overall}/100</span> <StatusPill value={ats.label === 'strong' ? 'strong' : ats.label === 'good' ? 'reasonable' : ats.label === 'moderate' ? 'stretch' : 'skip'}/></div>
+            <div><span className="score">{ats.overall}/100</span></div>
+            <b>{ats.eligibleToApply ? '✓ PASS · Eligible to apply' : 'CONDITIONAL · Not yet eligible'}</b>
           </div>
+          {pack?.atsOptimization ? <p className="small" style={{ lineHeight: 1.55 }}>
+            Automatic truthful tailoring: {pack.atsOptimization.initialScore}/100 → {pack.atsOptimization.finalScore}/100
+            {pack.atsOptimization.attempts ? ` across ${pack.atsOptimization.attempts} optimization pass${pack.atsOptimization.attempts === 1 ? '' : 'es'}` : ' · no extra pass needed'}.
+          </p> : null}
           <p className="small muted" style={{ lineHeight: 1.55 }}>{ats.explanation}</p>
           <div className="grid score-grid">
             {[
+              ['Must-haves', ats.requirementCoverage],
               ['JD skills', ats.skillCoverage],
-              ['Requirements', ats.requirementCoverage],
               ['Evidence', ats.evidenceRelevance],
               ['ATS format', ats.formatHygiene],
+              ['Positioning', ats.rolePositioning],
             ].map(([label, value]) => <div className="score-box" key={String(label)}><b>{value}</b><span>{label}</span><div className="progress"><span style={{ width: `${value}%` }}/></div></div>)}
           </div>
           {ats.matchedKeywords.length ? <><div className="divider"/><div className="kicker">Matched JD terms</div><div className="tag-list">{ats.matchedKeywords.map((item) => <span className="tag" key={item}>{item}</span>)}</div></> : null}
-          {ats.missingKeywords.length ? <><div className="divider"/><div className="kicker">Missing / gap terms</div><div className="tag-list">{ats.missingKeywords.map((item) => <span className="tag" key={item}>{item}</span>)}</div><p className="small muted">These are not automatically inserted. They remain gaps unless the master profile contains truthful evidence for them.</p></> : null}
-        </div> : packState.stale ? <div className="notice"><b>ATS score pending.</b> Regenerate the outdated pack first so the score reflects the current resume and JD.</div> : null}
+          {ats.unsupportedMustHaves.length ? <><div className="divider"/><div className="kicker">Cannot be added authentically</div>{ats.unsupportedMustHaves.map((item) => <div className="blocker" key={item}>{item}</div>)}<p className="small muted">These mandatory requirements are unsupported by the verified master profile, so the optimizer will not invent them to force a 90+ score.</p></> : null}
+          {!ats.unsupportedMustHaves.length && ats.missingKeywords.length ? <><div className="divider"/><div className="kicker">Remaining gaps</div><div className="tag-list">{ats.missingKeywords.map((item) => <span className="tag" key={item}>{item}</span>)}</div><p className="small muted">Supported terms are automatically promoted during generation. Unsupported terms remain visible rather than being fabricated.</p></> : null}
+          {pack?.atsOptimization?.truthfulCeilingReached && !ats.eligibleToApply ? <><div className="divider"/><div className="notice"><b>Truthful optimization ceiling reached.</b> The resume was re-ranked and retargeted three times without inventing experience. It remains conditional until the verified evidence can legitimately support a 90+ score.</div></> : null}
+        </div> : packState.stale ? <div className="notice"><b>ATS score pending.</b> Regenerate the outdated pack first. New packs are automatically tailored toward the 90+ pass standard.</div> : null}
 
-        <JobActions id={id} applyUrl={job.applyUrl || job.url} hasPack={Boolean(pack)} packStale={packState.stale} status={job.application?.status || 'discovered'} canResearch={canResearch}/>
+        <JobActions
+          id={id}
+          applyUrl={job.applyUrl || job.url}
+          hasPack={Boolean(pack)}
+          packStale={packState.stale}
+          status={job.application?.status || 'discovered'}
+          canResearch={canResearch}
+          atsEligible={Boolean(ats?.eligibleToApply)}
+          atsScore={ats?.overall}
+          atsPassScore={ats?.passScore}
+        />
         <JobAnswerAssistant jobId={id} />
         <InterviewPrepCard prep={interviewPrep} />
         <div className="card"><div className="kicker">Requirements extracted</div><h3>Must-have</h3><div className="tag-list">{match?.mustHave?.length ? match.mustHave.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">Run AI analysis to extract.</span>}</div><div className="divider"/><h3>Preferred</h3><div className="tag-list">{match?.preferred?.length ? match.preferred.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">No preferred requirements extracted.</span>}</div></div>
