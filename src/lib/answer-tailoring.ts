@@ -1,7 +1,7 @@
 import type { AnswerBankEntry, Job } from './types';
 import { normalizeText } from './utils';
 
-const STOP = new Set(['the','a','an','and','or','to','of','for','in','on','with','this','that','us','you','your','our','is','are','be','about','tell','describe','why']);
+const STOP = new Set(['the','a','an','and','or','to','of','for','in','on','with','this','that','us','you','your','our','is','are','be','about','tell','describe','why','what','when','where','who','which','how','do','does','did','can','could','would','should','have','has']);
 
 type QuestionIntent = 'authorization' | 'salary' | 'why-company' | 'why-role' | 'introduction' | 'technical-challenge' | 'experience' | 'unknown';
 
