@@ -38,6 +38,14 @@ function parseStructuredJson<T>(text: string): T {
   return JSON.parse(cleaned) as T;
 }
 
+function transientStatus(status: number) {
+  return [408, 409, 429, 500, 502, 503, 504].includes(status);
+}
+
+function retryDelay(attempt: number) {
+  return new Promise((resolve) => setTimeout(resolve, 450 * (attempt + 1)));
+}
+
 async function structuredInteraction<T>(options: {
   model: string;
   schema: Record<string, unknown>;
@@ -49,47 +57,69 @@ async function structuredInteraction<T>(options: {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('GEMINI_API_KEY is not configured.');
 
-  let lastParseError: unknown;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const response = await fetch(GEMINI_INTERACTIONS_URL, {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': key,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: options.model,
-        input: options.user,
-        system_instruction: attempt === 0
-          ? options.system
-          : `${options.system}\n\nOUTPUT RECOVERY: The previous structured response could not be parsed. Return exactly one complete valid JSON object matching the supplied schema. Do not use markdown fences or commentary. Ensure every string, array, and object is fully closed.`,
-        store: false,
-        generation_config: {
-          thinking_level: options.thinkingLevel ?? 'low',
-          max_output_tokens: options.maxOutputTokens ?? 2400,
-        },
-        response_format: [{
-          type: 'text',
-          mime_type: 'application/json',
-          schema: options.schema,
-        }],
-      }),
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Gemini ${response.status}: ${errorBody.slice(0, 800)}`);
-    }
-
-    const payload = await response.json();
+  let lastError: unknown;
+  let needsOutputRecovery = false;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      return parseStructuredJson<T>(outputText(payload));
+      const response = await fetch(GEMINI_INTERACTIONS_URL, {
+        method: 'POST',
+        headers: {
+          'x-goog-api-key': key,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: options.model,
+          input: options.user,
+          system_instruction: needsOutputRecovery
+            ? `${options.system}\n\nOUTPUT RECOVERY: The previous structured response could not be parsed. Return exactly one complete valid JSON object matching the supplied schema. Do not use markdown fences or commentary. Ensure every string, array, and object is fully closed.`
+            : options.system,
+          store: false,
+          generation_config: {
+            thinking_level: options.thinkingLevel ?? 'low',
+            max_output_tokens: options.maxOutputTokens ?? 2400,
+          },
+          response_format: [{
+            type: 'text',
+            mime_type: 'application/json',
+            schema: options.schema,
+          }],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        const error = new Error(`Gemini ${response.status}: ${errorBody.slice(0, 800)}`);
+        lastError = error;
+        if (transientStatus(response.status) && attempt < 2) {
+          await retryDelay(attempt);
+          continue;
+        }
+        throw error;
+      }
+
+      const payload = await response.json();
+      try {
+        return parseStructuredJson<T>(outputText(payload));
+      } catch (error) {
+        lastError = error;
+        needsOutputRecovery = true;
+        if (attempt < 2) {
+          await retryDelay(attempt);
+          continue;
+        }
+      }
     } catch (error) {
-      lastParseError = error;
+      lastError = error;
+      if (attempt < 2 && error instanceof TypeError) {
+        await retryDelay(attempt);
+        continue;
+      }
+      if (attempt >= 2) break;
+      if (!(error instanceof TypeError)) throw error;
     }
   }
 
-  throw new Error(`Gemini returned malformed structured JSON after retry: ${lastParseError instanceof Error ? lastParseError.message : String(lastParseError)}`);
+  throw new Error(`Gemini structured generation failed after retries: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
 }
 
 const matchSchema = {
