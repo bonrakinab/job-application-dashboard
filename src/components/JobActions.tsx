@@ -156,12 +156,12 @@ export function JobActions({
       <span className="small muted">Current posting state: {healthLabel(currentValidity)}{currentHealth == null ? '' : ` · ${currentHealth}/100`}. Verification runs again before the official application is opened.</span>
       <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Re-analyze</button>
       <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
-      {!canResearch ? <span className="small muted">Grounded company web research is disabled in Gemini free-tier mode.</span> : null}
+      {!canResearch ? <span className="small muted">Grounded company web research requires the OpenAI connection.</span> : null}
       <button className="btn primary" disabled={Boolean(busy) || closed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
         {packStale ? 'Regenerate outdated application pack' : hasPack ? 'Regenerate application pack' : 'Generate application pack'}
       </button>
       {closed ? <span className="small muted">Application preparation is disabled while this posting appears closed. Re-verify if you think the source has reopened it.</span> : null}
-      {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, or document template. Regenerate it before downloading or applying.</span> : null}
+      {packStale ? <span className="small muted">The stored pack was generated from an older profile, prompt, document template, or cover-letter standard. Regenerate it before downloading or applying.</span> : null}
       {usablePack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
         <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download professional cover letter PDF</a>
