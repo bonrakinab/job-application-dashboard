@@ -19,6 +19,7 @@ export interface AtsReadinessScore {
   improvableKeywords: string[];
   unsupportedMustHaves: string[];
   hardBlockers: string[];
+  analysisIncomplete: boolean;
   explanation: string;
 }
 
@@ -167,6 +168,13 @@ function unsupportedMustHaves(match?: MatchScore) {
   }));
 }
 
+function detailedAnalysisIncomplete(job: Job, match?: MatchScore) {
+  if (job.description.trim().length < 300) return false;
+  if (!match) return true;
+  const noRequirements = !(match.mustHave?.length || match.preferred?.length || match.missingSkills?.length);
+  return noRequirements && (!match.model || match.model.startsWith('deterministic'));
+}
+
 export function scoreTailoredResume(job: Job, profile: CandidateProfile, pack: ApplicationPack, match?: MatchScore): AtsReadinessScore {
   const text = resumeText(profile, pack);
   const allowedSkills = profileSkillMap(profile);
@@ -188,6 +196,7 @@ export function scoreTailoredResume(job: Job, profile: CandidateProfile, pack: A
 
   const unsupportedRequired = unsupportedMustHaves(match);
   const hardBlockers = [...new Set(match?.blockers ?? [])];
+  const analysisIncomplete = detailedAnalysisIncomplete(job, match);
   let overall = clampScore(
     requirementCoverage * 0.40
     + skillCoverage * 0.25
@@ -196,10 +205,10 @@ export function scoreTailoredResume(job: Job, profile: CandidateProfile, pack: A
     + positioning * 0.05,
   );
 
-  if (unsupportedRequired.length) overall = Math.min(89, overall);
+  if (unsupportedRequired.length || analysisIncomplete) overall = Math.min(89, overall);
   if (hardBlockers.length) overall = Math.min(49, overall);
 
-  const eligibleToApply = overall >= ATS_PASS_SCORE && !unsupportedRequired.length && !hardBlockers.length;
+  const eligibleToApply = overall >= ATS_PASS_SCORE && !unsupportedRequired.length && !hardBlockers.length && !analysisIncomplete;
   const status: AtsReadinessScore['status'] = eligibleToApply ? 'pass' : 'conditional';
   const missingKeywords = uniqueByNormalized([...improvableKeywords, ...unsupportedJobSkills]).slice(0, 14);
   const matchedKeywords = uniqueByNormalized([
@@ -223,6 +232,7 @@ export function scoreTailoredResume(job: Job, profile: CandidateProfile, pack: A
     improvableKeywords: improvableKeywords.slice(0, 12),
     unsupportedMustHaves: unsupportedRequired.slice(0, 8),
     hardBlockers,
-    explanation: `Internal ATS-readiness estimate using a 90/100 pass standard. It weighs must-have requirement coverage (40%), JD skill coverage (25%), evidence relevance (20%), ATS-safe structure (10%), and role positioning (5%). Unsupported mandatory requirements and hard eligibility blockers cannot be hidden by keyword tailoring. This is not a score from the employer's proprietary ATS.`,
+    analysisIncomplete,
+    explanation: `Internal ATS-readiness estimate using a 90/100 pass standard. It weighs must-have requirement coverage (40%), JD skill coverage (25%), evidence relevance (20%), ATS-safe structure (10%), and role positioning (5%). Unsupported mandatory requirements, incomplete detailed JD extraction, and hard eligibility blockers cannot be hidden by keyword tailoring. This is not a score from the employer's proprietary ATS.`,
   };
 }
