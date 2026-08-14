@@ -46,9 +46,9 @@ export function cleanCompanyName(value: string) {
 
 export function hasUsableJobDescription(job: Pick<Job, 'description'>) {
   const description = (job.description ?? '').replace(/\s+/g, ' ').trim();
-  if (description.length < 180) return false;
+  if (description.length < 80) return false;
   const alphaWords = description.match(/[A-Za-z][A-Za-z0-9+.#/-]{2,}/g) ?? [];
-  if (alphaWords.length < 28) return false;
+  if (alphaWords.length < 12) return false;
   const digits = (description.match(/\d/g) ?? []).length;
   if (digits > description.length * 0.45) return false;
   return true;
@@ -62,7 +62,7 @@ export function coverLetterQualityIssues(letter: string, job: Pick<Job, 'title' 
   const text = letter.trim();
   const issues: string[] = [];
   const words = wordCount(text);
-  if (words < 170) issues.push('too-short');
+  if (words < 150) issues.push('too-short');
   if (words > 430) issues.push('too-long');
   if (!/^dear\b/im.test(text)) issues.push('missing-greeting');
   if (!/\b(sincerely|best regards|kind regards),?/i.test(text)) issues.push('missing-signoff');
@@ -161,9 +161,11 @@ function fallbackProjectParagraph(entry: ReturnType<typeof topRelevantProjects>[
   const evidence = entry.selected.bullets?.[0] || entry.source?.description || '';
   const skills = (entry.source?.skills ?? []).slice(0, 3);
   const evidenceSentence = evidence ? firstPersonEvidence(evidence) : `I developed ${entry.selected.name} as a hands-on technical project`;
-  const skillClause = skills.length ? ` The work also gave me practical experience with ${skills.join(', ')}.` : '';
-  const relevanceClause = focus.length ? ` That experience is relevant to the role's focus on ${focus.join(' and ')}.` : '';
-  return `Alongside my professional experience, ${evidenceSentence.replace(/^I /, 'I ')}.${skillClause}${relevanceClause}`.replace(/\.\./g, '.');
+  const evidenceNormalized = normalizeText(evidence);
+  const missingSkillMentions = skills.filter((skill) => !evidenceNormalized.includes(normalizeText(skill)));
+  const skillClause = missingSkillMentions.length ? ` The work also gave me practical experience with ${missingSkillMentions.join(', ')}.` : '';
+  const relevanceClause = focus.length ? ` That experience is relevant to the role's focus on ${focus.join(' as well as ')}.` : '';
+  return `Alongside my professional experience, ${evidenceSentence}.${skillClause}${relevanceClause}`.replace(/\.\./g, '.');
 }
 
 export function buildProfessionalFallbackCoverLetter(
@@ -183,18 +185,18 @@ export function buildProfessionalFallbackCoverLetter(
     `I am writing to apply for the ${job.title} position at ${company}.`,
     graduation,
     focus.length
-      ? `The role aligns well with my background in ${focus.join(' and ')}, supported by both professional and project work.`
+      ? `The role aligns well with my background in ${focus.join(' as well as ')}, supported by both professional and project work.`
       : 'The role is a strong fit for my background across enterprise IT, software development, data, and applied AI.',
   ].filter(Boolean).join(' ');
 
   const experienceParagraph = experience
-    ? `In my professional experience at ${experience.organization}, ${firstPersonEvidence(experience.bullet).replace(/^I /, 'I ')}. This work strengthened my ability to solve operational and technical problems carefully, communicate across stakeholders, and deliver maintainable solutions.`.replace(/\.\./g, '.')
-    : 'My professional background has required me to work across technical systems, business requirements, documentation, and cross-functional problem solving while keeping implementation details accurate and maintainable.';
+    ? `In my professional experience at ${experience.organization}, ${firstPersonEvidence(experience.bullet)}. This work strengthened my ability to solve operational and technical problems carefully, communicate across stakeholders, and deliver maintainable solutions. It also required me to balance implementation detail with the business context behind each request, which is an approach I would bring to this position.`.replace(/\.\./g, '.')
+    : 'My professional background has required me to work across technical systems, business requirements, documentation, and cross-functional problem solving while keeping implementation details accurate and maintainable. I have learned to approach technical work with attention to both the immediate issue and the broader process it supports.';
 
   const projectParagraph = fallbackProjectParagraph(project, focus)
-    || 'My graduate and independent project work has also given me hands-on practice translating requirements into working software, validating results, and iterating on technical decisions.';
+    || 'My graduate and independent project work has also given me hands-on practice translating requirements into working software, validating results, and iterating on technical decisions. That work complements my professional experience by keeping me close to implementation, testing, and practical problem solving.';
 
-  const closing = `I would be glad to discuss how my experience and current graduate work could contribute to ${company} in this role. Thank you for considering my application.`;
+  const closing = `I would be glad to discuss how my experience and current graduate work could contribute to ${company} in this role. I am looking for an opportunity where I can apply my technical foundation while continuing to learn from a strong team and take ownership of useful, well-structured work. Thank you for considering my application.`;
 
   return [
     'Dear Hiring Manager,',
