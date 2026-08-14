@@ -18,7 +18,7 @@ const profile: CandidateProfile = {
 const job: Job = {
   externalId: '1', source: 'test', sourceKey: 'test', url: 'https://example.com',
   title: 'AI Software Engineer', company: 'Acme', location: 'Canada',
-  description: 'Design and build production AI applications using TypeScript and SQL. Develop RESTful services in Java and work with agent frameworks, distributed systems, and modern development workflows. This role also requires system design and scalable backend thinking.',
+  description: 'Design and build production AI applications using TypeScript and SQL. Develop RESTful services in Java and work with agent frameworks, distributed systems, and modern development workflows. This role also requires system design and scalable backend thinking. The engineer will collaborate across product and engineering, own implementation decisions, evaluate reliability, improve observability, and support production AI services across multiple integrations and data sources.',
 };
 
 const pack: ApplicationPack = {
