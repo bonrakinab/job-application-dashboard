@@ -79,6 +79,7 @@ export function RecommendedJobsClient({
         <option value="contract">Contract / contractual</option>
         <option value="remote">Remote</option>
         <option value="hybrid">Hybrid</option>
+        <option value="on-site">On-site / non-remote</option>
       </select>
       <select className="select" value={source} onChange={(event) => setSource(event.target.value)}>
         <option value="all">All sources</option>
