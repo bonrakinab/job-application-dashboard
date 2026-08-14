@@ -46,10 +46,8 @@ export async function createApplicationPack(job: Job, profile: CandidateProfile,
 }
 
 export async function researchCompanyAndHiringTeam(job: Job): Promise<{ research: CompanyIntelligence; model: string }> {
-  const provider = selectedAIProvider();
-  if (provider === 'gemini') {
-    throw new Error('Company web research is disabled with the Gemini free-tier configuration because Google Search grounding is not available on that tier. Job analysis and application-pack generation still work with Gemini.');
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OpenAI must be configured for grounded company web research.');
   }
-  if (!process.env.OPENAI_API_KEY) throw new Error('OpenAI must be configured for company web research.');
   return researchCompanyAndHiringTeamWithOpenAI(job);
 }
