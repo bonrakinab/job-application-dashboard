@@ -1,5 +1,6 @@
 import type { CandidateProfile, Job, JobWithMatch, MatchScore } from './types';
 import { deterministicScore, titleMatchesTarget } from './scoring';
+import { collapseDuplicateJobs } from './job-duplicates';
 import { clamp, normalizeText } from './utils';
 
 export type OpportunityStage = 'internship' | 'new-grad' | 'entry-level' | 'experienced';
@@ -12,6 +13,8 @@ export interface RecommendedOpportunity {
   family: string;
   highlySuitable: boolean;
   reasons: string[];
+  duplicateCount: number;
+  reposted: boolean;
 }
 
 export function opportunityStage(job: Pick<Job, 'title' | 'description' | 'employmentType'>): OpportunityStage {
@@ -27,15 +30,15 @@ export function roleFamily(job: Pick<Job, 'title' | 'description'>) {
   const description = normalizeText(job.description);
 
   if (/\b(sales|account executive|marketing|recruiter|human resources|financial analyst|finance analyst|accounting|product manager|customer success)\b/.test(title)) return 'Other';
-  if (/\b(oracle fusion|oracle erp|erp|enterprise applications|business systems)\b/.test(title)) return 'ERP & enterprise systems';
+  if (/\b(oracle fusion|oracle erp|oracle cloud|oracle applications|erp|enterprise applications|business systems)\b/.test(title)) return 'ERP & enterprise systems';
   if (/\b(machine learning|artificial intelligence|ai engineer|ml engineer|data scientist|computer vision|nlp)\b/.test(title)) return 'AI & machine learning';
   if (/\b(data analyst|data analytics|business intelligence|bi analyst|analytics engineer|data engineer)\b/.test(title)) return 'Data & analytics';
   if (/\b(solution engineer|solutions engineer|cloud engineer|cloud analyst|technical consultant|implementation consultant)\b/.test(title)) return 'Cloud & solutions';
   if (/\b(software engineer|software engineering|software developer|full stack|full-stack|backend|frontend|application developer)\b/.test(title)) return 'Software engineering';
   if (/\b(it analyst|it systems|systems analyst|business analyst|technical support|application support|information technology)\b/.test(title)) return 'IT & business systems';
 
-  if (/\b(applications? analyst|applications? engineer|systems? engineer)\b/.test(title)
-      && /\b(oracle fusion|oracle erp|erp|enterprise applications|business systems)\b/.test(description)) {
+  if (/\b(applications? analyst|applications? engineer|systems? engineer|functional analyst|implementation consultant)\b/.test(title)
+      && /\b(oracle fusion|oracle erp|oracle cloud|oracle financials|oracle procurement|erp|enterprise applications|business systems)\b/.test(description)) {
     return 'ERP & enterprise systems';
   }
 
@@ -69,7 +72,8 @@ function recommendationReasons(job: JobWithMatch, profile: CandidateProfile, mat
 }
 
 export function rankRecommendedJobs(jobs: JobWithMatch[], profile: CandidateProfile): RecommendedOpportunity[] {
-  return jobs.map((job) => {
+  const collapsed = collapseDuplicateJobs(jobs);
+  return collapsed.jobs.map((job) => {
     const match = job.match ?? deterministicScore(job, profile);
     const stage = opportunityStage(job);
     const family = roleFamily(job);
@@ -82,6 +86,7 @@ export function rankRecommendedJobs(jobs: JobWithMatch[], profile: CandidateProf
       || match.recommendation === 'strong'
       || (earlyCareer && match.overall >= 70)
     );
+    const duplicateMeta = job.id ? collapsed.meta.get(job.id) : undefined;
     return {
       job,
       match,
@@ -90,6 +95,8 @@ export function rankRecommendedJobs(jobs: JobWithMatch[], profile: CandidateProf
       family,
       highlySuitable,
       reasons: recommendationReasons(job, profile, match, stage, family),
+      duplicateCount: duplicateMeta?.duplicateCount ?? 0,
+      reposted: duplicateMeta?.reposted ?? false,
     };
   })
     .filter((item) => item.family !== 'Other'

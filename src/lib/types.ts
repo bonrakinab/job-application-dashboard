@@ -209,3 +209,40 @@ export interface CompanyIntelligence {
   researchedAt?: string;
   model?: string;
 }
+
+export interface AnswerBankEntry {
+  id?: string;
+  question: string;
+  answer: string;
+  tags: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SearchProfile {
+  id: string;
+  name: string;
+  description: string;
+  targetTitles: string[];
+  includeKeywords: string[];
+  minMatch: number;
+  enabled: boolean;
+}
+
+export interface WebhookIntegration {
+  id?: string;
+  name: string;
+  kind: 'n8n' | 'webhook';
+  webhookUrl: string;
+  secretConfigured?: boolean;
+  events: string[];
+  enabled: boolean;
+}
+
+export interface InterviewPrep {
+  topics: string[];
+  likelyQuestions: string[];
+  evidence: Array<{ label: string; detail: string }>;
+  starPrompts: string[];
+  questionsToAsk: string[];
+}

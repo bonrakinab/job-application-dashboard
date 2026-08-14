@@ -1,7 +1,8 @@
-import type { ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobValidityVerification, JobWithMatch, MatchScore } from './types';
+import type { AnswerBankEntry, ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobValidityVerification, JobWithMatch, MatchScore, SearchProfile, WebhookIntegration } from './types';
 import { demoJobs, demoProfile } from './demo';
 import { jsonEnv } from './utils';
-import { insertIgnoreRows, patchRows, supabaseConfigured, supabaseRequest, upsertRows } from './supabase-rest';
+import { deleteRows, insertIgnoreRows, insertRows, patchRows, supabaseConfigured, supabaseRequest, upsertRows } from './supabase-rest';
+import { dispatchAutomationEvent } from './automations';
 
 function jobToRow(job: Job) {
   return {
@@ -139,6 +140,13 @@ export async function saveMatch(jobId: string, match: MatchScore) {
     model: match.model,
     analyzed_at: new Date().toISOString(),
   }], 'job_id');
+  void dispatchAutomationEvent('job.match.updated', {
+    jobId,
+    overall: match.overall,
+    recommendation: match.recommendation,
+    matchedSkills: match.matchedSkills,
+    blockers: match.blockers,
+  });
 }
 
 export async function saveJobValidity(jobId: string, verification: JobValidityVerification) {
@@ -188,6 +196,7 @@ export async function updateApplicationStatus(jobId: string, status: Application
   if (status === 'applied') values.applied_at = now;
   if (['interview','rejected','offer'].includes(status)) values.response_at = now;
   await patchRows(`applications?job_id=eq.${encodeURIComponent(jobId)}`, values);
+  void dispatchAutomationEvent('application.status.changed', { jobId, status, notes: notes ?? null, changedAt: now });
 }
 
 export async function saveApplicationPack(jobId: string, pack: ApplicationPack, model?: string) {
@@ -250,4 +259,93 @@ export async function saveJobSource(kind: 'greenhouse' | 'lever' | 'ashby', sour
 export async function disableJobSource(kind: 'greenhouse' | 'lever' | 'ashby', sourceKey: string, company: string) {
   if (!supabaseConfigured) throw new Error('Supabase is required to persist job sources.');
   await upsertRows('job_sources', [{ kind, source_key: sourceKey.trim(), company: company.trim() || sourceKey.trim(), enabled: false }], 'kind,source_key');
+}
+
+export async function listAnswerBank(): Promise<AnswerBankEntry[]> {
+  if (!supabaseConfigured) return [];
+  try {
+    const rows = await supabaseRequest<Array<{ id: number; question: string; answer: string; tags: string[] | null; created_at: string; updated_at: string }>>('answer_bank?select=id,question,answer,tags,created_at,updated_at&order=updated_at.desc');
+    return rows.map((row) => ({ id: String(row.id), question: row.question, answer: row.answer, tags: row.tags ?? [], createdAt: row.created_at, updatedAt: row.updated_at }));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveAnswerBankEntry(entry: AnswerBankEntry) {
+  if (!supabaseConfigured) throw new Error('Supabase is required to persist answer-bank entries.');
+  const values = { question: entry.question.trim(), answer: entry.answer.trim(), tags: entry.tags.map((tag) => tag.trim()).filter(Boolean), updated_at: new Date().toISOString() };
+  if (!values.question) throw new Error('Question is required.');
+  if (entry.id) {
+    const rows = await patchRows<any>(`answer_bank?id=eq.${encodeURIComponent(entry.id)}`, values);
+    return rows[0];
+  }
+  const rows = await insertRows<any>('answer_bank', [{ ...values, created_at: new Date().toISOString() }]);
+  return rows[0];
+}
+
+export async function deleteAnswerBankEntry(id: string) {
+  if (!supabaseConfigured) return;
+  await deleteRows(`answer_bank?id=eq.${encodeURIComponent(id)}`);
+}
+
+export async function listSearchProfiles(): Promise<SearchProfile[]> {
+  if (!supabaseConfigured) return [];
+  try {
+    const rows = await supabaseRequest<Array<{ id: string; name: string; description: string; target_titles: string[] | null; include_keywords: string[] | null; min_match: number; enabled: boolean }>>('search_profiles?select=id,name,description,target_titles,include_keywords,min_match,enabled&order=name.asc');
+    return rows.map((row) => ({ id: row.id, name: row.name, description: row.description, targetTitles: row.target_titles ?? [], includeKeywords: row.include_keywords ?? [], minMatch: Number(row.min_match), enabled: row.enabled }));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveSearchProfile(profile: SearchProfile) {
+  if (!supabaseConfigured) throw new Error('Supabase is required to persist search profiles.');
+  await upsertRows('search_profiles', [{
+    id: profile.id,
+    name: profile.name.trim(),
+    description: profile.description.trim(),
+    target_titles: profile.targetTitles.map((value) => value.trim()).filter(Boolean),
+    include_keywords: profile.includeKeywords.map((value) => value.trim()).filter(Boolean),
+    min_match: Math.max(0, Math.min(100, profile.minMatch)),
+    enabled: profile.enabled,
+    updated_at: new Date().toISOString(),
+  }], 'id');
+}
+
+export async function deleteSearchProfile(id: string) {
+  if (!supabaseConfigured) return;
+  await deleteRows(`search_profiles?id=eq.${encodeURIComponent(id)}`);
+}
+
+export async function listWebhookIntegrations(): Promise<WebhookIntegration[]> {
+  if (!supabaseConfigured) return [];
+  try {
+    const rows = await supabaseRequest<Array<{ id: number; name: string; kind: 'n8n' | 'webhook'; webhook_url: string; secret: string | null; events: string[] | null; enabled: boolean }>>('webhook_integrations?select=id,name,kind,webhook_url,secret,events,enabled&order=created_at.asc');
+    return rows.map((row) => ({ id: String(row.id), name: row.name, kind: row.kind, webhookUrl: row.webhook_url, secretConfigured: Boolean(row.secret), events: row.events ?? [], enabled: row.enabled }));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveWebhookIntegration(integration: WebhookIntegration & { secret?: string }) {
+  if (!supabaseConfigured) throw new Error('Supabase is required to persist webhook integrations.');
+  const values: Record<string, unknown> = {
+    name: integration.name.trim(),
+    kind: integration.kind,
+    webhook_url: integration.webhookUrl.trim(),
+    events: integration.events,
+    enabled: integration.enabled,
+    updated_at: new Date().toISOString(),
+  };
+  if (integration.secret !== undefined) values.secret = integration.secret.trim() || null;
+  if (integration.id) {
+    await patchRows(`webhook_integrations?id=eq.${encodeURIComponent(integration.id)}`, values);
+    return;
+  }
+  await insertRows('webhook_integrations', [{ ...values, created_at: new Date().toISOString() }]);
+}
+
+export async function deleteWebhookIntegration(id: string) {
+  if (!supabaseConfigured) return;
+  await deleteRows(`webhook_integrations?id=eq.${encodeURIComponent(id)}`);
 }

@@ -1,3 +1,4 @@
+import { collapseDuplicateJobs } from '@/lib/job-duplicates';
 import { sendDigest } from '@/lib/gmail';
 import { listJobs, logActivity } from '@/lib/store';
 
@@ -14,10 +15,12 @@ export async function GET(request: Request) {
   if (!authorizedCron(request)) return new Response('Unauthorized', { status: 401 });
   try {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    const recent = (await listJobs(500)).filter((job) => {
+    const recentRaw = (await listJobs(500)).filter((job) => {
       const discovered = job.discoveredAt ? Date.parse(job.discoveredAt) : 0;
       return discovered >= cutoff && !['closed', 'likely_closed'].includes(job.validityStatus ?? 'unknown');
     });
+    const collapsed = collapseDuplicateJobs(recentRaw);
+    const recent = collapsed.jobs;
     const jobs = recent
       .filter((job) => job.match && ['exceptional', 'strong', 'reasonable'].includes(job.match.recommendation))
       .sort((a, b) => (b.match?.overall ?? 0) - (a.match?.overall ?? 0) || (b.healthScore ?? 50) - (a.healthScore ?? 50))
@@ -27,16 +30,17 @@ export async function GET(request: Request) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
     const text = [
       'Job Agent daily insights',
-      `New viable listings in the last 24 hours: ${recent.length}.`,
+      `New unique viable listings in the last 24 hours: ${recent.length}.`,
+      collapsed.groups.length ? `${recentRaw.length - recent.length} duplicate record(s) were collapsed before this digest.` : '',
       `Recommended new matches: ${jobs.length}. Strong / exceptional among new listings: ${strongCount}.`,
       '',
       ...lines,
       '',
       appUrl ? `Dashboard: ${appUrl}/recommended` : '',
-    ].join('\n');
+    ].filter(Boolean).join('\n');
     const mail = await sendDigest(`Job Agent: ${jobs.length} new matches`, text);
-    await logActivity('cron.daily.completed', undefined, { newListings: recent.length, digestJobs: jobs.length, strongCount, mailSkipped: mail.skipped });
-    return Response.json({ ok: true, newListings: recent.length, digestJobs: jobs.length, strongCount, mail });
+    await logActivity('cron.daily.completed', undefined, { newListings: recent.length, duplicatesCollapsed: recentRaw.length - recent.length, digestJobs: jobs.length, strongCount, mailSkipped: mail.skipped });
+    return Response.json({ ok: true, newListings: recent.length, duplicatesCollapsed: recentRaw.length - recent.length, digestJobs: jobs.length, strongCount, mail });
   } catch (error) {
     await logActivity('cron.daily.failed', undefined, { error: error instanceof Error ? error.message : String(error) });
     return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });

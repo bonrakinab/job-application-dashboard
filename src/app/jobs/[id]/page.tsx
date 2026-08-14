@@ -1,9 +1,12 @@
+import { InterviewPrepCard } from '@/components/InterviewPrepCard';
 import { JobActions } from '@/components/JobActions';
+import { JobAnswerAssistant } from '@/components/JobAnswerAssistant';
 import { JobDescription } from '@/components/JobDescription';
 import { StatusPill } from '@/components/StatusPill';
 import { aiStatus } from '@/lib/ai';
 import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
 import { scoreTailoredResume } from '@/lib/ats-score';
+import { buildInterviewPrep } from '@/lib/interview-prep';
 import { getCompanyIntelligence, getJob } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 import { notFound } from 'next/navigation';
@@ -22,6 +25,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const pack = packState.pack;
   const match = job.match;
   const ats = pack && !packState.stale ? scoreTailoredResume(job, profileState.profile, pack, match) : null;
+  const interviewPrep = buildInterviewPrep(job, pack && !packState.stale ? pack : null);
   const ai = aiStatus();
   const canResearch = ai.provider === 'openai' && ai.openai;
 
@@ -112,6 +116,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         </div> : packState.stale ? <div className="notice"><b>ATS score pending.</b> Regenerate the outdated pack first so the score reflects the current resume and JD.</div> : null}
 
         <JobActions id={id} applyUrl={job.applyUrl || job.url} hasPack={Boolean(pack)} packStale={packState.stale} status={job.application?.status || 'discovered'} canResearch={canResearch}/>
+        <JobAnswerAssistant jobId={id} />
+        <InterviewPrepCard prep={interviewPrep} />
         <div className="card"><div className="kicker">Requirements extracted</div><h3>Must-have</h3><div className="tag-list">{match?.mustHave?.length ? match.mustHave.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">Run AI analysis to extract.</span>}</div><div className="divider"/><h3>Preferred</h3><div className="tag-list">{match?.preferred?.length ? match.preferred.map((item) => <span className="tag" key={item}>{item}</span>) : <span className="muted small">No preferred requirements extracted.</span>}</div></div>
         <div className="card"><div className="kicker">Source</div><div className="small"><b>{job.source}</b> · {job.sourceKey}</div><div className="divider"/><a className="btn ghost" target="_blank" rel="noreferrer" href={job.url}>Open original posting ↗</a></div>
       </div>

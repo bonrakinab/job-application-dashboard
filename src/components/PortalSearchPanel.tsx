@@ -1,4 +1,5 @@
-const query = encodeURIComponent('AI Engineer Machine Learning Engineer Data Analyst ERP Analyst Software Engineer Intern');
+const query = encodeURIComponent('AI Engineer Machine Learning Engineer Data Analyst Software Engineer ERP Analyst Oracle Fusion Oracle ERP Enterprise Applications Intern');
+const erpQuery = encodeURIComponent('Oracle Fusion ERP Oracle Cloud ERP ERP Analyst ERP Consultant Enterprise Applications Oracle Financials Oracle Procurement');
 
 const portals = [
   {
@@ -28,7 +29,7 @@ const portals = [
   {
     name: 'Himalayas',
     status: 'Live import',
-    detail: 'Public Himalayas jobs API is imported for Canada and worldwide-compatible remote roles.',
+    detail: 'Public Himalayas jobs API is imported for Canada and worldwide-compatible remote roles, including Oracle and ERP searches.',
     href: 'https://himalayas.app/jobs',
   },
   {
@@ -46,14 +47,26 @@ const portals = [
   {
     name: 'LinkedIn',
     status: 'Portal search',
-    detail: 'Direct search link. We do not use logged-in scraping or pretend LinkedIn offers a public job-search API.',
+    detail: 'Direct broad search link. We do not use logged-in scraping or pretend LinkedIn offers a public job-search API.',
     href: `https://www.linkedin.com/jobs/search/?keywords=${query}&location=Canada`,
+  },
+  {
+    name: 'LinkedIn · Oracle / ERP',
+    status: 'ERP focus',
+    detail: 'Direct Canada search for Oracle Fusion, Oracle Cloud ERP, ERP analyst/consultant and enterprise-application roles.',
+    href: `https://www.linkedin.com/jobs/search/?keywords=${erpQuery}&location=Canada`,
   },
   {
     name: 'Indeed',
     status: 'Portal search',
     detail: 'Direct Canada search link; official Indeed APIs are partner/employer oriented rather than a public search feed.',
     href: `https://ca.indeed.com/jobs?q=${query}&l=Canada`,
+  },
+  {
+    name: 'Indeed · Oracle / ERP',
+    status: 'ERP focus',
+    detail: 'Direct Canada search for Oracle Fusion ERP, Financials, Procurement, ERP analyst and implementation roles.',
+    href: `https://ca.indeed.com/jobs?q=${erpQuery}&l=Canada`,
   },
   {
     name: 'Monster',
