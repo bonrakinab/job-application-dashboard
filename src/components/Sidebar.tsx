@@ -1,6 +1,10 @@
 const links = [
   { href: '/', label: 'Dashboard', icon: '⌂' },
   { href: '/recommended', label: 'Recommended Jobs', icon: '★' },
+  { href: '/insights', label: 'Career Insights', icon: '◈' },
+  { href: '/search-profiles', label: 'Saved Searches', icon: '⌕' },
+  { href: '/answer-bank', label: 'Answer Bank', icon: '✎' },
+  { href: '/automations', label: 'Automations', icon: '↯' },
   { href: '/target-jobs', label: 'Target Company Jobs', icon: '◆' },
   { href: '/companies', label: 'Target Companies', icon: '◫' },
   { href: '/applications', label: 'Applications', icon: '◎' },
