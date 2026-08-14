@@ -9,11 +9,16 @@ export function profileForSearch(profile: CandidateProfile, searchProfile?: Sear
   };
 }
 
+function keywordMatches(text: string, keyword: string) {
+  if (keyword.length <= 3 && !keyword.includes(' ')) return ` ${text} `.includes(` ${keyword} `);
+  return text.includes(keyword);
+}
+
 export function filterJobsForSearchProfile(jobs: JobWithMatch[], searchProfile?: SearchProfile | null) {
   if (!searchProfile?.includeKeywords.length) return jobs;
   const keywords = searchProfile.includeKeywords.map(normalizeText).filter(Boolean);
   return jobs.filter((job) => {
     const text = normalizeText(`${job.title} ${job.description}`);
-    return keywords.some((keyword) => text.includes(keyword));
+    return keywords.some((keyword) => keywordMatches(text, keyword));
   });
 }
