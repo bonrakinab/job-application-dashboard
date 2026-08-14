@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
-import { scoreTailoredResume } from './ats-score';
+import { ATS_PASS_SCORE, scoreTailoredResume } from './ats-score';
 import { coverLetterBodyParagraphs, coverLetterText } from './cover-letter';
 import { resumePdf } from './application-pdf';
 import { coverLetterPdf } from './indeed-cover-letter-pdf';
@@ -69,6 +69,30 @@ test('ATS estimate rewards JD-aligned selected skills and evidence', () => {
   assert.ok(strong.skillCoverage >= 90);
   assert.deepEqual(strong.missingKeywords, []);
   assert.ok(weak.missingKeywords.includes('TypeScript'));
+  assert.equal(strong.passScore, ATS_PASS_SCORE);
+  assert.equal(strong.status, 'pass');
+  assert.equal(strong.eligibleToApply, true);
+  assert.ok(strong.overall >= 90);
+  assert.equal(weak.status, 'conditional');
+});
+
+test('unsupported mandatory requirements cannot be keyword-gamed into an ATS pass', () => {
+  const missingJavaMatch: MatchScore = {
+    ...match,
+    mustHave: ['TypeScript', 'React', 'Java'],
+    matchedSkills: ['TypeScript', 'React'],
+    missingSkills: ['Java'],
+  };
+  const misleadingPack = {
+    ...pack(['TypeScript', 'React', 'PostgreSQL', 'Python']),
+    resumeSummary: 'Software Engineer candidate with TypeScript and React experience.',
+  };
+  const score = scoreTailoredResume({ ...job, description: `${job.description} Java is required.` }, profile, misleadingPack, missingJavaMatch);
+  assert.equal(score.status, 'conditional');
+  assert.equal(score.eligibleToApply, false);
+  assert.ok(score.overall < ATS_PASS_SCORE);
+  assert.ok(score.unsupportedMustHaves.includes('Java'));
+  assert.ok(score.missingKeywords.includes('Java'));
 });
 
 test('cover letter normalizes generated prose into Indeed-style template blocks', () => {
