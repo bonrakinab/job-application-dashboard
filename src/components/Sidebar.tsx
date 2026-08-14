@@ -1,19 +1,14 @@
-const links = [
-  { href: '/', label: 'Dashboard', icon: '⌂' },
-  { href: '/recommended', label: 'Recommended Jobs', icon: '★' },
-  { href: '/insights', label: 'Career Insights', icon: '◈' },
-  { href: '/search-profiles', label: 'Saved Searches', icon: '⌕' },
-  { href: '/answer-bank', label: 'Answer Bank', icon: '✎' },
-  { href: '/automations', label: 'Automations', icon: '↯' },
-  { href: '/target-jobs', label: 'Target Company Jobs', icon: '◆' },
-  { href: '/companies', label: 'Target Companies', icon: '◫' },
+const primaryLinks = [
+  { href: '/', label: 'Overview', icon: '⌂' },
+  { href: '/recommended', label: 'Find Jobs', icon: '★' },
   { href: '/applications', label: 'Applications', icon: '◎' },
+  { href: '/workspace', label: 'Workspace', icon: '◫' },
   { href: '/settings', label: 'Settings', icon: '⚙' },
 ];
 
 function NavigationLinks({ className }: { className: string }) {
   return <nav className={className} aria-label="Primary navigation">
-    {links.map((link) => <a href={link.href} key={link.href}>
+    {primaryLinks.map((link) => <a href={link.href} key={link.href}>
       <span aria-hidden="true">{link.icon}</span>{' '}
       <span>{link.label}</span>
     </a>)}
@@ -25,7 +20,7 @@ export function Sidebar() {
     <aside className="sidebar">
       <a className="brand" href="/" aria-label="Job Agent dashboard">JOB<span>AGENT</span></a>
       <NavigationLinks className="nav" />
-      <div className="side-foot">Human approval stays between AI preparation and application submission.</div>
+      <div className="side-foot">Five main areas. Advanced tools stay inside Workspace instead of crowding the navigation.</div>
     </aside>
 
     <header className="mobile-header">
@@ -37,7 +32,7 @@ export function Sidebar() {
         </summary>
         <div className="mobile-menu-panel">
           <NavigationLinks className="mobile-nav" />
-          <div className="mobile-menu-note">AI prepares. You review before applying or sending outreach.</div>
+          <div className="mobile-menu-note">Overview → find jobs → apply → track. Everything else lives in Workspace.</div>
         </div>
       </details>
     </header>

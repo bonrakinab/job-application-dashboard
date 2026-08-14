@@ -15,35 +15,33 @@ export default async function RecommendedJobsPage({ searchParams }: { searchPara
   const recommendations = rankRecommendedJobs(searchJobs, effectiveProfile)
     .filter((item) => !selectedProfile || item.match.overall >= selectedProfile.minMatch);
   const highlySuitable = recommendations.filter((item) => item.highlySuitable).length;
-  const internships = recommendations.filter((item) => item.stage === 'internship').length;
 
   return <>
-    <div className="topbar">
+    <div className="topbar simple-topbar">
       <div>
-        <div className="eyebrow">Résumé-based ranking</div>
-        <h1 className="title">Recommended jobs</h1>
-        <div className="sub">High-fit opportunities based on your role targets, skills, education, experience, location preferences and hard eligibility checks. Internships and new-grad roles are intentionally included.</div>
+        <div className="eyebrow">Find jobs</div>
+        <h1 className="title">Best matches</h1>
+        <div className="sub">A shorter list of jobs worth reviewing first. Change the search profile when you want to focus on ERP, AI/ML, software, data, IT or automation roles.</div>
       </div>
-      <div className="row">
-        <a className="btn ghost" href="/search-profiles">Manage searches</a>
-        <a className="btn ghost" href="/">View all jobs →</a>
-      </div>
+      <a className="btn ghost" href="/jobs">All jobs →</a>
     </div>
 
-    <div className="grid recommendation-metrics">
+    <div className="grid find-metrics">
       <div className="metric"><div className="label">Recommended</div><div className="value">{recommendations.length}</div></div>
       <div className="metric"><div className="label">Highly suitable</div><div className="value">{highlySuitable}</div></div>
-      <div className="metric"><div className="label">Internships</div><div className="value">{internships}</div></div>
-      <div className="metric"><div className="label">All discovered</div><div className="value">{jobs.length}</div></div>
+      <div className="metric"><div className="label">Total discovered</div><div className="value">{jobs.length}</div></div>
     </div>
 
-    {selectedProfile ? <div className="success" style={{ marginBottom: 15 }}><b>Search profile:</b> {selectedProfile.name}. {selectedProfile.description} Minimum match: {selectedProfile.minMatch}/100. <a href="/recommended" style={{ textDecoration: 'underline' }}>Clear filter</a></div> : null}
-    <div className="notice">“Priority” is an internal review order, not an employer ATS score or probability of getting an interview. Hard blockers still override ranking. Exact duplicate title/company listings are collapsed to a canonical job in this view.</div>
+    {selectedProfile ? <div className="active-search-banner"><div><b>{selectedProfile.name}</b><span>{selectedProfile.description}</span></div><a href="/recommended">Clear filter</a></div> : null}
 
-    <div className="section-head"><h2>Your recommended listings</h2><span className="small muted">The existing dashboard continues to keep every other discovered job.</span></div>
     <RecommendedJobsClient items={recommendations} searchProfiles={searchProfiles} selectedProfileId={selectedProfile?.id} />
 
-    <div className="section-head"><h2>Broaden the search</h2><span className="small muted">Live imports where a safe public feed exists; direct portal searches where it does not.</span></div>
-    <PortalSearchPanel />
+    <details className="advanced-panel">
+      <summary>More ways to search</summary>
+      <div className="advanced-panel-body">
+        <p className="small muted">Use these only when the ranked list is too narrow. Live sources continue importing automatically.</p>
+        <PortalSearchPanel />
+      </div>
+    </details>
   </>;
 }
