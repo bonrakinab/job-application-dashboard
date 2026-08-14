@@ -24,6 +24,15 @@ test('matches remote and hybrid workplace types', () => {
   assert.equal(jobMatchesType({ ...base, location: 'Remote - Canada' }, 'remote'), true);
 });
 
+test('matches explicit on-site and structured non-remote jobs', () => {
+  assert.equal(jobMatchesType({ ...base, workplaceType: 'On-site' }, 'on-site'), true);
+  assert.equal(jobMatchesType({ ...base, workplaceType: 'In office' }, 'on-site'), true);
+  assert.equal(jobMatchesType({ ...base, remote: false, location: 'Toronto, ON' }, 'on-site'), true);
+  assert.equal(jobMatchesType({ ...base, remote: false, workplaceType: 'Hybrid' }, 'on-site'), false);
+  assert.equal(jobMatchesType({ ...base, remote: true }, 'on-site'), false);
+});
+
 test('returns multiple useful labels', () => {
   assert.deepEqual(jobTypeLabels({ ...base, employmentType: 'Full-time', workplaceType: 'Hybrid' }), ['Full-time', 'Hybrid']);
+  assert.deepEqual(jobTypeLabels({ ...base, employmentType: 'Full-time', workplaceType: 'On-site' }), ['Full-time', 'On-site']);
 });
