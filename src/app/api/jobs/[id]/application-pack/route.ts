@@ -1,12 +1,13 @@
-import { createApplicationPack, selectedAIProvider } from '@/lib/ai';
+import { createApplicationPack, researchCompanyAndHiringTeam, selectedAIProvider } from '@/lib/ai';
 import { withPersistentApplicationSkills } from '@/lib/application-skill-policy';
 import { getCandidateProfileState } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
-import { withJdProjectAlignedCoverLetter } from '@/lib/cover-letter-tailoring';
+import { hasUsableJobDescription } from '@/lib/cover-letter-tailoring';
 import { isJobClosed, verifyJobAvailability } from '@/lib/job-validity';
+import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-ai';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { attachApplicationPackGenerationMeta } from '@/lib/resume-tailoring';
-import { getJob, saveApplicationPack, saveJobValidity } from '@/lib/store';
+import { getCompanyIntelligence, getJob, saveApplicationPack, saveCompanyIntelligence, saveJobValidity } from '@/lib/store';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -28,8 +29,20 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const employerProfile = externalApplicationProfile(profileState.profile);
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
     const { pack: generatedPack, model } = await createApplicationPack(job, applicationProfile, job.match);
-    const alignedPack = withJdProjectAlignedCoverLetter(generatedPack, applicationProfile, job, job.match);
-    const skillsPolicyPack = withPersistentApplicationSkills(alignedPack, applicationProfile);
+
+    let research = await getCompanyIntelligence(job.company);
+    if (!research && !hasUsableJobDescription(job) && process.env.OPENAI_API_KEY) {
+      try {
+        const result = await researchCompanyAndHiringTeam(job);
+        research = result.research;
+        await saveCompanyIntelligence(job.company, result.research);
+      } catch {
+        // Sparse JDs benefit from company context, but cover-letter generation must still work if research is unavailable.
+      }
+    }
+
+    const professionalPack = await withProfessionalCoverLetterAI(generatedPack, applicationProfile, job, job.match, research);
+    const skillsPolicyPack = withPersistentApplicationSkills(professionalPack, applicationProfile);
     const pack = attachApplicationPackGenerationMeta(skillsPolicyPack, {
       model,
       provider: selectedAIProvider(),
