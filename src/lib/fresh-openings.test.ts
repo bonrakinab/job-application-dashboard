@@ -15,6 +15,7 @@ function job(id: string, discoveredAt: string, postedAt?: string): JobWithMatch 
     url: `https://example.com/${id}`,
     title: `Role ${id}`,
     company: 'Example',
+    description: 'Example job description.',
     discoveredAt,
     postedAt,
   };
