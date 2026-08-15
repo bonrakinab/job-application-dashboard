@@ -79,7 +79,7 @@ test('software/backend roles promote software, algorithms, database, or Java cou
   assert.equal(courses.includes('Neural Networks and Deep Learning'), false);
 });
 
-test('resume education keeps the original degree truth and adds at most two selected courses per degree', () => {
+test('resume education preserves degree text and carries at most two selected courses separately', () => {
   const pack = {
     summary: '', resumeHeadline: '', resumeSummary: '', skills: [], experience: [], projects: [],
     education: [
@@ -90,7 +90,8 @@ test('resume education keeps the original degree truth and adds at most two sele
   } satisfies ApplicationPack;
   const rendered = profileWithTailoredCourseworkForResume(profile, pack);
   assert.equal(rendered.degrees?.[0].end, 'Aug 2026 (Expected)');
-  assert.match(rendered.degrees?.[0].field ?? '', /Relevant Coursework: Neural Networks and Deep Learning, Statistical Learning/);
-  assert.doesNotMatch(rendered.degrees?.[0].field ?? '', /Topics: Applied Artificial Intelligence/);
-  assert.match(rendered.degrees?.[1].field ?? '', /Relevant Coursework: Data Structures and Algorithms, Software Engineering/);
+  assert.equal(rendered.degrees?.[0].field, 'AI Specialization');
+  assert.deepEqual(rendered.degrees?.[0].coursework, ['Neural Networks and Deep Learning', 'Statistical Learning']);
+  assert.equal(rendered.degrees?.[1].field, 'Computer Science and Engineering');
+  assert.deepEqual(rendered.degrees?.[1].coursework, ['Data Structures and Algorithms', 'Software Engineering']);
 });
