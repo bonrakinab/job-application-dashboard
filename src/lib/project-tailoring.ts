@@ -18,6 +18,15 @@ type TaggedProject = ProjectItem & {
 
 const DEFAULT_THESIS_PROJECT = 'MSc Thesis - Color-Aware Composed Image Retrieval';
 
+const HIGH_SELECTIVITY_COMPANY_PATTERNS = [
+  /\bgoogle\b/, /\balphabet\b/, /\bamazon\b/, /\baws\b/, /\bapple\b/, /\bmeta\b/, /\bfacebook\b/,
+  /\bmicrosoft\b/, /\bnetflix\b/, /\bnvidia\b/, /\bopenai\b/, /\banthropic\b/, /\btesla\b/,
+  /\buber\b/, /\bairbnb\b/, /\bstripe\b/, /\bdatabricks\b/, /\bsnowflake\b/, /\bsalesforce\b/,
+  /\badobe\b/, /\boracle\b/, /\bibm\b/, /\bintel\b/, /\bamd\b/, /\bcisco\b/, /\bpalantir\b/,
+  /\bbytedance\b/, /\btik ?tok\b/, /\bshopify\b/, /\bservice ?now\b/, /\bwalmart\b/,
+  /\bunitedhealth\b/, /\boptum\b/, /\bcvs health\b/, /\bjpmorgan(?: chase)?\b/, /\bberkshire hathaway\b/,
+];
+
 const TITLE_SIGNALS: Array<[ProjectRoleFamily, RegExp[]]> = [
   ['ai-ml', [
     /\bmachine learning\b/, /\bml engineer/, /\bml(?:\s+\w+){0,2}\s+engineer\b/,
@@ -88,14 +97,25 @@ function isDefaultThesisProject(project: ProjectItem) {
     || name.includes('color aware composed image retrieval');
 }
 
+function projectRoleFamilies(project: ProjectItem) {
+  return (project as TaggedProject).roleFamilies ?? [];
+}
+
+function isAiMlProject(project: ProjectItem) {
+  return projectRoleFamilies(project).includes('ai-ml');
+}
+
+export function isHighSelectivityTargetCompany(company: string) {
+  const normalized = normalizeText(company);
+  return HIGH_SELECTIVITY_COMPANY_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
 export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' | 'department'>): ProjectRoleFamily[] {
   const title = normalizeText(`${job.title} ${job.department ?? ''}`);
   const description = normalizeText(job.description ?? '');
   const titleFamilies = new Set<ProjectRoleFamily>();
   addTitleFamilies(title, titleFamilies);
 
-  // Explicit AI/ML titles are dominant even when words such as platform,
-  // software, APIs, or cloud also appear in the posting.
   if (titleFamilies.has('ai-ml')) {
     const dominant = new Set<ProjectRoleFamily>(['ai-ml']);
     if (titleFamilies.has('cybersecurity')) dominant.add('cybersecurity');
@@ -106,9 +126,6 @@ export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' 
   const businessSystemsTitle = /\bbusiness systems?\b/.test(title);
   if (explicitErpTitle && !businessSystemsTitle) return ['erp-enterprise'];
 
-  // When the title already identifies a role family, keep that family strict.
-  // Only business/IT roles may add ERP because enterprise-system context changes
-  // the actual work domain rather than merely sharing generic technologies.
   if (titleFamilies.size) {
     const families = new Set<ProjectRoleFamily>(titleFamilies);
     if (businessSystemsTitle) families.add('business-analysis');
@@ -119,7 +136,6 @@ export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' 
     return [...families];
   }
 
-  // Ambiguous titles can fall back to the JD body, but only with several signals.
   const inferred = new Set<ProjectRoleFamily>();
   for (const family of Object.keys(DESCRIPTION_SIGNALS) as ProjectRoleFamily[]) {
     if (descriptionHits(description, family) >= 3) inferred.add(family);
@@ -146,6 +162,55 @@ function lexicalProjectScore(project: ProjectItem, job: Job) {
   return score;
 }
 
+function evidenceStrength(project: ProjectItem) {
+  const bullets = project.bullets ?? [];
+  const metrics = bullets.join(' ').match(/\b\d+(?:[.,]\d+)?(?:%|\+)?\b/g)?.length ?? 0;
+  return bullets.length * 2 + metrics * 3 + (project.skills?.length ?? 0) * 0.25;
+}
+
+function rankProjects(projects: ProjectItem[], job: Job, families?: Set<ProjectRoleFamily>) {
+  return projects
+    .map((project, index) => {
+      const tagged = projectRoleFamilies(project);
+      const familyHits = families?.size ? tagged.filter((family) => families.has(family)).length : 0;
+      const lexical = lexicalProjectScore(project, job);
+      return { project, index, familyHits, lexical, score: familyHits * 100 + lexical * 2 + evidenceStrength(project) };
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+}
+
+function selectForHighSelectivityCompany(projects: ProjectItem[], job: Job, families: Set<ProjectRoleFamily>, limit: number) {
+  const selected: ProjectItem[] = [];
+  const defaultThesis = projects.find(isDefaultThesisProject);
+  if (defaultThesis) selected.push(defaultThesis);
+
+  const availableMl = projects.filter(isAiMlProject);
+  const minimumMl = Math.min(2, limit, availableMl.length);
+  const rankedMl = rankProjects(availableMl.filter((project) => project !== defaultThesis), job);
+  for (const item of rankedMl) {
+    if (selected.filter(isAiMlProject).length >= minimumMl || selected.length >= limit) break;
+    if (!selected.includes(item.project)) selected.push(item.project);
+  }
+
+  if (selected.length < limit && families.size) {
+    const relevant = rankProjects(projects.filter((project) => !selected.includes(project)), job, families)
+      .filter((item) => item.familyHits > 0);
+    for (const item of relevant) {
+      if (selected.length >= limit) break;
+      selected.push(item.project);
+    }
+  }
+
+  if (selected.length < limit) {
+    for (const item of rankProjects(projects.filter((project) => !selected.includes(project)), job)) {
+      if (selected.length >= limit) break;
+      if (isAiMlProject(item.project)) selected.push(item.project);
+    }
+  }
+
+  return selected.slice(0, limit);
+}
+
 export function selectProjectsForJob(profile: CandidateProfile, job: Job, maxProjects = 3): ProjectItem[] {
   const limit = Math.max(0, maxProjects);
   if (!limit) return [];
@@ -153,19 +218,15 @@ export function selectProjectsForJob(profile: CandidateProfile, job: Job, maxPro
   const projects = profile.projects ?? [];
   const defaultThesis = projects.find(isDefaultThesisProject);
   const families = new Set(inferProjectRoleFamilies(job));
-  const remainingSlots = Math.max(0, limit - (defaultThesis ? 1 : 0));
 
+  if (isHighSelectivityTargetCompany(job.company)) {
+    return selectForHighSelectivityCompany(projects, job, families, limit);
+  }
+
+  const remainingSlots = Math.max(0, limit - (defaultThesis ? 1 : 0));
   const relevant = families.size && remainingSlots
-    ? projects
-      .filter((project) => project !== defaultThesis)
-      .map((project, index) => {
-        const projectFamilies = (project as TaggedProject).roleFamilies ?? [];
-        const familyHits = projectFamilies.filter((family) => families.has(family)).length;
-        const lexical = lexicalProjectScore(project, job);
-        return { project, index, familyHits, lexical, score: familyHits * 100 + lexical };
-      })
+    ? rankProjects(projects.filter((project) => project !== defaultThesis), job, families)
       .filter((item) => item.familyHits > 0)
-      .sort((a, b) => b.score - a.score || a.index - b.index)
       .slice(0, remainingSlots)
       .map((item) => item.project)
     : [];

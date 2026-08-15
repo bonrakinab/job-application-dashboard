@@ -109,6 +109,20 @@ class ResumeCanvas {
   }
 }
 
+function fitsSideBySide(
+  leftText: string,
+  rightText: string,
+  leftSize: number,
+  rightSize: number,
+  leftFont: FontName,
+  rightFont: FontName,
+  leftX = MARGIN + 11,
+  gap = 14,
+) {
+  if (!rightText) return true;
+  return width(leftText, leftSize, leftFont) + width(rightText, rightSize, rightFont) + gap <= RIGHT - leftX;
+}
+
 function roleSource(profile: CandidateProfile, organization: string, title: string) {
   return (profile.experience ?? []).find((item) => normalizeText(item.organization) === normalizeText(organization) && normalizeText(item.title) === normalizeText(title));
 }
@@ -174,6 +188,54 @@ function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: A
   }
 }
 
+function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
+  for (const degree of profile.degrees ?? []) {
+    const left = MARGIN + 11;
+    const institutionSize = canvas.size(8.45);
+    const locationSize = canvas.size(7.4);
+    const degreeSize = canvas.size(7.55);
+    const dateSize = canvas.size(7.4);
+    const courseSize = canvas.size(7.15);
+
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
+    canvas.text(degree.institution, left, canvas.y, institutionSize, 'TB');
+    if (degree.location && fitsSideBySide(degree.institution, degree.location, institutionSize, locationSize, 'TB', 'TR', left)) {
+      canvas.right(degree.location, canvas.y, locationSize);
+      canvas.consume(8.6);
+    } else {
+      canvas.consume(8.6);
+      if (degree.location) {
+        canvas.right(degree.location, canvas.y, locationSize);
+        canvas.consume(7.8);
+      }
+    }
+
+    const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
+    const dates = dateRange(degree.start, degree.end);
+    canvas.text(degreeText, left, canvas.y, degreeSize, 'TI');
+    if (dates && fitsSideBySide(degreeText, dates, degreeSize, dateSize, 'TI', 'TI', left)) {
+      canvas.right(dates, canvas.y, dateSize, 'TI');
+      canvas.consume(8.5);
+    } else {
+      canvas.consume(8.5);
+      if (dates) {
+        canvas.right(dates, canvas.y, dateSize, 'TI');
+        canvas.consume(7.8);
+      }
+    }
+
+    const courses = (degree.coursework ?? []).slice(0, 2);
+    if (courses.length) {
+      const courseworkText = `Relevant Coursework: ${courses.join(', ')}`;
+      for (const line of wrapWidth(courseworkText, RIGHT - left, courseSize, 'TI')) {
+        canvas.text(line, left, canvas.y, courseSize, 'TI');
+        canvas.consume(7.7);
+      }
+    }
+    canvas.consume(0.8);
+  }
+}
+
 function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
   const canvas = new ResumeCanvas(options.scale);
   canvas.center(profile.name, canvas.y, canvas.size(24.5), 'TB');
@@ -189,17 +251,7 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
   renderSkills(canvas, profile, pack);
   if (pack.projects.length) { canvas.section('Projects'); renderProjects(canvas, profile, pack, options); }
   canvas.section('Education');
-  for (const degree of profile.degrees ?? []) {
-    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-    canvas.text(degree.institution, MARGIN + 11, canvas.y, canvas.size(8.45), 'TB');
-    if (degree.location) canvas.right(degree.location, canvas.y, canvas.size(7.4));
-    canvas.consume(8.6);
-    const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    canvas.text(degreeText, MARGIN + 11, canvas.y, canvas.size(7.55), 'TI');
-    const dates = dateRange(degree.start, degree.end);
-    if (dates) canvas.right(dates, canvas.y, canvas.size(7.4), 'TI');
-    canvas.consume(8.5);
-  }
+  renderEducation(canvas, profile);
   if ((profile.certifications ?? []).length) {
     canvas.section('Certifications');
     for (const certification of profile.certifications ?? []) {
