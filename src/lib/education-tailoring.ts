@@ -1,4 +1,4 @@
-import type { CandidateProfile, Job, MatchScore } from './types';
+import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
 import { normalizeText } from './utils';
 
 export interface TailoredEducationItem {
@@ -115,12 +115,11 @@ export function tailorRelevantCoursework(job: Job, profile: CandidateProfile, ma
     if (remaining <= 0) break;
     const available = [...new Set((degree.coursework ?? []).filter(Boolean))];
     if (!available.length) continue;
-    const perDegreeLimit = /master|msc/i.test(`${degree.degree} ${degree.field ?? ''}`) ? 3 : 3;
     const ranked = available
       .map((course, index) => ({ course, index, score: courseScore(course, jobContext) }))
       .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score || a.index - b.index)
-      .slice(0, Math.min(perDegreeLimit, remaining));
+      .slice(0, Math.min(3, remaining));
     if (!ranked.length) continue;
     result.push({
       institution: degree.institution,
@@ -132,4 +131,28 @@ export function tailorRelevantCoursework(job: Job, profile: CandidateProfile, ma
   }
 
   return result;
+}
+
+export function profileWithTailoredCourseworkForResume(profile: CandidateProfile, pack: ApplicationPack): CandidateProfile {
+  const selected = new Map((pack.education ?? []).map((item) => [
+    `${normalizeText(item.institution)}|${normalizeText(item.degree)}`,
+    item.coursework,
+  ]));
+
+  return {
+    ...profile,
+    degrees: (profile.degrees ?? []).map((degree) => {
+      const key = `${normalizeText(degree.institution)}|${normalizeText(degree.degree)}`;
+      const courses = (selected.get(key) ?? []).slice(0, 2);
+      if (!courses.length) return degree;
+      const field = /artificial intelligence specialization/i.test(degree.field ?? '')
+        ? 'AI Specialization'
+        : degree.field;
+      const coursework = `Relevant Coursework: ${courses.join(', ')}`;
+      return {
+        ...degree,
+        field: [field, coursework].filter(Boolean).join('; '),
+      };
+    }),
+  };
 }
