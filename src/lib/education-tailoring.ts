@@ -144,14 +144,10 @@ export function profileWithTailoredCourseworkForResume(profile: CandidateProfile
     degrees: (profile.degrees ?? []).map((degree) => {
       const key = `${normalizeText(degree.institution)}|${normalizeText(degree.degree)}`;
       const courses = (selected.get(key) ?? []).slice(0, 2);
-      if (!courses.length) return degree;
-      const field = /artificial intelligence specialization/i.test(degree.field ?? '')
-        ? 'AI Specialization'
-        : degree.field;
-      const coursework = `Relevant Coursework: ${courses.join(', ')}`;
       return {
         ...degree,
-        field: [field, coursework].filter(Boolean).join('; '),
+        field: /artificial intelligence specialization/i.test(degree.field ?? '') ? 'AI Specialization' : degree.field,
+        coursework: courses,
       };
     }),
   };
