@@ -4,6 +4,7 @@ import { getCandidateProfileState } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
 import { optimizeApplicationPackForAts } from '@/lib/ats-optimizer';
 import { hasUsableJobDescription } from '@/lib/cover-letter-tailoring';
+import { tailorRelevantCoursework } from '@/lib/education-tailoring';
 import { isJobClosed, verifyJobAvailability } from '@/lib/job-validity';
 import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-ai';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
@@ -61,7 +62,11 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     }
 
     const skillsPolicyPack = withPersistentApplicationSkills(generation.pack, applicationProfile);
-    const optimized = optimizeApplicationPackForAts(job, applicationProfile, skillsPolicyPack, match);
+    const courseworkPack = {
+      ...skillsPolicyPack,
+      education: tailorRelevantCoursework(job, applicationProfile, match),
+    };
+    const optimized = optimizeApplicationPackForAts(job, applicationProfile, courseworkPack, match);
 
     let research = await getCompanyIntelligence(job.company);
     if (!research && !hasUsableJobDescription(job) && process.env.OPENAI_API_KEY) {
