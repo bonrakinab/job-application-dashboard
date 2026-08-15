@@ -1,4 +1,5 @@
 import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
+import { profileWithTailoredCourseworkForResume } from '@/lib/education-tailoring';
 import { getJob } from '@/lib/store';
 import { resumePdf } from '@/lib/application-pdf';
 import { slug } from '@/lib/utils';
@@ -14,7 +15,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (packState.stale) {
     return Response.json({ error: 'This tailored resume is outdated. Regenerate the application pack before downloading.', reasons: packState.reasons }, { status: 409 });
   }
-  const pdf = resumePdf(profileState.profile, job, packState.pack);
+  const resumeProfile = profileWithTailoredCourseworkForResume(profileState.profile, packState.pack);
+  const pdf = resumePdf(resumeProfile, job, packState.pack);
   return new Response(new Uint8Array(pdf), {
     headers: {
       'Content-Type': 'application/pdf',
