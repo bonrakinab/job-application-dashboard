@@ -6,7 +6,7 @@ import { StatusPill } from '@/components/StatusPill';
 import { aiStatus } from '@/lib/ai';
 import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
-import { scoreTailoredResume } from '@/lib/ats-score';
+import { scoreTailoredResumeWithCoursework } from '@/lib/ats-coursework';
 import { buildInterviewPrep } from '@/lib/interview-prep';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { getCompanyIntelligence, getJob } from '@/lib/store';
@@ -27,7 +27,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const pack = packState.pack;
   const match = job.match;
   const applicationProfile = projectTailoredApplicationProfile(externalApplicationProfile(profileState.profile), job);
-  const ats = pack && !packState.stale ? scoreTailoredResume(job, applicationProfile, pack, match) : null;
+  const ats = pack && !packState.stale ? scoreTailoredResumeWithCoursework(job, applicationProfile, pack, match) : null;
   const interviewPrep = buildInterviewPrep(job, pack && !packState.stale ? pack : null);
   const ai = aiStatus();
   const canResearch = ai.openai;
@@ -82,6 +82,11 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <div className="divider"/>
           <div className="kicker">Selected resume evidence</div>
           <div className="tag-list">{pack.skills.slice(0, 24).map((item) => <span className="tag" key={item}>{item}</span>)}</div>
+          {pack.education?.some((item) => item.coursework.length) ? <>
+            <div className="divider"/>
+            <div className="kicker">Relevant coursework · verified transcripts</div>
+            {pack.education.map((item) => item.coursework.length ? <div className="small" style={{ marginBottom: 10 }} key={`${item.institution}-${item.degree}`}><b>{item.institution}</b><div className="tag-list" style={{ marginTop: 6 }}>{item.coursework.map((course) => <span className="tag" key={course}>{course}</span>)}</div></div> : null)}
+          </> : null}
           <div className="divider"/>
           <div className="kicker">Cover letter body</div>
           <p className="small" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{pack.coverLetter}</p>
