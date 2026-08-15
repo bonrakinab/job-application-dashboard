@@ -1,6 +1,7 @@
 const primaryLinks = [
   { href: '/', label: 'Overview', icon: '⌂' },
   { href: '/recommended', label: 'Find Jobs', icon: '★' },
+  { href: '/fresh-openings', label: 'Fresh openings', icon: '✦' },
   { href: '/applications', label: 'Applications', icon: '◎' },
   { href: '/workspace', label: 'Workspace', icon: '◫' },
   { href: '/settings', label: 'Settings', icon: '⚙' },
@@ -20,7 +21,7 @@ export function Sidebar() {
     <aside className="sidebar">
       <a className="brand" href="/" aria-label="Job Agent dashboard">JOB<span>AGENT</span></a>
       <NavigationLinks className="nav" />
-      <div className="side-foot">Five main areas. Advanced tools stay inside Workspace instead of crowding the navigation.</div>
+      <div className="side-foot">Six main areas. Advanced tools stay inside Workspace instead of crowding the navigation.</div>
     </aside>
 
     <header className="mobile-header">
@@ -32,7 +33,7 @@ export function Sidebar() {
         </summary>
         <div className="mobile-menu-panel">
           <NavigationLinks className="mobile-nav" />
-          <div className="mobile-menu-note">Overview → find jobs → apply → track. Everything else lives in Workspace.</div>
+          <div className="mobile-menu-note">Overview → fresh openings → find jobs → apply → track. Everything else lives in Workspace.</div>
         </div>
       </details>
     </header>
