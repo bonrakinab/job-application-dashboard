@@ -72,6 +72,7 @@ export interface EducationItem {
   end?: string;
   location?: string;
   gpa?: string;
+  coursework?: string[];
 }
 
 export interface SkillGroup {
@@ -170,6 +171,12 @@ export interface ApplicationPack {
   projects: Array<{
     name: string;
     bullets: string[];
+  }>;
+  education?: Array<{
+    institution: string;
+    degree: string;
+    field?: string;
+    coursework: string[];
   }>;
   coverLetter: string;
   outreachMessage: string;
