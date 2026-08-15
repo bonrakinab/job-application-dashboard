@@ -1,4 +1,5 @@
-import { ATS_PASS_SCORE, scoreTailoredResume, type AtsReadinessScore } from './ats-score';
+import { ATS_PASS_SCORE, type AtsReadinessScore } from './ats-score';
+import { scoreTailoredResumeWithCoursework } from './ats-coursework';
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
 import { normalizeText } from './utils';
 
@@ -157,7 +158,7 @@ export function optimizeApplicationPackForAts(
   initialPack: ApplicationPack,
   match?: MatchScore,
 ): { pack: ApplicationPack; score: AtsReadinessScore } {
-  const initialScore = scoreTailoredResume(job, profile, initialPack, match);
+  const initialScore = scoreTailoredResumeWithCoursework(job, profile, initialPack, match);
   let bestPack = initialPack;
   let bestScore = initialScore;
   let attempts = 0;
@@ -166,7 +167,7 @@ export function optimizeApplicationPackForAts(
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       attempts = attempt;
       const candidate = retunePack(job, profile, bestPack, match, attempt);
-      const candidateScore = scoreTailoredResume(job, profile, candidate, match);
+      const candidateScore = scoreTailoredResumeWithCoursework(job, profile, candidate, match);
       if (candidateScore.overall >= bestScore.overall) {
         bestPack = candidate;
         bestScore = candidateScore;
@@ -189,5 +190,5 @@ export function optimizeApplicationPackForAts(
     },
   };
 
-  return { pack, score: scoreTailoredResume(job, profile, pack, match) };
+  return { pack, score: scoreTailoredResumeWithCoursework(job, profile, pack, match) };
 }
