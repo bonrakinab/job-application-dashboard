@@ -3,7 +3,7 @@
  * The PDF renderer consumes this module so template changes are versioned and
  * can invalidate previously generated application packs.
  */
-export const RESUME_TEMPLATE_VERSION = 'arnob-latex-reference.v4-full-page';
+export const RESUME_TEMPLATE_VERSION = 'arnob-latex-reference.v5-jd-coursework';
 
 export const RESUME_PAGE = {
   width: 595.28,
