@@ -1,4 +1,5 @@
 import { analyzeJobWithAI, createApplicationPack, researchCompanyAndHiringTeam } from '@/lib/ai';
+import { applicationPackEligibility } from '@/lib/application-pack-eligibility';
 import { withPersistentApplicationSkills } from '@/lib/application-skill-policy';
 import { getCandidateProfileState } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
@@ -32,6 +33,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     if (isJobClosed(verification.validityStatus)) {
       return Response.json({
         error: verification.closureReason || 'This posting appears to be closed or no longer applyable. Application-pack generation was stopped.',
+        code: 'POSTING_CLOSED',
         verification,
       }, { status: 409 });
     }
@@ -45,6 +47,31 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         match = refreshed;
         await saveMatch(id, refreshed);
       }
+    }
+
+    const eligibility = applicationPackEligibility(match);
+    if (!eligibility.allowed) {
+      await logActivity('application_pack.blocked', id, {
+        jobId: id,
+        company: job.company,
+        title: job.title,
+        recommendation: match?.recommendation ?? null,
+        overall: match?.overall ?? null,
+        code: eligibility.code,
+        blockers: eligibility.blockers,
+        at: new Date().toISOString(),
+      });
+      return Response.json({
+        error: eligibility.reason,
+        code: 'APPLICATION_PACK_BLOCKED',
+        blockCode: eligibility.code,
+        blockers: eligibility.blockers,
+        match: match ? {
+          overall: match.overall,
+          recommendation: match.recommendation,
+        } : null,
+        verification,
+      }, { status: 422 });
     }
 
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
@@ -89,6 +116,17 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       profileUpdatedAt: profileState.updatedAt,
     });
     await saveApplicationPack(id, pack, generation.model);
+    await logActivity('application_pack.completed', id, {
+      jobId: id,
+      company: job.company,
+      title: job.title,
+      provider: generation.providerUsed,
+      model: generation.model,
+      usedFallback: Boolean(generation.fallbackReason),
+      ats: optimized.score.overall,
+      atsStatus: optimized.score.status,
+      at: new Date().toISOString(),
+    });
     return Response.json({
       pack,
       model: generation.model,
@@ -110,6 +148,6 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     } catch {
       // Do not mask the primary generation error if diagnostics cannot be persisted.
     }
-    return Response.json({ error: message }, { status: 400 });
+    return Response.json({ error: message, code: 'APPLICATION_PACK_FAILED' }, { status: 500 });
   }
 }
