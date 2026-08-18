@@ -23,6 +23,14 @@ function needsDetailedRequirementAnalysis(match: MatchScore | undefined, descrip
   return description.trim().length >= 300 && (model.startsWith('deterministic') || noRequirements);
 }
 
+async function safeLogActivity(event: string, jobId: string | undefined, payload: unknown) {
+  try {
+    await logActivity(event, jobId, payload);
+  } catch {
+    // Diagnostics must never make an otherwise valid application-pack request fail.
+  }
+}
+
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [job, profileState] = await Promise.all([getJob(id), getCandidateProfileState()]);
@@ -51,7 +59,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
     const eligibility = applicationPackEligibility(match);
     if (!eligibility.allowed) {
-      await logActivity('application_pack.blocked', id, {
+      await safeLogActivity('application_pack.blocked', id, {
         jobId: id,
         company: job.company,
         title: job.title,
@@ -77,7 +85,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
     const generation = await createApplicationPack(job, applicationProfile, match);
     if (generation.fallbackReason) {
-      await logActivity('application_pack.ai_fallback', id, {
+      await safeLogActivity('application_pack.ai_fallback', id, {
         jobId: id,
         company: job.company,
         title: job.title,
@@ -116,7 +124,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       profileUpdatedAt: profileState.updatedAt,
     });
     await saveApplicationPack(id, pack, generation.model);
-    await logActivity('application_pack.completed', id, {
+    await safeLogActivity('application_pack.completed', id, {
       jobId: id,
       company: job.company,
       title: job.title,
@@ -137,17 +145,13 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    try {
-      await logActivity('application_pack.failed', id, {
-        jobId: id,
-        company: job.company,
-        title: job.title,
-        message: message.slice(0, 1600),
-        at: new Date().toISOString(),
-      });
-    } catch {
-      // Do not mask the primary generation error if diagnostics cannot be persisted.
-    }
+    await safeLogActivity('application_pack.failed', id, {
+      jobId: id,
+      company: job.company,
+      title: job.title,
+      message: message.slice(0, 1600),
+      at: new Date().toISOString(),
+    });
     return Response.json({ error: message, code: 'APPLICATION_PACK_FAILED' }, { status: 500 });
   }
 }
