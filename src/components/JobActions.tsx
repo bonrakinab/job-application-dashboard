@@ -23,6 +23,9 @@ export function JobActions({
   atsEligible = false,
   atsScore,
   atsPassScore = 90,
+  packGenerationAllowed = true,
+  packGenerationReason,
+  packGenerationBlockers = [],
 }: {
   id: string;
   applyUrl?: string;
@@ -34,6 +37,9 @@ export function JobActions({
   atsEligible?: boolean;
   atsScore?: number;
   atsPassScore?: number;
+  packGenerationAllowed?: boolean;
+  packGenerationReason?: string;
+  packGenerationBlockers?: string[];
 }) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
@@ -66,7 +72,15 @@ export function JobActions({
     try {
       const response = await fetch(path, { method: 'POST' });
       const json = await response.json();
-      if (!response.ok) throw new Error(json.error || 'Action failed');
+      if (!response.ok) {
+        if (json.code === 'APPLICATION_PACK_BLOCKED') {
+          const blockers = Array.isArray(json.blockers) ? json.blockers.filter(Boolean) : [];
+          setMsg([json.error, ...blockers].filter(Boolean).join(' '));
+          router.refresh();
+          return;
+        }
+        throw new Error(json.error || 'Action failed');
+      }
       if (json.verification?.validityStatus) {
         setCurrentValidity(json.verification.validityStatus as JobValidityStatus);
         setCurrentHealth(Number(json.verification.healthScore));
@@ -174,12 +188,18 @@ export function JobActions({
       <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Re-analyze</button>
       <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
       {!canResearch ? <span className="small muted">Grounded company web research requires the OpenAI connection.</span> : null}
-      <button className="btn primary" disabled={Boolean(busy) || closed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
+      <button className="btn primary" disabled={Boolean(busy) || closed || !packGenerationAllowed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
         {packStale ? 'Regenerate + ATS optimize application pack' : hasPack ? 'Regenerate + ATS optimize application pack' : 'Generate + ATS optimize application pack'}
       </button>
-      <span className="small muted">Generation automatically retargets verified resume evidence toward the {atsPassScore}+ ATS pass standard. Unsupported experience is never inserted to force a pass.</span>
+      {packGenerationAllowed
+        ? <span className="small muted">Generation automatically retargets verified resume evidence toward the {atsPassScore}+ ATS pass standard. Unsupported experience is never inserted to force a pass.</span>
+        : <div className="notice" style={{ marginBottom: 0 }}>
+          <b>Application pack unavailable for this role.</b> {packGenerationReason || 'This job is currently blocked by the fit/eligibility layer.'}
+          {packGenerationBlockers.length ? <div style={{ marginTop: 8 }}>{packGenerationBlockers.map((item) => <div key={item}>• {item}</div>)}</div> : null}
+          <div style={{ marginTop: 8 }}>Use Re-analyze if the job description or your verified profile evidence has changed.</div>
+        </div>}
       {closed ? <span className="small muted">Application preparation is disabled while this posting appears closed. Re-verify if you think the source has reopened it.</span> : null}
-      {packStale ? <span className="small muted">The stored pack was generated from an older profile or quality standard. Regenerate it before downloading or applying.</span> : null}
+      {packStale ? <span className="small muted">The stored pack is not currently usable. Regenerate it only when this role is eligible for pack generation.</span> : null}
       {usablePack ? <>
         <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
         <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download professional cover letter PDF</a>
@@ -199,7 +219,9 @@ export function JobActions({
         ? <button className="btn" type="button" disabled={Boolean(busy) || closed} onClick={verifyAndOpen}>Verify & open official application ↗</button>
         : usablePack
           ? <span className="notice"><b>Application locked.</b> ATS readiness is {atsScore ?? 'pending'}/100; {atsPassScore}+ is required for PASS and application eligibility. A conditional resume can still be downloaded for review, but the dashboard will not recommend opening the application until it passes.</span>
-          : <span className="small muted">Generate a fresh tailored pack first. The ATS pass decision will appear above before the application link is unlocked.</span>}
+          : packGenerationAllowed
+            ? <span className="small muted">Generate a fresh tailored pack first. The ATS pass decision will appear above before the application link is unlocked.</span>
+            : <span className="small muted">This role is currently outside the application-pack eligibility layer, so no application action will be recommended.</span>}
       {busy ? <span className="small muted">{busy}…</span> : null}
       {msg ? <span className="small muted">{msg}</span> : null}
     </div>
