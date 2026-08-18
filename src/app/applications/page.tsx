@@ -1,12 +1,36 @@
-import { MetricCard } from '@/components/MetricCard';
-import { applicationLabel } from '@/lib/application-state';
+import { ApplicationTracker, type ApplicationTrackerRow } from '@/components/ApplicationTracker';
 import { listJobs } from '@/lib/store';
 
-export const dynamic='force-dynamic';
+export const dynamic = 'force-dynamic';
 
-export default async function ApplicationsPage(){
-  const jobs=await listJobs(300); const statuses=['discovered','reviewing','approved','applied','interview','rejected','offer'];
-  const counts=Object.fromEntries(statuses.map(s=>[s,jobs.filter(j=>(j.application?.status||'discovered')===s).length])); const max=Math.max(1,...Object.values(counts) as number[]);
-  const applied=counts.applied+counts.interview+counts.rejected+counts.offer; const responses=counts.interview+counts.rejected+counts.offer; const interviewRate=applied?Math.round((counts.interview/applied)*100):0;
-  return <><div className="topbar"><div><div className="eyebrow">Outcome learning</div><h1 className="title">Application funnel</h1><div className="sub">Track actual outcomes so future ranking can be calibrated against what converts. Every tracked job now says clearly whether it has actually been submitted.</div></div></div><div className="grid metrics" style={{gridTemplateColumns:'repeat(4,1fr)'}}><MetricCard label="Applied+" value={applied}/><MetricCard label="Responses" value={responses}/><MetricCard label="Interviews" value={counts.interview}/><MetricCard label="Interview rate" value={`${interviewRate}%`}/></div><div className="grid detail-grid"><div className="card"><div className="kicker">Pipeline</div><div className="funnel">{statuses.map(s=><div className="funnel-row" key={s}><span style={{textTransform:'capitalize'}}>{s}</span><div className="funnel-bar"><span style={{width:`${(counts[s]/max)*100}%`}}/></div><b>{counts[s]}</b></div>)}</div></div><div className="card"><div className="kicker">Feedback loop</div><h3>What the system will learn</h3><p className="small muted" style={{lineHeight:1.7}}>As applications accumulate, we can compare interview conversion by role family, location, company type, skills, application timing and match band. That evidence can later adjust ranking weights without changing the hard-eligibility layer.</p></div></div><div className="section-head"><h2>Tracked jobs</h2></div><div className="table-wrap"><table><thead><tr><th>Job</th><th>Match</th><th>Application</th><th></th></tr></thead><tbody>{jobs.filter(j=>j.application && j.application.status!=='discovered').map(j=><tr key={j.id}><td><div className="job-title">{j.title}</div><div className="job-company">{j.company}</div></td><td>{j.match?.overall??'—'}</td><td><span className="tag"><b>{applicationLabel(j.application)}</b></span></td><td><a className="btn ghost" href={`/jobs/${j.id}`}>Review →</a></td></tr>)}</tbody></table></div></>;
+export default async function ApplicationsPage() {
+  // The tracker must inspect the full stored inventory. A 300-job read can hide older
+  // applications as new discoveries push them out of the newest rows.
+  const jobs = await listJobs(3000);
+  const trackedRows: ApplicationTrackerRow[] = jobs
+    .filter((job) => Boolean(job.id && job.application && job.application.status !== 'discovered'))
+    .map((job) => ({
+      id: job.id as string,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      match: job.match?.overall,
+      status: job.application!.status,
+      appliedAt: job.application!.appliedAt,
+      responseAt: job.application!.responseAt,
+      updatedAt: job.application!.updatedAt,
+      notes: job.application!.notes,
+    }))
+    .sort((a, b) => new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime());
+
+  return <>
+    <div className="topbar">
+      <div>
+        <div className="eyebrow">Application tracking</div>
+        <h1 className="title">Track applications</h1>
+        <div className="sub">Manage every active application from one place. Update the stage here and the same status is saved across the dashboard.</div>
+      </div>
+    </div>
+    <ApplicationTracker initialRows={trackedRows} />
+  </>;
 }
