@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { gmailConfigStatus } from './gmail';
+import { gmailConfigStatus, preferredGmailRefreshToken } from './gmail';
 
 function env(values: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
   return { NODE_ENV: 'test', ...values } as NodeJS.ProcessEnv;
@@ -40,4 +40,10 @@ test('missing refresh token leaves Gmail OAuth unconfigured', () => {
   assert.equal(status.oauth, false);
   assert.equal(status.refreshToken, false);
   assert.equal(status.digest, false);
+});
+
+test('dashboard-stored Gmail token overrides an environment fallback', () => {
+  assert.equal(preferredGmailRefreshToken('new-dashboard-token', 'stale-env-token'), 'new-dashboard-token');
+  assert.equal(preferredGmailRefreshToken(null, 'env-token'), 'env-token');
+  assert.equal(preferredGmailRefreshToken('  ', 'env-token'), 'env-token');
 });
