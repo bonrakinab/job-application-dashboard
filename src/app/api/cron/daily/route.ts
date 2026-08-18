@@ -38,9 +38,38 @@ export async function GET(request: Request) {
       '',
       appUrl ? `Dashboard: ${appUrl}/recommended` : '',
     ].filter(Boolean).join('\n');
-    const mail = await sendDigest(`Job Agent: ${jobs.length} new matches`, text);
-    await logActivity('cron.daily.completed', undefined, { newListings: recent.length, duplicatesCollapsed: recentRaw.length - recent.length, digestJobs: jobs.length, strongCount, mailSkipped: mail.skipped });
-    return Response.json({ ok: true, newListings: recent.length, duplicatesCollapsed: recentRaw.length - recent.length, digestJobs: jobs.length, strongCount, mail });
+
+    let mail: Awaited<ReturnType<typeof sendDigest>> | null = null;
+    let mailError: string | null = null;
+    try {
+      mail = await sendDigest(`Job Agent: ${jobs.length} new matches`, text);
+    } catch (error) {
+      mailError = error instanceof Error ? error.message : String(error);
+      await logActivity('cron.daily.mail_failed', undefined, {
+        error: mailError.slice(0, 1200),
+        digestJobs: jobs.length,
+        newListings: recent.length,
+        at: new Date().toISOString(),
+      });
+    }
+
+    await logActivity('cron.daily.completed', undefined, {
+      newListings: recent.length,
+      duplicatesCollapsed: recentRaw.length - recent.length,
+      digestJobs: jobs.length,
+      strongCount,
+      mailSkipped: mail?.skipped ?? false,
+      mailFailed: Boolean(mailError),
+    });
+    return Response.json({
+      ok: true,
+      newListings: recent.length,
+      duplicatesCollapsed: recentRaw.length - recent.length,
+      digestJobs: jobs.length,
+      strongCount,
+      mail,
+      mailError,
+    });
   } catch (error) {
     await logActivity('cron.daily.failed', undefined, { error: error instanceof Error ? error.message : String(error) });
     return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
