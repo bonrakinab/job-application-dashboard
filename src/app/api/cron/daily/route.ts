@@ -11,6 +11,14 @@ function authorizedCron(request: Request) {
   return request.headers.get('user-agent')?.toLowerCase().includes('vercel-cron/1.0') ?? false;
 }
 
+async function safeLogActivity(event: string, payload: unknown) {
+  try {
+    await logActivity(event, undefined, payload);
+  } catch {
+    // Observability must not turn a successful cron calculation into a failed cron run.
+  }
+}
+
 export async function GET(request: Request) {
   if (!authorizedCron(request)) return new Response('Unauthorized', { status: 401 });
   try {
@@ -45,7 +53,7 @@ export async function GET(request: Request) {
       mail = await sendDigest(`Job Agent: ${jobs.length} new matches`, text);
     } catch (error) {
       mailError = error instanceof Error ? error.message : String(error);
-      await logActivity('cron.daily.mail_failed', undefined, {
+      await safeLogActivity('cron.daily.mail_failed', {
         error: mailError.slice(0, 1200),
         digestJobs: jobs.length,
         newListings: recent.length,
@@ -53,7 +61,7 @@ export async function GET(request: Request) {
       });
     }
 
-    await logActivity('cron.daily.completed', undefined, {
+    await safeLogActivity('cron.daily.completed', {
       newListings: recent.length,
       duplicatesCollapsed: recentRaw.length - recent.length,
       digestJobs: jobs.length,
@@ -71,7 +79,7 @@ export async function GET(request: Request) {
       mailError,
     });
   } catch (error) {
-    await logActivity('cron.daily.failed', undefined, { error: error instanceof Error ? error.message : String(error) });
+    await safeLogActivity('cron.daily.failed', { error: error instanceof Error ? error.message : String(error) });
     return Response.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }
