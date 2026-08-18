@@ -8,14 +8,21 @@ function present(value: string | undefined) {
   return Boolean(value?.trim());
 }
 
+export function preferredGmailRefreshToken(storedToken?: string | null, envToken?: string | null) {
+  const stored = storedToken?.trim();
+  if (stored) return stored;
+  const env = envToken?.trim();
+  return env || null;
+}
+
 async function refreshTokenValue() {
-  const envToken = process.env.GOOGLE_REFRESH_TOKEN?.trim();
-  if (envToken) return envToken;
+  let storedToken: string | null = null;
   try {
-    return await getStoredGmailRefreshToken();
+    storedToken = await getStoredGmailRefreshToken();
   } catch {
-    return null;
+    // A dashboard-stored credential is preferred, but an environment fallback can still keep Gmail working.
   }
+  return preferredGmailRefreshToken(storedToken, process.env.GOOGLE_REFRESH_TOKEN);
 }
 
 async function accessToken() {
@@ -60,20 +67,23 @@ export function gmailConfigStatus(env: NodeJS.ProcessEnv = process.env) {
 
 export async function gmailRuntimeStatus() {
   const env = gmailConfigStatus();
+  let storedConnection = false;
   let storedRefreshToken = false;
-  if (!env.refreshToken) {
-    try {
-      storedRefreshToken = await hasStoredGmailConnection();
-    } catch {
-      storedRefreshToken = false;
-    }
+  try {
+    storedConnection = await hasStoredGmailConnection();
+    if (storedConnection) storedRefreshToken = Boolean(await getStoredGmailRefreshToken());
+  } catch {
+    storedRefreshToken = false;
   }
-  const oauth = env.clientId && env.clientSecret && (env.refreshToken || storedRefreshToken);
+  const oauth = env.clientId && env.clientSecret && (storedRefreshToken || env.refreshToken);
+  const credentialSource = storedRefreshToken ? 'stored' : env.refreshToken ? 'environment' : 'none';
   return {
     ...env,
     oauth,
     digest: oauth && env.digestTo,
+    storedConnection,
     storedRefreshToken,
+    credentialSource,
   };
 }
 
@@ -95,6 +105,22 @@ export async function validateGmailOAuth() {
   });
   if (!response.ok) throw new Error(`Gmail authorization ${response.status}: ${(await response.text()).slice(0, 600)}`);
   return { ok: true };
+}
+
+export async function gmailAuthorizationStatus() {
+  const runtime = await gmailRuntimeStatus();
+  if (!runtime.oauth) {
+    return { authorized: false, error: 'Gmail OAuth is not configured.' };
+  }
+  try {
+    await validateGmailOAuth();
+    return { authorized: true, error: null as string | null };
+  } catch (error) {
+    return {
+      authorized: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 export async function sendDigest(subject: string, text: string) {
