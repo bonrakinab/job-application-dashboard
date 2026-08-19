@@ -1,4 +1,5 @@
 import { analyzeJobWithAI, createApplicationPack, researchCompanyAndHiringTeam } from '@/lib/ai';
+import { applicationPackEligibility } from '@/lib/application-pack-eligibility';
 import { withPersistentApplicationSkills } from '@/lib/application-skill-policy';
 import { getCandidateProfileState } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
@@ -22,6 +23,14 @@ function needsDetailedRequirementAnalysis(match: MatchScore | undefined, descrip
   return description.trim().length >= 300 && (model.startsWith('deterministic') || noRequirements);
 }
 
+async function safeLogActivity(event: string, jobId: string | undefined, payload: unknown) {
+  try {
+    await logActivity(event, jobId, payload);
+  } catch {
+    // Diagnostics must never make an otherwise valid application-pack request fail.
+  }
+}
+
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [job, profileState] = await Promise.all([getJob(id), getCandidateProfileState()]);
@@ -32,6 +41,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     if (isJobClosed(verification.validityStatus)) {
       return Response.json({
         error: verification.closureReason || 'This posting appears to be closed or no longer applyable. Application-pack generation was stopped.',
+        code: 'POSTING_CLOSED',
         verification,
       }, { status: 409 });
     }
@@ -47,10 +57,35 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       }
     }
 
+    const eligibility = applicationPackEligibility(match);
+    if (!eligibility.allowed) {
+      await safeLogActivity('application_pack.blocked', id, {
+        jobId: id,
+        company: job.company,
+        title: job.title,
+        recommendation: match?.recommendation ?? null,
+        overall: match?.overall ?? null,
+        code: eligibility.code,
+        blockers: eligibility.blockers,
+        at: new Date().toISOString(),
+      });
+      return Response.json({
+        error: eligibility.reason,
+        code: 'APPLICATION_PACK_BLOCKED',
+        blockCode: eligibility.code,
+        blockers: eligibility.blockers,
+        match: match ? {
+          overall: match.overall,
+          recommendation: match.recommendation,
+        } : null,
+        verification,
+      }, { status: 422 });
+    }
+
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
     const generation = await createApplicationPack(job, applicationProfile, match);
     if (generation.fallbackReason) {
-      await logActivity('application_pack.ai_fallback', id, {
+      await safeLogActivity('application_pack.ai_fallback', id, {
         jobId: id,
         company: job.company,
         title: job.title,
@@ -89,6 +124,17 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       profileUpdatedAt: profileState.updatedAt,
     });
     await saveApplicationPack(id, pack, generation.model);
+    await safeLogActivity('application_pack.completed', id, {
+      jobId: id,
+      company: job.company,
+      title: job.title,
+      provider: generation.providerUsed,
+      model: generation.model,
+      usedFallback: Boolean(generation.fallbackReason),
+      ats: optimized.score.overall,
+      atsStatus: optimized.score.status,
+      at: new Date().toISOString(),
+    });
     return Response.json({
       pack,
       model: generation.model,
@@ -99,17 +145,13 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    try {
-      await logActivity('application_pack.failed', id, {
-        jobId: id,
-        company: job.company,
-        title: job.title,
-        message: message.slice(0, 1600),
-        at: new Date().toISOString(),
-      });
-    } catch {
-      // Do not mask the primary generation error if diagnostics cannot be persisted.
-    }
-    return Response.json({ error: message }, { status: 400 });
+    await safeLogActivity('application_pack.failed', id, {
+      jobId: id,
+      company: job.company,
+      title: job.title,
+      message: message.slice(0, 1600),
+      at: new Date().toISOString(),
+    });
+    return Response.json({ error: message, code: 'APPLICATION_PACK_FAILED' }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import type { ApplicationPack, CandidateProfile, CompanyIntelligence, Job, MatchScore } from './types';
+import { applicationPackEligibility } from './application-pack-eligibility';
 import { analyzeJobWithGemini, createApplicationPackWithGemini } from './gemini';
 import {
   analyzeJobWithAI as analyzeJobWithOpenAI,
@@ -47,8 +48,10 @@ export async function createApplicationPack(
   profile: CandidateProfile,
   match?: MatchScore,
 ): Promise<{ pack: ApplicationPack; model: string; providerUsed: AIProvider; fallbackReason?: string }> {
-  if (match?.blockers.length || match?.recommendation === 'skip') {
-    throw new Error('Application pack generation is disabled for blocked/skip jobs.');
+  const eligibility = applicationPackEligibility(match);
+  if (!eligibility.allowed) {
+    const details = eligibility.blockers.length ? ` ${eligibility.blockers.join(' ')}` : '';
+    throw new Error(`${eligibility.reason ?? 'Application-pack generation is unavailable for this job.'}${details}`);
   }
 
   const primary = selectedAIProvider();
