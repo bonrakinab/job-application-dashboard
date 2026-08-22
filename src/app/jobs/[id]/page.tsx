@@ -28,7 +28,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const pack = packState.pack;
   const match = job.match;
   const packEligibility = applicationPackEligibility(match);
-  const packUsable = Boolean(pack && !packState.stale && packEligibility.allowed);
+  const packUsable = Boolean(pack && !packState.stale);
   const applicationProfile = projectTailoredApplicationProfile(externalApplicationProfile(profileState.profile), job);
   const ats = packUsable && pack ? scoreTailoredResumeWithCoursework(job, applicationProfile, pack, match) : null;
   const interviewPrep = buildInterviewPrep(job, packUsable && pack ? pack : null);
@@ -78,14 +78,13 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <b>Application pack is outdated.</b> {packState.reasons.join(' ')} Regenerate it before downloading or using it for an application.
         </div> : null}
 
-        {!packEligibility.allowed ? <div className="notice">
-          <b>Application pack is blocked for this role.</b> {packEligibility.reason}
+        {packEligibility.conditional ? <div className="notice">
+          <b>Gap-aware application pack available.</b> {packEligibility.reason}
           {packEligibility.blockers.length ? <div style={{ marginTop: 8 }}>{packEligibility.blockers.map((item) => <div key={item}>• {item}</div>)}</div> : null}
-          {pack ? <div style={{ marginTop: 8 }}>Any previously generated pack is kept for reference but is not considered usable while the current fit analysis is blocked.</div> : null}
         </div> : null}
 
         {pack ? <div className="card">
-          <div className="kicker">Generated application pack{packState.stale || !packEligibility.allowed ? ' · not currently usable' : ''}</div>
+          <div className="kicker">Generated application pack{packState.stale ? ' · not currently usable' : ''}</div>
           <h3>{pack.resumeHeadline}</h3>
           <p className="small" style={{ lineHeight: 1.7 }}>{pack.resumeSummary}</p>
           <div className="divider"/>
@@ -138,20 +137,19 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           {ats.unsupportedMustHaves.length ? <><div className="divider"/><div className="kicker">Cannot be added authentically</div>{ats.unsupportedMustHaves.map((item) => <div className="blocker" key={item}>{item}</div>)}<p className="small muted">These mandatory requirements are unsupported by the verified master profile, so the optimizer will not invent them to force a 90+ score.</p></> : null}
           {!ats.unsupportedMustHaves.length && ats.missingKeywords.length ? <><div className="divider"/><div className="kicker">Remaining gaps</div><div className="tag-list">{ats.missingKeywords.map((item) => <span className="tag" key={item}>{item}</span>)}</div><p className="small muted">Supported terms are automatically promoted during generation. Unsupported terms remain visible rather than being fabricated.</p></> : null}
           {pack?.atsOptimization?.truthfulCeilingReached && !ats.eligibleToApply ? <><div className="divider"/><div className="notice"><b>Truthful optimization ceiling reached.</b> The resume was re-ranked and retargeted three times without inventing experience. It remains conditional until the verified evidence can legitimately support a 90+ score.</div></> : null}
-        </div> : packState.stale && packEligibility.allowed ? <div className="notice"><b>ATS score pending.</b> Regenerate the outdated pack first. New packs are automatically tailored toward the 90+ pass standard.</div> : null}
+        </div> : packState.stale ? <div className="notice"><b>ATS score pending.</b> Regenerate the outdated pack first. New packs are automatically tailored toward the 90+ pass standard.</div> : null}
 
         <JobActions
           id={id}
           applyUrl={job.applyUrl || job.url}
           hasPack={Boolean(pack)}
-          packStale={packState.stale || !packEligibility.allowed}
+          packStale={packState.stale}
           status={job.application?.status || 'discovered'}
           canResearch={canResearch}
           validityStatus={job.validityStatus}
           atsEligible={Boolean(ats?.eligibleToApply)}
           atsScore={ats?.overall}
           atsPassScore={ats?.passScore}
-          packGenerationAllowed={packEligibility.allowed}
           packGenerationReason={packEligibility.reason}
           packGenerationBlockers={packEligibility.blockers}
         />

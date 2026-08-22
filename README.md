@@ -11,11 +11,11 @@ A private, human-in-the-loop job intelligence system for discovering public job 
 - **148-company target-employer watchlist** organized into overlapping groups such as MANG/FAANG, Magnificent Seven, Big Four, global IT/services, enterprise software/cloud, AI leaders and Canadian employer groups.
 - **Supabase/Postgres persistence** for profile, public ATS sources, enterprise career sources, jobs, matches, application status, generated documents, company intelligence and activity logs.
 - **Public job discovery** from Greenhouse, Lever, Ashby, Jobicy, Remotive, Remote OK and Himalayas, plus public candidate-facing Workday career endpoints and Amazon Jobs Canada. No LinkedIn/Indeed/Monster/Wellfound login or account scraping is required.
-- **Four scheduled discovery workers** through JWT-protected Supabase Edge Functions invoked by pg_cron using Vault-backed credentials: direct ATS, supplemental feeds, expanded remote feeds and enterprise target-company careers.
+- **Four scheduled discovery workers** through JWT-protected Supabase Edge Functions invoked by pg_cron using Vault-backed credentials: hourly direct ATS, two-hour supplemental and enterprise sources, and four-hour expanded remote feeds. Direct ATS receives a half-hour boost on Tuesdays and September/October weekdays during Toronto business hours.
 - **Deterministic prefilter/scoring** for target role families, skill evidence, preferred locations, seniority, explicit citizenship/clearance requirements and large stated experience gaps.
 - **Gemini-first structured AI analysis** through the Gemini Interactions API. `gemini-3.6-flash` is the default model and can run on the Gemini API free tier.
 - **Optional OpenAI provider** remains available by explicitly setting `AI_PROVIDER=openai`.
-- **Truth-constrained application pack** with tailored resume content, cover letter, outreach draft, interview themes and a claims audit. Known skill/employer/project identities are post-filtered against the master profile.
+- **Truth-constrained application pack for every open role** with tailored resume content, cover letter, outreach draft, interview themes and a claims audit. Low-fit roles use gap-aware generation: verified projects, coursework, transferable evidence and supported JD terms are strengthened without inventing missing requirements.
 - **ATS-friendly PDF generation** for tailored resumes and cover letters, generated server-side on demand.
 - **Company/hiring-team web research** remains available with the OpenAI provider. It is intentionally disabled in the Gemini free-tier configuration because Google Search grounding is not included on that tier.
 - **Gmail integration** for daily digests and draft-only outreach. Recruiter outreach is never auto-sent.
@@ -26,10 +26,10 @@ A private, human-in-the-loop job intelligence system for discovering public job 
 ```text
 Supabase pg_cron
       │
-      ├── 12:00 UTC ─► direct ATS discovery ─► Ashby / Lever / Greenhouse
-      ├── 12:10 UTC ─► supplemental discovery ─► Jobicy / Remotive
-      ├── 12:20 UTC ─► expanded remote discovery ─► Remote OK / Himalayas
-      └── 12:30 UTC ─► enterprise discovery ─► Workday public careers / Amazon Jobs
+      ├── hourly ─► direct ATS discovery ─► Ashby / Lever / Greenhouse
+      ├── every 2h ─► supplemental discovery ─► Jobicy / Remotive
+      ├── every 4h ─► expanded remote discovery ─► Remote OK / Himalayas / WWR
+      └── every 2h ─► enterprise discovery ─► Workday public careers / Amazon Jobs
                           │
                           ▼
                     PostgreSQL + RLS
@@ -41,6 +41,8 @@ Supabase pg_cron
                      ├─ OpenAI API (optional paid provider / grounded research)
                      └─ Gmail API (optional digest + draft outreach)
 ```
+
+The **Fresh openings** view is intentionally stricter than the full inventory: a job must have both a source-reported posting time and a first-discovery time within the same rolling 24-hour window.
 
 ## Setup
 

@@ -12,7 +12,9 @@ function formatDate(value?: string) {
   if (!value) return 'Not provided';
   const parsed = Date.parse(value);
   if (!Number.isFinite(parsed)) return 'Not provided';
-  return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(parsed));
+  return new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Toronto', timeZoneName: 'short',
+  }).format(new Date(parsed));
 }
 
 function validityLabel(status?: JobValidityStatus) {
@@ -83,7 +85,7 @@ export function FreshOpeningsClient({ jobs }: { jobs: JobWithMatch[] }) {
     </div>
 
     <div className="row" style={{ justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-      <span className="small muted">Showing {visible.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, visible.length)} of {visible.length} matching fresh jobs · {jobs.length} in the 30-day window</span>
+      <span className="small muted">Showing {visible.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, visible.length)} of {visible.length} matching fresh jobs · {jobs.length} in the 24-hour window</span>
       <span className="small muted">Page {page} of {totalPages}</span>
     </div>
 

@@ -58,8 +58,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     }
 
     const eligibility = applicationPackEligibility(match);
-    if (!eligibility.allowed) {
-      await safeLogActivity('application_pack.blocked', id, {
+    if (eligibility.conditional) {
+      await safeLogActivity('application_pack.gap_aware', id, {
         jobId: id,
         company: job.company,
         title: job.title,
@@ -69,17 +69,6 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         blockers: eligibility.blockers,
         at: new Date().toISOString(),
       });
-      return Response.json({
-        error: eligibility.reason,
-        code: 'APPLICATION_PACK_BLOCKED',
-        blockCode: eligibility.code,
-        blockers: eligibility.blockers,
-        match: match ? {
-          overall: match.overall,
-          recommendation: match.recommendation,
-        } : null,
-        verification,
-      }, { status: 422 });
     }
 
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
@@ -133,6 +122,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       usedFallback: Boolean(generation.fallbackReason),
       ats: optimized.score.overall,
       atsStatus: optimized.score.status,
+      gapAware: eligibility.conditional,
+      remainingBlockers: optimized.score.hardBlockers,
       at: new Date().toISOString(),
     });
     return Response.json({
@@ -142,6 +133,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       usedFallback: Boolean(generation.fallbackReason),
       verification,
       ats: optimized.score,
+      eligibility,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

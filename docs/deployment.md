@@ -69,7 +69,7 @@ Outreach remains draft-only; it is never automatically sent. `/api/health` repor
 
 - `CRON_SECRET`
 
-The production scheduler is Supabase `daily-discovery` + pg_cron. The protected Next.js cron route is retained only as a manual/fallback path.
+The production scheduler is Supabase Edge Functions + pg_cron. Direct ATS sources run hourly, supplemental and enterprise sources every two hours, expanded remote sources every four hours, and direct ATS receives a half-hour peak-period boost. The protected Next.js cron route is retained only as a daily digest/manual fallback path.
 
 ## Safe secret generation
 

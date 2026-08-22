@@ -5,29 +5,32 @@ export type ApplicationPackEligibility = {
   code?: 'hard_blockers' | 'skip';
   reason?: string;
   blockers: string[];
+  conditional: boolean;
 };
 
 export function applicationPackEligibility(match?: MatchScore): ApplicationPackEligibility {
-  if (!match) return { allowed: true, blockers: [] };
+  if (!match) return { allowed: true, blockers: [], conditional: false };
 
   const blockers = (match.blockers ?? []).filter(Boolean);
   if (blockers.length) {
     return {
-      allowed: false,
+      allowed: true,
       code: 'hard_blockers',
-      reason: 'Application-pack generation is unavailable because this role has mandatory requirements that are not supported by the verified profile.',
+      reason: 'A gap-aware application pack can still be generated. It will maximize supported ATS terms and verified transferable evidence while leaving unsupported mandatory requirements visible as warnings.',
       blockers,
+      conditional: true,
     };
   }
 
   if (match.recommendation === 'skip') {
     return {
-      allowed: false,
+      allowed: true,
       code: 'skip',
-      reason: 'Application-pack generation is unavailable because this role is currently classified as Skip. Re-analyze the job if the posting or profile evidence has changed.',
+      reason: 'This is a low-fit role, but a gap-aware application pack can still be generated from the strongest verified evidence in the profile.',
       blockers: [],
+      conditional: true,
     };
   }
 
-  return { allowed: true, blockers: [] };
+  return { allowed: true, blockers: [], conditional: false };
 }

@@ -25,21 +25,26 @@ function match(overrides: Partial<MatchScore> = {}): MatchScore {
 }
 
 test('allows application packs for non-skip jobs without blockers', () => {
-  assert.equal(applicationPackEligibility(match()).allowed, true);
+  const result = applicationPackEligibility(match());
+  assert.equal(result.allowed, true);
+  assert.equal(result.conditional, false);
 });
 
-test('blocks application packs when hard blockers are present and exposes them', () => {
+test('allows a conditional gap-aware pack when hard blockers are present and exposes them', () => {
   const result = applicationPackEligibility(match({
     recommendation: 'skip',
     blockers: ['Missing mandatory Sage ERP experience.'],
   }));
-  assert.equal(result.allowed, false);
+  assert.equal(result.allowed, true);
+  assert.equal(result.conditional, true);
   assert.equal(result.code, 'hard_blockers');
   assert.deepEqual(result.blockers, ['Missing mandatory Sage ERP experience.']);
+  assert.match(result.reason ?? '', /gap-aware application pack/i);
 });
 
-test('blocks skip jobs even when the model did not emit a blocker list', () => {
+test('allows a conditional pack for skip jobs even without a blocker list', () => {
   const result = applicationPackEligibility(match({ recommendation: 'skip' }));
-  assert.equal(result.allowed, false);
+  assert.equal(result.allowed, true);
+  assert.equal(result.conditional, true);
   assert.equal(result.code, 'skip');
 });
