@@ -146,6 +146,7 @@ export interface ApplicationPackGenerationMeta {
   templateVersion: string;
   model: string;
   provider: 'gemini' | 'openai';
+  workflowRunId?: string;
 }
 
 export interface AtsOptimizationMeta {
@@ -156,6 +157,29 @@ export interface AtsOptimizationMeta {
   status: 'pass' | 'conditional';
   truthfulCeilingReached: boolean;
   notes: string[];
+}
+
+export type RequirementSupport = 'supported' | 'partial' | 'gap';
+
+export interface RequirementEvidence {
+  requirement: string;
+  importance: 'must-have' | 'preferred';
+  support: RequirementSupport;
+  confidence: number;
+  evidence: Array<{
+    id: string;
+    label: string;
+    excerpt: string;
+    score: number;
+  }>;
+}
+
+export interface ClaimVerificationSummary {
+  status: 'pass' | 'review';
+  checkedClaims: number;
+  verifiedClaims: number;
+  replacedFields: Array<'resumeSummary' | 'coverLetter' | 'outreachMessage'>;
+  warnings: string[];
 }
 
 export interface ApplicationPack {
@@ -184,7 +208,12 @@ export interface ApplicationPack {
   claimsAudit: Array<{
     claim: string;
     evidence: string;
+    status?: 'verified' | 'review';
+    confidence?: number;
+    reason?: string;
   }>;
+  requirementEvidence?: RequirementEvidence[];
+  claimVerification?: ClaimVerificationSummary;
   atsOptimization?: AtsOptimizationMeta;
   generationMeta?: ApplicationPackGenerationMeta;
 }

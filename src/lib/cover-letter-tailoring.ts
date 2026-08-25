@@ -149,7 +149,7 @@ function firstPersonEvidence(value: string) {
 
 function focusTerms(job: Job, match?: MatchScore) {
   if (!hasUsableJobDescription(job)) return [];
-  return [...(match?.mustHave ?? []), ...(match?.preferred ?? []), ...(match?.matchedSkills ?? [])]
+  return [...(match?.matchedSkills ?? [])]
     .map((value) => value.trim().replace(/^[-•\s]+/, '').replace(/[.;:,]+$/, ''))
     .filter((value) => /[A-Za-z]{3}/.test(value) && value.length >= 3 && value.length <= 70 && !/^\d+$/.test(value))
     .filter((value, index, list) => list.findIndex((candidate) => normalizeText(candidate) === normalizeText(value)) === index)
