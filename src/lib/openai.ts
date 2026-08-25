@@ -1,4 +1,4 @@
-import type { CandidateProfile, CompanyIntelligence, Job, MatchScore } from './types';
+import type { CandidateProfile, CompanyIntelligence, Job, MatchScore, RequirementEvidence } from './types';
 import { deterministicScore } from './scoring';
 import { clamp } from './utils';
 import {
@@ -125,16 +125,15 @@ export async function analyzeJobWithAI(job: Job, profile: CandidateProfile): Pro
   }
 }
 
-export async function createApplicationPack(job: Job, profile: CandidateProfile, match?: MatchScore) {
+export async function createApplicationPack(job: Job, profile: CandidateProfile, match?: MatchScore, requirementEvidence?: RequirementEvidence[]) {
   if (!process.env.OPENAI_API_KEY) throw new Error('OpenAI must be configured to generate an application pack.');
-  if (match?.blockers.length || match?.recommendation === 'skip') throw new Error('Application pack generation is disabled for blocked/skip jobs.');
   const model = process.env.OPENAI_MODEL_APPLICATION_PACK || 'gpt-5.6-sol';
   const plan = await structuredResponse<ApplicationPackPlan>({
     model,
     name: 'application_pack_selection_plan',
     schema: applicationPackPlanSchema,
     system: applicationPackSystemPrompt,
-    user: applicationPackUserPrompt(job, profile, match),
+    user: applicationPackUserPrompt(job, profile, match, requirementEvidence),
     maxOutputTokens: 5200,
     reasoningEffort: 'high',
   });

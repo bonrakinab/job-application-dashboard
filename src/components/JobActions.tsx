@@ -22,7 +22,6 @@ export function JobActions({
   validityStatus = 'unknown',
   atsEligible = false,
   atsScore,
-  atsPassScore = 90,
   packGenerationReason,
   packGenerationBlockers = [],
 }: {
@@ -35,17 +34,15 @@ export function JobActions({
   validityStatus?: JobValidityStatus;
   atsEligible?: boolean;
   atsScore?: number;
-  atsPassScore?: number;
   packGenerationReason?: string;
   packGenerationBlockers?: string[];
 }) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
   const [currentValidity, setCurrentValidity] = useState<JobValidityStatus>(validityStatus);
-  const [currentHealth, setCurrentHealth] = useState<number | null>(null);
   const router = useRouter();
   const usablePack = hasPack && !packStale;
-  const applicationReady = usablePack && atsEligible;
+  const applicationReady = usablePack;
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +52,6 @@ export function JobActions({
         const json = await response.json();
         if (!cancelled && response.ok) {
           setCurrentValidity(json.validityStatus as JobValidityStatus);
-          setCurrentHealth(Number(json.healthScore));
         }
       } catch {
         // Background verification is best-effort. Manual verification remains available.
@@ -75,7 +71,6 @@ export function JobActions({
       }
       if (json.verification?.validityStatus) {
         setCurrentValidity(json.verification.validityStatus as JobValidityStatus);
-        setCurrentHealth(Number(json.verification.healthScore));
       }
       if (label === 'Application pack' && typeof json.ats?.overall === 'number') {
         setMsg(json.ats.eligibleToApply
@@ -100,8 +95,7 @@ export function JobActions({
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || 'Verification failed');
       setCurrentValidity(json.validityStatus as JobValidityStatus);
-      setCurrentHealth(Number(json.healthScore));
-      setMsg(`${healthLabel(json.validityStatus)} · health ${json.healthScore}/100`);
+      setMsg(healthLabel(json.validityStatus));
       router.refresh();
     } catch (error) {
       setMsg(error instanceof Error ? error.message : String(error));
@@ -112,7 +106,7 @@ export function JobActions({
 
   async function verifyAndOpen() {
     if (!applicationReady) {
-      setMsg(`Application is locked until the tailored resume reaches the ATS pass standard of ${atsPassScore}/100.`);
+      setMsg('Generate a current résumé and cover letter before opening the application.');
       return;
     }
     if (!applyUrl || applyUrl === '#') return;
@@ -126,7 +120,6 @@ export function JobActions({
       if (!response.ok) throw new Error(json.error || 'Verification failed');
       const verifiedStatus = json.validityStatus as JobValidityStatus;
       setCurrentValidity(verifiedStatus);
-      setCurrentHealth(Number(json.healthScore));
       router.refresh();
 
       if (verifiedStatus === 'closed' || verifiedStatus === 'likely_closed') {
@@ -142,7 +135,7 @@ export function JobActions({
 
       if (popup) popup.location.href = applyUrl;
       else window.open(applyUrl, '_blank', 'noopener,noreferrer');
-      setMsg(`${healthLabel(verifiedStatus)} · ATS PASS confirmed · opening the official application.`);
+      setMsg(`${healthLabel(verifiedStatus)} · opening the official application.`);
     } catch (error) {
       popup?.close();
       setMsg(error instanceof Error ? error.message : String(error));
@@ -172,46 +165,58 @@ export function JobActions({
 
   const closed = currentValidity === 'closed' || currentValidity === 'likely_closed';
 
-  return <div className="card">
-    <div className="kicker">Actions</div>
-    <div className="grid" style={{ gap: 9 }}>
-      <button className="btn" disabled={Boolean(busy)} onClick={verifyOnly}>Verify posting now</button>
-      <span className="small muted">Current posting state: {healthLabel(currentValidity)}{currentHealth == null ? '' : ` · ${currentHealth}/100`}. Verification runs again before the official application is opened.</span>
-      <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Re-analyze</button>
-      <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company + hiring team</button>
-      {!canResearch ? <span className="small muted">Grounded company web research requires the OpenAI connection.</span> : null}
-      <button className="btn primary" disabled={Boolean(busy) || closed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
-        {packStale ? 'Regenerate + ATS optimize application pack' : hasPack ? 'Regenerate + ATS optimize application pack' : 'Generate + ATS optimize application pack'}
-      </button>
-      <span className="small muted">Generation automatically retargets verified resume evidence, relevant projects, coursework, and supported JD terms toward the {atsPassScore}+ ATS pass standard. A tailored résumé and cover letter are generated even when the final score remains conditional.</span>
-      {packGenerationReason ? <div className="notice" style={{ marginBottom: 0 }}>
-        <b>Gap-aware generation enabled.</b> {packGenerationReason}
-        {packGenerationBlockers.length ? <div style={{ marginTop: 8 }}>{packGenerationBlockers.map((item) => <div key={item}>• {item}</div>)}</div> : null}
-      </div> : null}
-      {closed ? <span className="small muted">Application preparation is disabled while this posting appears closed. Re-verify if you think the source has reopened it.</span> : null}
-      {packStale ? <span className="small muted">The stored pack is outdated. Regenerate it before downloading or applying.</span> : null}
-      {usablePack ? <>
-        <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download tailored resume PDF</a>
-        <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download professional cover letter PDF</a>
-        <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/draft-outreach`, 'Gmail outreach draft')}>Create Gmail outreach draft</button>
-      </> : null}
-      <select className="select" value={status} disabled={busy === 'status'} onChange={(event) => changeStatus(event.target.value as ApplicationStatus)}>
-        <option value="discovered">Discovered</option>
-        <option value="reviewing">Reviewing</option>
-        <option value="approved">Approved</option>
-        <option value="applied">Applied</option>
-        <option value="interview">Interview</option>
-        <option value="rejected">Rejected</option>
-        <option value="offer">Offer</option>
-        <option value="withdrawn">Withdrawn</option>
-      </select>
-      {applicationReady && applyUrl && applyUrl !== '#'
-        ? <button className="btn" type="button" disabled={Boolean(busy) || closed} onClick={verifyAndOpen}>Verify & open official application ↗</button>
-        : usablePack
-          ? <span className="notice"><b>Application locked.</b> ATS readiness is {atsScore ?? 'pending'}/100; {atsPassScore}+ is required for PASS and application eligibility. A conditional resume can still be downloaded for review, but the dashboard will not recommend opening the application until it passes.</span>
-          : <span className="small muted">Generate a fresh tailored pack first. The ATS pass decision will appear above before the application link is unlocked.</span>}
-      {busy ? <span className="small muted">{busy}…</span> : null}
-      {msg ? <span className="small muted">{msg}</span> : null}
+  return <div className="card application-actions">
+    <div className="kicker">Application</div>
+    <h2>{usablePack ? 'Documents ready' : hasPack ? 'Documents need updating' : 'Prepare your application'}</h2>
+    <div className="action-status">
+      <span>Posting <b>{healthLabel(currentValidity)}</b></span>
+      {atsScore != null ? <span>Résumé score <b className={atsEligible ? 'text-success' : 'text-warning'}>{atsScore}/100</b></span> : null}
     </div>
+
+    <button className="btn primary action-primary" disabled={Boolean(busy) || closed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
+      {hasPack ? 'Regenerate résumé + cover letter' : 'Generate résumé + cover letter'}
+    </button>
+
+    {closed ? <p className="small muted">This posting appears closed. Verify it again if the employer has reopened the role.</p> : null}
+    {packGenerationReason ? <div className="compact-warning">
+      <b>Some requirements are not fully supported.</b>
+      <span>The documents will emphasize verified transferable evidence and show the gaps for review.</span>
+      {packGenerationBlockers.length ? <span>{packGenerationBlockers.slice(0, 3).join(' · ')}</span> : null}
+    </div> : null}
+
+    {usablePack ? <div className="document-actions">
+      <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download résumé</a>
+      <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download cover letter</a>
+    </div> : <p className="small muted">A tailored résumé and cover letter are generated for every open role. Unsupported requirements remain clearly marked.</p>}
+
+    {applicationReady && applyUrl && applyUrl !== '#'
+      ? <button className="btn" type="button" disabled={Boolean(busy) || closed} onClick={verifyAndOpen}>Open official application ↗</button>
+      : <span className="small muted">Generate current documents before applying.</span>}
+
+    <label className="field-label" htmlFor={`application-status-${id}`}>Application status</label>
+    <select id={`application-status-${id}`} className="select" value={status} disabled={busy === 'status'} onChange={(event) => changeStatus(event.target.value as ApplicationStatus)}>
+      <option value="discovered">Discovered</option>
+      <option value="reviewing">Reviewing</option>
+      <option value="approved">Approved</option>
+      <option value="applied">Applied</option>
+      <option value="interview">Interview</option>
+      <option value="rejected">Rejected</option>
+      <option value="offer">Offer</option>
+      <option value="withdrawn">Withdrawn</option>
+    </select>
+
+    <details className="advanced-panel action-more">
+      <summary>More actions</summary>
+      <div className="advanced-panel-body grid" style={{ gap: 9 }}>
+        <button className="btn" disabled={Boolean(busy)} onClick={verifyOnly}>Verify posting</button>
+        <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Refresh job analysis</button>
+        <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company</button>
+        {usablePack ? <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/draft-outreach`, 'Gmail outreach draft')}>Create outreach draft</button> : null}
+        {!canResearch ? <span className="small muted">Company research is not connected.</span> : null}
+      </div>
+    </details>
+
+    {busy ? <span className="small muted">{busy}…</span> : null}
+    {msg ? <span className="small muted">{msg}</span> : null}
   </div>;
 }

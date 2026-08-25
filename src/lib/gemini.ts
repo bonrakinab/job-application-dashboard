@@ -1,4 +1,4 @@
-import type { CandidateProfile, Job, MatchScore } from './types';
+import type { CandidateProfile, Job, MatchScore, RequirementEvidence } from './types';
 import { deterministicScore } from './scoring';
 import { clamp } from './utils';
 import {
@@ -177,16 +177,15 @@ export async function analyzeJobWithGemini(job: Job, profile: CandidateProfile):
   }
 }
 
-export async function createApplicationPackWithGemini(job: Job, profile: CandidateProfile, match?: MatchScore) {
+export async function createApplicationPackWithGemini(job: Job, profile: CandidateProfile, match?: MatchScore, requirementEvidence?: RequirementEvidence[]) {
   if (!process.env.GEMINI_API_KEY) throw new Error('Gemini must be configured to generate an application pack.');
-  if (match?.blockers.length || match?.recommendation === 'skip') throw new Error('Application pack generation is disabled for blocked/skip jobs.');
   const model = process.env.GEMINI_MODEL_APPLICATION_PACK || 'gemini-3.6-flash';
 
   const plan = await structuredInteraction<ApplicationPackPlan>({
     model,
     schema: applicationPackPlanSchema,
     system: applicationPackSystemPrompt,
-    user: applicationPackUserPrompt(job, profile, match),
+    user: applicationPackUserPrompt(job, profile, match, requirementEvidence),
     maxOutputTokens: 6500,
     thinkingLevel: 'high',
   });

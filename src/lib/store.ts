@@ -206,6 +206,54 @@ export async function saveApplicationPack(jobId: string, pack: ApplicationPack, 
   ], 'job_id,kind');
 }
 
+export async function startApplicationPackRun(jobId: string) {
+  if (!supabaseConfigured) return undefined;
+  const rows = await insertRows<{ id: string }>('application_pack_runs', [{
+    job_id: jobId,
+    status: 'running',
+    current_step: 'started',
+    updated_at: new Date().toISOString(),
+  }]);
+  return rows[0]?.id;
+}
+
+export async function recordApplicationPackStep(
+  runId: string | undefined,
+  step: string,
+  details: Record<string, unknown> = {},
+  status: 'completed' | 'skipped' | 'failed' = 'completed',
+) {
+  if (!supabaseConfigured || !runId) return;
+  const now = new Date().toISOString();
+  await upsertRows('application_pack_run_steps', [{
+    run_id: runId,
+    step,
+    status,
+    details,
+    completed_at: now,
+  }], 'run_id,step');
+  await patchRows(`application_pack_runs?id=eq.${encodeURIComponent(runId)}`, {
+    current_step: step,
+    updated_at: now,
+  });
+}
+
+export async function finishApplicationPackRun(
+  runId: string | undefined,
+  status: 'completed' | 'blocked' | 'failed',
+  error?: string,
+) {
+  if (!supabaseConfigured || !runId) return;
+  const now = new Date().toISOString();
+  await patchRows(`application_pack_runs?id=eq.${encodeURIComponent(runId)}`, {
+    status,
+    current_step: status,
+    error: error?.slice(0, 1600) ?? null,
+    completed_at: now,
+    updated_at: now,
+  });
+}
+
 export async function getApplicationPack(jobId: string): Promise<ApplicationPack | null> {
   if (!supabaseConfigured) return null;
   const rows = await supabaseRequest<Array<{ content_json: ApplicationPack }>>(`documents?job_id=eq.${encodeURIComponent(jobId)}&kind=eq.application_pack&select=content_json&limit=1`);

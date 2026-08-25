@@ -1,4 +1,4 @@
-import type { ApplicationPack, CandidateProfile, CompanyIntelligence, Job, MatchScore } from './types';
+import type { ApplicationPack, CandidateProfile, CompanyIntelligence, Job, MatchScore, RequirementEvidence } from './types';
 import { applicationPackEligibility } from './application-pack-eligibility';
 import { analyzeJobWithGemini, createApplicationPackWithGemini } from './gemini';
 import {
@@ -47,6 +47,7 @@ export async function createApplicationPack(
   job: Job,
   profile: CandidateProfile,
   match?: MatchScore,
+  requirementEvidence?: RequirementEvidence[],
 ): Promise<{ pack: ApplicationPack; model: string; providerUsed: AIProvider; fallbackReason?: string }> {
   const eligibility = applicationPackEligibility(match);
   if (!eligibility.allowed) {
@@ -63,8 +64,8 @@ export async function createApplicationPack(
   const failures: string[] = [];
 
   const run = async (provider: AIProvider) => provider === 'gemini'
-    ? createApplicationPackWithGemini(job, profile, match)
-    : createApplicationPackWithOpenAI(job, profile, match);
+    ? createApplicationPackWithGemini(job, profile, match, requirementEvidence)
+    : createApplicationPackWithOpenAI(job, profile, match, requirementEvidence);
 
   for (const provider of [primary, secondary] as const) {
     if (!configured[provider]) continue;
