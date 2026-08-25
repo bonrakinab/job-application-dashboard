@@ -1,31 +1,27 @@
 const primaryLinks = [
-  { href: '/', label: 'Overview', icon: '⌂' },
-  { href: '/recommended', label: 'Find Jobs', icon: '★' },
-  { href: '/fresh-openings', label: 'Fresh openings', icon: '✦' },
-  { href: '/applications', label: 'Applications', icon: '◎' },
-  { href: '/workspace', label: 'Workspace', icon: '◫' },
-  { href: '/settings', label: 'Settings', icon: '⚙' },
+  { href: '/', label: 'Home' },
+  { href: '/recommended', label: 'Jobs' },
+  { href: '/applications', label: 'Applications' },
+  { href: '/settings', label: 'Profile & settings' },
+  { href: '/workspace', label: 'More' },
 ];
 
 function NavigationLinks({ className }: { className: string }) {
   return <nav className={className} aria-label="Primary navigation">
-    {primaryLinks.map((link) => <a href={link.href} key={link.href}>
-      <span aria-hidden="true">{link.icon}</span>{' '}
-      <span>{link.label}</span>
-    </a>)}
+    {primaryLinks.map((link) => <a href={link.href} key={link.href}>{link.label}</a>)}
   </nav>;
 }
 
 export function Sidebar() {
   return <>
     <aside className="sidebar">
-      <a className="brand" href="/" aria-label="Job Agent dashboard">JOB<span>AGENT</span></a>
+      <a className="brand" href="/" aria-label="Job dashboard">JOB <span>DASHBOARD</span></a>
       <NavigationLinks className="nav" />
-      <div className="side-foot">Six main areas. Advanced tools stay inside Workspace instead of crowding the navigation.</div>
+      <div className="side-foot">Find jobs, prepare documents, and track applications.</div>
     </aside>
 
     <header className="mobile-header">
-      <a className="brand mobile-brand" href="/" aria-label="Job Agent dashboard">JOB<span>AGENT</span></a>
+      <a className="brand mobile-brand" href="/" aria-label="Job dashboard">JOB <span>DASHBOARD</span></a>
       <details className="mobile-menu">
         <summary aria-label="Open navigation menu">
           <span>Menu</span>
@@ -33,7 +29,7 @@ export function Sidebar() {
         </summary>
         <div className="mobile-menu-panel">
           <NavigationLinks className="mobile-nav" />
-          <div className="mobile-menu-note">Overview → fresh openings → find jobs → apply → track. Everything else lives in Workspace.</div>
+          <div className="mobile-menu-note">Everything needed for your job search, in one place.</div>
         </div>
       </details>
     </header>

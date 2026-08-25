@@ -1,83 +1,55 @@
-import { duplicateGroups } from '@/lib/job-duplicates';
 import { buildMarketInsights } from '@/lib/market-insights';
 import { getCandidateProfile, listJobs } from '@/lib/store';
-import { formatDate } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 export default async function InsightsPage() {
   const [jobs, profile] = await Promise.all([listJobs(1200), getCandidateProfile()]);
   const insights = buildMarketInsights(jobs, profile);
-  const duplicates = duplicateGroups(jobs);
-  const reposts = duplicates.filter((group) => group.meta.reposted);
+  const coveredSkills = insights.skills.filter((row) => row.owned).length;
 
   return <>
     <div className="topbar">
       <div>
-        <div className="eyebrow">Career intelligence</div>
-        <h1 className="title">Market & skills insights</h1>
-        <div className="sub">What the jobs in your own discovery database are asking for, which requirements already have evidence in your profile, and where the biggest recurring skill gaps are.</div>
+        <h1 className="title">Skills insights</h1>
+        <div className="sub">See which skills appear most often and which ones may be worth learning next.</div>
       </div>
-      <a className="btn ghost" href="/search-profiles">Saved searches →</a>
+      <a className="btn ghost" href="/settings">Update profile</a>
     </div>
 
-    <div className="grid recommendation-metrics">
-      <div className="metric"><div className="label">Jobs analyzed</div><div className="value">{insights.analyzedJobs}</div></div>
-      <div className="metric"><div className="label">ERP / enterprise</div><div className="value">{insights.erpJobs}</div></div>
-      <div className="metric"><div className="label">Strong ERP matches</div><div className="value">{insights.erpStrongMatches}</div></div>
-      <div className="metric"><div className="label">Duplicate / repost groups</div><div className="value">{duplicates.length}</div></div>
+    <div className="summary-strip">
+      <div className="summary-item"><b>{insights.analyzedJobs}</b><span>Jobs analyzed</span></div>
+      <div className="summary-item"><b>{coveredSkills}</b><span>Common skills in your profile</span></div>
+      <div className="summary-item"><b>{insights.gaps.length}</b><span>Recurring skill gaps</span></div>
     </div>
 
-    <div className="section-head"><h2>Highest-demand skills in your discovered market</h2><span className="small muted">Demand = share of viable listings containing the skill or an explicit alias.</span></div>
-    <div className="table-wrap">
+    <div className="section-head"><h2>Skills employers request</h2></div>
+    <div className="table-wrap compact-table">
       <table>
-        <thead><tr><th>Skill</th><th>Listings</th><th>Demand</th><th>Your evidence</th></tr></thead>
-        <tbody>{insights.skills.slice(0, 30).map((row) => <tr key={row.skill}>
+        <thead><tr><th>Skill</th><th>Jobs</th><th>Share</th><th>Your profile</th></tr></thead>
+        <tbody>{insights.skills.slice(0, 15).map((row) => <tr key={row.skill}>
           <td><b>{row.skill}</b></td>
           <td>{row.count}</td>
           <td>{row.percentage}%</td>
-          <td>{row.owned ? <span className="pill strong">Present</span> : <span className="pill stretch">Gap</span>}</td>
+          <td>{row.owned ? <span className="pill strong">Included</span> : <span className="pill stretch">Missing</span>}</td>
         </tr>)}</tbody>
       </table>
     </div>
 
-    <div className="section-head"><h2>Highest-return learning gaps</h2><span className="small muted">Sorted by how often a skill appears when your profile has no direct evidence for it.</span></div>
-    <div className="recommendation-grid">
-      {insights.gaps.map((row) => <article className="card recommendation-card" key={row.skill}>
-        <div className="row recommendation-card-head">
-          <div><div className="kicker">Market gap</div><h3>{row.skill}</h3></div>
-          <div className="recommendation-score"><span className="small muted">Demand</span><b>{row.percentage}%</b></div>
-        </div>
-        <div className="small muted">Mentioned in {row.count} viable listings currently stored in the dashboard. Treat this as prioritization evidence, not a guarantee that learning the skill produces interviews.</div>
+    <div className="section-head"><h2>Skills to consider learning</h2></div>
+    <div className="recommendation-grid simple-job-cards">
+      {insights.gaps.slice(0, 8).map((row) => <article className="card simple-job-card" key={row.skill}>
+        <div><h3>{row.skill}</h3><div className="simple-job-meta">Requested by {row.count} jobs in your current search.</div></div>
+        <div className="simple-job-score"><b>{row.percentage}%</b><span>of jobs</span></div>
       </article>)}
-      {!insights.gaps.length ? <div className="notice">No recurring missing skill was detected from the controlled skill dictionary.</div> : null}
+      {!insights.gaps.length ? <div className="notice">No recurring skill gaps were found.</div> : null}
     </div>
 
-    <div className="section-head"><h2>Role-family mix</h2><span className="small muted">Useful for seeing where your discovery coverage is concentrated.</span></div>
-    <div className="grid recommendation-metrics">
-      {insights.roleFamilies.map((row) => <div className="metric" key={row.family}><div className="label">{row.family}</div><div className="value">{row.count}</div><div className="small muted">{row.percentage}% of viable listings</div></div>)}
-    </div>
-
-    <div className="section-head"><h2>Duplicate & repost intelligence</h2><span className="small muted">Recommended jobs collapse these groups to one canonical listing; the history remains stored for audit.</span></div>
-    <div className="grid">
-      {duplicates.slice(0, 20).map((group) => <article className="card" key={group.key}>
-        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div className="kicker">{group.meta.reposted ? 'Likely repost / repeated listing' : 'Duplicate listing'}</div>
-            <h3>{group.canonical.title}</h3>
-            <div className="small muted">{group.canonical.company} · {group.jobs.length} records · {group.meta.sources.join(', ')}</div>
-          </div>
-          <a className="btn ghost" href={`/jobs/${group.canonical.id}`}>Open canonical →</a>
-        </div>
-        <div className="tag-list">
-          <span className="tag">{group.meta.duplicateCount} duplicate{group.meta.duplicateCount === 1 ? '' : 's'} collapsed</span>
-          {group.meta.firstSeen ? <span className="tag">First seen {formatDate(group.meta.firstSeen)}</span> : null}
-          {group.meta.lastSeen ? <span className="tag">Latest {formatDate(group.meta.lastSeen)}</span> : null}
-        </div>
-      </article>)}
-      {!duplicates.length ? <div className="notice">No duplicate title/company groups are currently detected.</div> : null}
-    </div>
-
-    {reposts.length ? <div className="notice" style={{ marginTop: 18 }}>{reposts.length} duplicate groups look like repeated/reposted positions. This is a posting-history signal only; it does not claim the employer intentionally created a “ghost job”.</div> : null}
+    <details className="advanced-panel">
+      <summary>Role types in your search</summary>
+      <div className="advanced-panel-body tag-list">
+        {insights.roleFamilies.map((row) => <span className="tag" key={row.family}>{row.family}: {row.count}</span>)}
+      </div>
+    </details>
   </>;
 }

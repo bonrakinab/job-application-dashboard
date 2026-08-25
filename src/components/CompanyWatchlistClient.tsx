@@ -38,55 +38,43 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
   }), [companies, coverage, group, q, sector]);
 
   return <>
-    <div className="section-head"><h2>Company groups</h2><span className="small muted">Click a group to open its jobs. Use the dropdown below if you only want to filter company cards.</span></div>
-    <div className="company-group-grid">
-      {groupSummaries.map((item) => <a className="company-group-card" key={item.id} href={`/target-jobs?group=${encodeURIComponent(item.id)}`}>
-        <b>{item.label}</b>
-        <span>{item.description}</span>
-        <div className="row small"><strong>{item.count}</strong> companies · {item.live} live · {item.recommended} recommended</div>
-        <div className="company-group-open">View {item.label} jobs →</div>
-      </a>)}
-    </div>
+    <input className="input" aria-label="Search companies" placeholder="Search companies…" value={q} onChange={(event) => setQ(event.target.value)} />
+    <details className="filter-panel">
+      <summary>Filters</summary>
+      <div className="filter-panel-body searchbar company-filterbar">
+        <select className="select" aria-label="Company group" value={group} onChange={(event) => setGroup(event.target.value)}>
+          <option value="all">All groups</option>
+          {groupSummaries.map((value) => <option value={value.id} key={value.id}>{value.label} ({value.count})</option>)}
+        </select>
+        <select className="select" aria-label="Sector" value={sector} onChange={(event) => setSector(event.target.value)}>
+          <option value="all">All sectors</option>
+          {sectors.map((value) => <option value={value} key={value}>{value}</option>)}
+        </select>
+        <select className="select" aria-label="Job coverage" value={coverage} onChange={(event) => setCoverage(event.target.value)}>
+          <option value="all">All companies</option>
+          <option value="live">Companies with jobs</option>
+          <option value="watching">No current jobs</option>
+        </select>
+      </div>
+    </details>
 
-    <div className="section-head"><h2>{group === 'all' ? 'All target companies' : COMPANY_GROUPS.find((item) => item.id === group)?.label}</h2><span className="small muted">{visible.length} companies shown</span></div>
-    <div className="searchbar company-filterbar">
-      <input className="input" placeholder="Search company, sector or group…" value={q} onChange={(event) => setQ(event.target.value)} />
-      <select className="select" style={{ maxWidth: 250 }} value={group} onChange={(event) => setGroup(event.target.value)}>
-        <option value="all">All groups</option>
-        {groupSummaries.map((value) => <option value={value.id} key={value.id}>{value.label} ({value.count})</option>)}
-      </select>
-      <select className="select" style={{ maxWidth: 250 }} value={sector} onChange={(event) => setSector(event.target.value)}>
-        <option value="all">All sectors</option>
-        {sectors.map((value) => <option value={value} key={value}>{value}</option>)}
-      </select>
-      <select className="select" style={{ maxWidth: 190 }} value={coverage} onChange={(event) => setCoverage(event.target.value)}>
-        <option value="all">All coverage</option>
-        <option value="live">Jobs imported</option>
-        <option value="watching">Watching only</option>
-      </select>
-    </div>
+    <div className="result-line"><span className="small muted">{visible.length} compan{visible.length === 1 ? 'y' : 'ies'}</span></div>
 
     <div className="company-grid">
       {visible.map((company) => {
-        const groups = companyGroups(company.company);
         return <div className="card company-card" key={company.company}>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div className="job-title">{company.company}</div>
-              <div className="job-company">{company.sector} · Tier {company.priority}</div>
+              <div className="job-company">{company.sector}</div>
             </div>
             <span className={`pill ${company.jobs > 0 ? 'strong' : ''}`}>{company.jobs > 0 ? `${company.jobs} jobs` : 'watching'}</span>
           </div>
-          {groups.length ? <div className="company-group-tags">{groups.map((item) => <a className="company-group-tag" key={item.id} href={`/target-jobs?group=${encodeURIComponent(item.id)}`}>{item.label}</a>)}</div> : null}
-          <div className="company-coverage">
-            <span><b>{company.recommended}</b> recommended</span>
-            <span><b>{company.jobs}</b> imported</span>
-          </div>
+          {company.recommended ? <div className="small muted">{company.recommended} recommended job{company.recommended === 1 ? '' : 's'}</div> : <div className="small muted">Watching for new jobs</div>}
           <div className="row company-actions">
-            <a className={company.jobs > 0 ? 'btn primary' : 'btn ghost'} href={`/target-jobs?company=${encodeURIComponent(company.company)}`}>Jobs →</a>
-            {company.careersUrl ? <a className="btn ghost" href={company.careersUrl} target="_blank" rel="noreferrer">Careers ↗</a> : null}
-            <a className="btn ghost" href={queryUrl('https://www.linkedin.com/jobs/search/?location=Canada&keywords=', `${company.company} AI data software ERP`)} target="_blank" rel="noreferrer">LinkedIn ↗</a>
-            <a className="btn ghost" href={queryUrl('https://ca.indeed.com/jobs?q=', `${company.company} AI data software ERP`)} target="_blank" rel="noreferrer">Indeed ↗</a>
+            <a className={company.jobs > 0 ? 'btn primary' : 'btn ghost'} href={`/target-jobs?company=${encodeURIComponent(company.company)}`}>Jobs</a>
+            {company.careersUrl ? <a className="btn ghost" href={company.careersUrl} target="_blank" rel="noreferrer">Careers</a> : null}
+            <a className="btn ghost" href={queryUrl('https://www.linkedin.com/jobs/search/?location=Canada&keywords=', company.company)} target="_blank" rel="noreferrer">LinkedIn</a>
           </div>
         </div>;
       })}

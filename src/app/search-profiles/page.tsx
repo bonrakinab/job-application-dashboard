@@ -8,11 +8,10 @@ export default async function SearchProfilesPage() {
   return <>
     <div className="topbar">
       <div>
-        <div className="eyebrow">Role-specific discovery views</div>
-        <h1 className="title">Saved search profiles</h1>
-        <div className="sub">Switch between AI/ML, data, software, IT/cloud, ERP/enterprise and automation-oriented searches without changing the master candidate profile or the existing all-jobs workflow.</div>
+        <h1 className="title">Saved searches</h1>
+        <div className="sub">Create focused searches for different types of roles.</div>
       </div>
-      <a className="btn ghost" href="/recommended">All recommendations →</a>
+      <a className="btn ghost" href="/recommended">Back to jobs</a>
     </div>
     <SearchProfilesClient initialProfiles={profiles} />
   </>;

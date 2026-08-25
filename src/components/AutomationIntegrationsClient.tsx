@@ -107,11 +107,11 @@ export function AutomationIntegrationsClient({ initialIntegrations }: { initialI
 
   return <>
     <div className="card">
-      <div className="kicker">{id ? 'Edit automation endpoint' : 'Connect n8n / webhook'}</div>
+      <h2>{id ? 'Edit automation' : 'Connect a webhook'}</h2>
       <div className="grid" style={{ gap: 10 }}>
         <input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Integration name" />
         <input className="input" value={webhookUrl} onChange={(event) => setWebhookUrl(event.target.value)} placeholder="https://your-n8n-host/webhook/job-agent" />
-        <input className="input" type="password" value={secret} onChange={(event) => setSecret(event.target.value)} placeholder={id ? 'Secret (leave blank to keep existing)' : 'Optional shared secret'} />
+        <details className="advanced-panel" style={{ marginTop: 0 }}><summary>Security</summary><div className="advanced-panel-body"><input className="input" type="password" value={secret} onChange={(event) => setSecret(event.target.value)} placeholder={id ? 'Secret (leave blank to keep existing)' : 'Optional shared secret'} /></div></details>
         <div className="grid" style={{ gap: 8 }}>
           {EVENT_OPTIONS.map((option) => <label className="small" key={option.value}>
             <input type="checkbox" checked={events.includes(option.value)} onChange={() => toggleEvent(option.value)} /> {option.label}
@@ -126,25 +126,24 @@ export function AutomationIntegrationsClient({ initialIntegrations }: { initialI
       </div>
     </div>
 
-    <div className="section-head"><h2>Connected automation endpoints</h2><span className="small muted">Events are POSTed as JSON. Delivery failures never block job scoring or application updates.</span></div>
+    <div className="section-head"><h2>Connected automations</h2><span className="small muted">{integrations.length} total</span></div>
     <div className="grid">
       {integrations.map((item) => <article className="card" key={item.id}>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <div className="kicker">{item.kind.toUpperCase()} · {item.enabled ? 'enabled' : 'disabled'}</div>
             <h3>{item.name}</h3>
             <div className="small muted" style={{ overflowWrap: 'anywhere' }}>{item.webhookUrl}</div>
           </div>
-          <span className="tag">Secret {item.secretConfigured ? 'configured' : 'not set'}</span>
+          <span className="tag">{item.enabled ? 'Enabled' : 'Disabled'}</span>
         </div>
-        <div className="tag-list">{item.events.map((event) => <span className="tag" key={event}>{event}</span>)}</div>
+        <div className="tag-list">{item.events.map((event) => <span className="tag" key={event}>{EVENT_OPTIONS.find((option) => option.value === event)?.label ?? event}</span>)}</div>
         <div className="row">
           <button className="btn primary" onClick={() => testIntegration(item.id)} disabled={busy}>Send test</button>
           <button className="btn ghost" onClick={() => edit(item)}>Edit</button>
           <button className="btn danger" onClick={() => remove(item.id)} disabled={busy}>Delete</button>
         </div>
       </article>)}
-      {!integrations.length ? <div className="notice">No n8n endpoint is connected yet. The integration layer is ready; add an HTTPS webhook URL when your n8n workflow is available.</div> : null}
+      {!integrations.length ? <div className="notice">No automations are connected.</div> : null}
     </div>
   </>;
 }

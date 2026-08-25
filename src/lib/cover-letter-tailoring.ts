@@ -164,7 +164,7 @@ function fallbackProjectParagraph(entry: ReturnType<typeof topRelevantProjects>[
   const evidenceNormalized = normalizeText(evidence);
   const missingSkillMentions = skills.filter((skill) => !evidenceNormalized.includes(normalizeText(skill)));
   const skillClause = missingSkillMentions.length ? ` The work also gave me practical experience with ${missingSkillMentions.join(', ')}.` : '';
-  const relevanceClause = focus.length ? ` That experience is relevant to the role's focus on ${focus.join(' as well as ')}.` : '';
+  const relevanceClause = focus.length ? ` That experience is relevant to the role's focus on ${focus.join(' and ')}.` : '';
   return `Alongside my professional experience, ${evidenceSentence}.${skillClause}${relevanceClause}`.replace(/\.\./g, '.');
 }
 
@@ -185,7 +185,7 @@ export function buildProfessionalFallbackCoverLetter(
     `I am writing to apply for the ${job.title} position at ${company}.`,
     graduation,
     focus.length
-      ? `The role aligns well with my background in ${focus.join(' as well as ')}, supported by both professional and project work.`
+      ? `The role aligns well with my background in ${focus.join(' and ')}, supported by both professional and project work.`
       : 'The role is a strong fit for my background across enterprise IT, software development, data, and applied AI.',
   ].filter(Boolean).join(' ');
 

@@ -1,39 +1,39 @@
 const tools = [
   {
     href: '/insights',
-    title: 'Career insights',
-    description: 'See which skills and role families are appearing most often in your job market.',
-    action: 'View insights',
+    title: 'Skills insights',
+    description: 'See common skills and learning gaps.',
+    action: 'Open',
   },
   {
     href: '/search-profiles',
     title: 'Saved searches',
-    description: 'Manage AI/ML, software, IT, data, automation and ERP/Oracle search profiles.',
-    action: 'Manage searches',
+    description: 'Save focused searches for different types of roles.',
+    action: 'Open',
   },
   {
     href: '/target-jobs',
     title: 'Target company jobs',
-    description: 'Review openings specifically from employers on your target-company watchlist.',
-    action: 'View target jobs',
+    description: 'Review jobs from employers you follow.',
+    action: 'Open',
   },
   {
     href: '/companies',
     title: 'Target companies',
-    description: 'Maintain your employer watchlist and company-level intelligence.',
-    action: 'Manage companies',
+    description: 'Find and manage employers you want to follow.',
+    action: 'Open',
   },
   {
     href: '/answer-bank',
     title: 'Answer bank',
-    description: 'Store approved answers for recurring application questions and reuse them safely.',
-    action: 'Open answer bank',
+    description: 'Save reusable answers to common application questions.',
+    action: 'Open',
   },
   {
     href: '/automations',
     title: 'Automations',
-    description: 'Optional n8n or webhook connections for job-match and application-status events.',
-    action: 'Manage automations',
+    description: 'Connect optional external workflows.',
+    action: 'Open',
   },
 ];
 
@@ -41,9 +41,8 @@ export default function WorkspacePage() {
   return <>
     <div className="topbar simple-topbar">
       <div>
-        <div className="eyebrow">Advanced tools</div>
-        <h1 className="title">Workspace</h1>
-        <div className="sub">Less-used tools are grouped here so the main navigation stays focused on finding and applying to jobs.</div>
+        <h1 className="title">More tools</h1>
+        <div className="sub">Extra tools that support your job search.</div>
       </div>
     </div>
 

@@ -59,71 +59,63 @@ export function TargetCompanyJobsClient({
       : 'Target-company';
 
   return <>
-    <div className="searchbar recommendation-filters">
+    <div className="primary-search">
       <input className="input" placeholder="Search target-company jobs…" value={q} onChange={(event) => setQ(event.target.value)} />
       <select className="select" value={fit} onChange={(event) => setFit(event.target.value)}>
-        <option value="best">Best profile matches</option>
-        <option value="high">Highly suitable only</option>
-        <option value="eligible">All eligible</option>
-        <option value="all">All target-company jobs</option>
-      </select>
-      <select className="select" value={stage} onChange={(event) => setStage(event.target.value)}>
-        <option value="all">All career stages</option>
-        <option value="internship">Internships</option>
-        <option value="new-grad">New grad</option>
-        <option value="entry-level">Entry level</option>
-        <option value="experienced">Experienced</option>
-      </select>
-      <select className="select" value={group} onChange={(event) => setGroup(event.target.value)}>
-        <option value="all">All company groups</option>
-        {groups.map(([id, label]) => <option value={id} key={id}>{label}</option>)}
-      </select>
-      <select className="select" value={company} onChange={(event) => setCompany(event.target.value)}>
-        <option value="all">All target companies</option>
-        {companies.map((value) => <option value={value} key={value}>{value}</option>)}
-      </select>
-      <select className="select" value={source} onChange={(event) => setSource(event.target.value)}>
-        <option value="all">All sources</option>
-        {sources.map((value) => <option value={value} key={value}>{value}</option>)}
+        <option value="best">Best matches</option>
+        <option value="high">Strong matches</option>
+        <option value="eligible">Eligible jobs</option>
+        <option value="all">All jobs</option>
       </select>
     </div>
 
-    <div className="section-head"><h2>{selectedLabel} jobs · {visible.length} shown</h2><span className="small muted">Sorted by profile fit first, then recency.</span></div>
-    <div className="recommendation-grid">
-      {visible.map((item) => <article className="card recommendation-card" key={item.job.id}>
-        <div className="row recommendation-card-head">
-          <div>
-            <div className="kicker">{item.family === 'Other' ? item.sector : item.family}</div>
-            <h3>{item.job.title}</h3>
-            <div className="job-company">{item.watchedCompany} · {item.job.source}</div>
+    <details className="filter-panel">
+      <summary>Filters</summary>
+      <div className="filter-panel-body searchbar recommendation-filters">
+        <select className="select" aria-label="Career stage" value={stage} onChange={(event) => setStage(event.target.value)}>
+          <option value="all">All career stages</option>
+          <option value="internship">Internships</option>
+          <option value="new-grad">New grad</option>
+          <option value="entry-level">Entry level</option>
+          <option value="experienced">Experienced</option>
+        </select>
+        <select className="select" aria-label="Company group" value={group} onChange={(event) => setGroup(event.target.value)}>
+          <option value="all">All company groups</option>
+          {groups.map(([id, label]) => <option value={id} key={id}>{label}</option>)}
+        </select>
+        <select className="select" aria-label="Company" value={company} onChange={(event) => setCompany(event.target.value)}>
+          <option value="all">All target companies</option>
+          {companies.map((value) => <option value={value} key={value}>{value}</option>)}
+        </select>
+        <select className="select" aria-label="Source" value={source} onChange={(event) => setSource(event.target.value)}>
+          <option value="all">All sources</option>
+          {sources.map((value) => <option value={value} key={value}>{value}</option>)}
+        </select>
+      </div>
+    </details>
+
+    <div className="result-line"><span className="small muted">{visible.length} {selectedLabel.toLowerCase()} job{visible.length === 1 ? '' : 's'}</span></div>
+    <div className="recommendation-grid simple-job-cards">
+      {visible.map((item) => <article className="card simple-job-card" key={item.job.id}>
+        <div>
+          <h3>{item.job.title}</h3>
+          <div className="simple-job-meta">{item.watchedCompany} · {item.job.location || 'Location not listed'} · {stageLabel(item.stage)}</div>
+          <div className="tag-list">
+            <StatusPill value={item.match.recommendation} />
+            {item.highlySuitable ? <span className="tag">Strong fit</span> : null}
+            {item.groups[0] ? <span className="tag">{item.groups[0].label}</span> : null}
           </div>
-          <div className="recommendation-score">
-            <span className="small muted">Priority</span>
-            <b>{item.priority}</b>
-          </div>
         </div>
-
-        <div className="tag-list recommendation-tags">
-          <span className="tag">Target company</span>
-          {item.highlySuitable ? <span className="tag">Highly suitable</span> : item.recommended ? <span className="tag">Recommended</span> : null}
-          <span className="tag">{stageLabel(item.stage)}</span>
-          <StatusPill value={item.match.recommendation} />
-          {item.job.location ? <span className="tag">{item.job.location}</span> : null}
+        <div className="simple-job-score">
+          <b>{item.match.overall}</b>
+          <span>match</span>
         </div>
-
-        {item.groups.length ? <div className="company-group-tags">{item.groups.slice(0, 4).map((candidate) => <button type="button" className="company-group-tag" key={candidate.id} onClick={() => { setCompany('all'); setGroup(candidate.id); }}>{candidate.label}</button>)}</div> : null}
-
-        <div className="recommendation-reasons">
-          {item.reasons.map((reason) => <div className="small" key={reason}>• {reason}</div>)}
-        </div>
-
         <div className="row recommendation-actions">
-          <a className="btn primary" href={`/jobs/${item.job.id}`}>Review & prepare →</a>
-          <a className="btn ghost" href={item.job.applyUrl || item.job.url} target="_blank" rel="noreferrer">Open listing ↗</a>
-          <span className="small muted">Match {item.match.overall}/100</span>
+          <span className="small muted">{item.reasons[0] || 'Review this role against your profile.'}</span>
+          <a className="btn primary" href={`/jobs/${item.job.id}`}>View job</a>
         </div>
       </article>)}
     </div>
-    {!visible.length ? <div className="notice">No {selectedLabel} jobs match the current fit/stage filters yet. Try “All eligible” or “All target-company jobs”; if the group has no imported jobs, the careers connectors will keep checking it daily.</div> : null}
+    {!visible.length ? <div className="notice">No {selectedLabel.toLowerCase()} jobs match these filters.</div> : null}
   </>;
 }
