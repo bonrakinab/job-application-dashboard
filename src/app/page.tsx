@@ -1,5 +1,4 @@
 import { DiscoverButton } from '@/components/DiscoverButton';
-import { MetricCard } from '@/components/MetricCard';
 import { applicationLabel } from '@/lib/application-state';
 import { rankRecommendedJobs } from '@/lib/recommendations';
 import { getCandidateProfile, getDashboardStats, isLiveMode, listJobs } from '@/lib/store';
@@ -10,37 +9,34 @@ export default async function DashboardPage() {
   const [jobs, profile] = await Promise.all([listJobs(1000), getCandidateProfile()]);
   const stats = await getDashboardStats(jobs);
   const recommended = rankRecommendedJobs(jobs, profile).slice(0, 5);
-  const erpCount = rankRecommendedJobs(jobs, profile).filter((item) => item.family === 'ERP & enterprise systems').length;
 
   return <>
     <div className="topbar simple-topbar">
       <div>
-        <div className="eyebrow">Job search overview</div>
-        <h1 className="title">What needs your attention?</h1>
-        <div className="sub">Start with the best matches, prepare the application, then track the outcome. Advanced tools are kept out of the way until you need them.</div>
+        <h1 className="title">Your job search</h1>
+        <div className="sub">Review the best jobs, prepare your documents, and keep applications up to date.</div>
       </div>
       <div className="row"><a className="btn primary" href="/recommended">Review best matches</a><DiscoverButton /></div>
     </div>
 
     {!isLiveMode() ? <div className="notice">Demo mode is active because Supabase is not configured. Data will not persist until the production connection is available.</div> : null}
 
-    <div className="grid overview-metrics">
-      <MetricCard label="Strong matches" value={stats.recommended} />
-      <MetricCard label="Applied" value={stats.applied} />
-      <MetricCard label="Interviews" value={stats.interviews} />
-      <MetricCard label="ERP / enterprise matches" value={erpCount} />
+    <div className="summary-strip">
+      <div className="summary-item"><b>{stats.recommended}</b><span>Jobs worth reviewing</span></div>
+      <div className="summary-item"><b>{stats.applied}</b><span>Applications sent</span></div>
+      <div className="summary-item"><b>{stats.interviews}</b><span>Interviews</span></div>
     </div>
 
-    <div className="section-head"><h2>Start here</h2><span className="small muted">The three things you are most likely to need.</span></div>
+    <div className="section-head"><h2>Next steps</h2></div>
     <div className="quick-grid">
       <a className="card quick-card" href="/recommended">
-        <div className="quick-number">1</div><div><h3>Find the right jobs</h3><p className="small muted">See ranked recommendations, choose a saved search such as ERP & Enterprise Applications, and compare roles.</p></div><span>Open Find Jobs →</span>
+        <div className="quick-number">1</div><div><h3>Review jobs</h3><p className="small muted">Start with roles that best match your profile.</p></div><span>View jobs →</span>
       </a>
       <a className="card quick-card" href="/applications">
-        <div className="quick-number">2</div><div><h3>Track applications</h3><p className="small muted">Keep reviewing, applied, interview and offer stages in one place.</p></div><span>Open Applications →</span>
+        <div className="quick-number">2</div><div><h3>Update applications</h3><p className="small muted">Record applications, interviews, and decisions.</p></div><span>Open tracker →</span>
       </a>
-      <a className="card quick-card" href="/workspace">
-        <div className="quick-number">3</div><div><h3>Use advanced tools when needed</h3><p className="small muted">Career insights, answer bank, saved searches, companies and automations are grouped in Workspace.</p></div><span>Open Workspace →</span>
+      <a className="card quick-card" href="/settings">
+        <div className="quick-number">3</div><div><h3>Keep your profile current</h3><p className="small muted">Your profile is used to tailor every résumé and cover letter.</p></div><span>Edit profile →</span>
       </a>
     </div>
 
@@ -52,9 +48,6 @@ export default async function DashboardPage() {
       </a>) : <div className="small muted">No recommended listings currently clear the ranking and eligibility thresholds.</div>}
     </div>
 
-    <div className="overview-footer-links">
-      <a href="/jobs">Browse all {jobs.length} stored jobs →</a>
-      <a href="/recommended?profile=erp-enterprise">Open ERP / Oracle search →</a>
-    </div>
+    <div className="overview-footer-links"><a href="/jobs">Browse all {jobs.length} jobs →</a></div>
   </>;
 }

@@ -26,9 +26,8 @@ export default async function ApplicationsPage() {
   return <>
     <div className="topbar">
       <div>
-        <div className="eyebrow">Application tracking</div>
-        <h1 className="title">Track applications</h1>
-        <div className="sub">Manage every active application from one place. Update the stage here and the same status is saved across the dashboard.</div>
+        <h1 className="title">Applications</h1>
+        <div className="sub">Track each application from review to decision.</div>
       </div>
     </div>
     <ApplicationTracker initialRows={trackedRows} />

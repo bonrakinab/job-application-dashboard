@@ -87,11 +87,11 @@ export function AnswerBankClient({ initialEntries }: { initialEntries: AnswerBan
 
   return <>
     <div className="card">
-      <div className="kicker">{editingId ? 'Edit approved response' : 'Save a reusable response'}</div>
+      <h2>{editingId ? 'Edit answer' : 'Add an answer'}</h2>
       <div className="grid" style={{ gap: 10 }}>
         <input className="input" value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Application question" />
-        <textarea className="input" style={{ minHeight: 150, resize: 'vertical' }} value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Your truthful base answer. Keep reusable facts here; tailor wording per job later." />
-        <input className="input" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="Tags, comma-separated (e.g. behavioral, oracle, work authorization)" />
+        <textarea className="input" style={{ minHeight: 130, resize: 'vertical' }} value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="Your answer" />
+        <input className="input" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="Optional tags" />
         <div className="row">
           <button className="btn primary" onClick={save} disabled={busy || !question.trim()}>{busy ? 'Saving…' : editingId ? 'Update answer' : 'Save answer'}</button>
           {editingId ? <button className="btn ghost" onClick={reset} disabled={busy}>Cancel</button> : null}
@@ -100,26 +100,23 @@ export function AnswerBankClient({ initialEntries }: { initialEntries: AnswerBan
       </div>
     </div>
 
-    <div className="section-head"><h2>Quick-start questions</h2><span className="small muted">These only fill the question field; no answer is invented.</span></div>
-    <div className="tag-list">
-      {STARTERS.map((starter) => <button key={starter} className="btn ghost" onClick={() => setQuestion(starter)}>{starter}</button>)}
-    </div>
+    <details className="advanced-panel">
+      <summary>Choose a common question</summary>
+      <div className="advanced-panel-body tag-list">{STARTERS.map((starter) => <button key={starter} className="btn ghost" onClick={() => setQuestion(starter)}>{starter}</button>)}</div>
+    </details>
 
-    <div className="section-head"><h2>Saved answer bank</h2><span className="small muted">{entries.length} reusable responses</span></div>
+    <div className="section-head"><h2>Saved answers</h2><span className="small muted">{entries.length} total</span></div>
     <div className="searchbar"><input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search questions, answers or tags…" /></div>
     <div className="grid">
       {visible.map((entry) => <article className="card" key={entry.id ?? entry.question}>
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <div className="kicker">Saved application answer</div>
-            <h3>{entry.question}</h3>
-          </div>
+          <div style={{ flex: 1 }}><h3>{entry.question}</h3></div>
           <div className="row">
             <button className="btn ghost" onClick={() => edit(entry)}>Edit</button>
             <button className="btn danger" onClick={() => remove(entry.id)}>Delete</button>
           </div>
         </div>
-        <p className="small" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{entry.answer || <span className="muted">No answer written yet.</span>}</p>
+        <details className="advanced-panel" style={{ marginTop: 0 }}><summary>View answer</summary><div className="advanced-panel-body small" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>{entry.answer || <span className="muted">No answer written yet.</span>}</div></details>
         {entry.tags.length ? <div className="tag-list">{entry.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}</div> : null}
       </article>)}
       {!visible.length ? <div className="notice">No saved answer matches this search.</div> : null}

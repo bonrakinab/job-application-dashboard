@@ -28,31 +28,37 @@ export default async function SettingsPage() {
   ];
 
   return <>
-    <div className="topbar"><div><div className="eyebrow">Configuration</div><h1 className="title">System settings</h1><div className="sub">Secret values stay server-side; this page reports configuration and live Gmail authorization health.</div></div><form action="/api/auth/logout" method="post"><button className="btn ghost" type="submit">Sign out</button></form></div>
-    <div className="grid config-grid">{configs.map(([name, on, desc]) => <div className="config" key={name}><b><span className={`status-dot ${on ? 'on' : ''}`}/>{name}</b><span>{on ? 'Ready' : 'Needs attention'} · {desc}</span></div>)}</div>
-    {ai.provider === 'gemini' ? <div className="notice">Gemini is the default AI provider. Core job analysis and application-pack generation can use the Gemini free tier. Company/hiring-team web research remains disabled in free-tier mode because Google Search grounding is not included there.</div> : null}
-
-    <div className="section-head"><h2>Gmail connection</h2><span className="small muted">Used only for Gmail drafts and the optional digest.</span></div>
-    <div className="panel">
-      {gmailAuth.authorized ? <>
-        <p><b>Gmail is connected and authorized.</b> Outreach stays draft-only; the app does not automatically send recruiter messages.</p>
-        {gmail.storedConnection ? <form action="/api/auth/google/disconnect" method="post"><button className="btn ghost" type="submit">Disconnect Gmail</button></form> : <div className="small muted">This connection currently comes from the Vercel GOOGLE_REFRESH_TOKEN environment variable.</div>}
-      </> : gmail.oauth ? <>
-        <p><b>Gmail needs to be reconnected.</b> The configured refresh token could not be authorized. A new dashboard connection will take priority over any older environment token.</p>
-        {gmailAuth.error ? <div className="notice">{gmailAuth.error}</div> : null}
-        <a className="btn" href="/api/auth/google/start">Reconnect Gmail</a>
-      </> : <>
-        <p>Connect Gmail without copying tokens or using OAuth Playground.</p>
-        <a className="btn" href="/api/auth/google/start">Connect Gmail</a>
-      </>}
-    </div>
-    {gmailAuth.authorized && !gmail.digest ? <div className="notice">Gmail outreach drafts are ready. Add GMAIL_DIGEST_TO only if you also want the optional daily email digest.</div> : null}
-    {gmail.digest && !gmailAuth.authorized ? <div className="notice"><b>Daily digest paused.</b> The recipient is configured, but Gmail authorization is invalid. Reconnect Gmail above to resume email delivery.</div> : null}
-
-    <div className="section-head"><h2>Candidate profile</h2><span className="small muted">This is the truth source for all tailoring. Never add invented experience.</span></div>
+    <div className="topbar"><div><h1 className="title">Profile & settings</h1><div className="sub">Keep your résumé information current. The dashboard uses it for job matching and application documents.</div></div><form action="/api/auth/logout" method="post"><button className="btn ghost" type="submit">Sign out</button></form></div>
     {!isLiveMode() ? <div className="notice">Supabase is not connected, so saving is disabled. You can still use CANDIDATE_PROFILE_JSON as a private Vercel environment variable for first boot.</div> : null}
     <ProfileEditor initial={profile}/>
-    <div className="section-head"><h2>Job sources</h2><span className="small muted">Public ATS sources only; LinkedIn account scraping is not required.</span></div>
-    <SourceManager sources={sources} canPersist={isLiveMode()}/>
+
+    <div className="section-head"><h2>Email connection</h2></div>
+    <div className="card">
+      {gmailAuth.authorized ? <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div><b>Gmail connected</b><p className="small muted">Used for outreach drafts and configured alerts.</p></div>
+        {gmail.storedConnection ? <form action="/api/auth/google/disconnect" method="post"><button className="btn ghost" type="submit">Disconnect</button></form> : null}
+      </div> : gmail.oauth ? <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div><b>Gmail needs to be reconnected</b><p className="small muted">Reconnect to restore dashboard email features.</p></div>
+        <a className="btn primary" href="/api/auth/google/start">Reconnect Gmail</a>
+      </div> : <div className="row" style={{ justifyContent: 'space-between' }}>
+        <div><b>Gmail is not connected</b><p className="small muted">Connect it to create outreach drafts.</p></div>
+        <a className="btn primary" href="/api/auth/google/start">Connect Gmail</a>
+      </div>}
+    </div>
+
+    <div className="settings-stack" style={{ marginTop: 22 }}>
+      <details className="advanced-panel">
+        <summary>Job sources</summary>
+        <div className="advanced-panel-body"><SourceManager sources={sources} canPersist={isLiveMode()}/></div>
+      </details>
+      <details className="advanced-panel">
+        <summary>Technical status</summary>
+        <div className="advanced-panel-body">
+          <div className="grid config-grid">{configs.map(([name, on, desc]) => <div className="config" key={name}><b><span className={`status-dot ${on ? 'on' : ''}`}/>{name}</b><span>{on ? 'Ready' : 'Needs attention'} · {desc}</span></div>)}</div>
+          {ai.provider === 'gemini' ? <p className="small muted">Gemini is the current AI provider. Company web research requires the OpenAI connection.</p> : null}
+          {gmailAuth.error ? <p className="small muted">Gmail: {gmailAuth.error}</p> : null}
+        </div>
+      </details>
+    </div>
   </>;
 }

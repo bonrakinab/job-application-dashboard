@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MetricCard } from '@/components/MetricCard';
 import { applicationLabel } from '@/lib/application-state';
 import type { ApplicationStatus } from '@/lib/types';
 
@@ -41,10 +40,6 @@ function wasSubmitted(row: ApplicationTrackerRow) {
   return row.status === 'withdrawn' && Boolean(row.appliedAt);
 }
 
-function receivedResponse(row: ApplicationTrackerRow) {
-  return ['interview', 'rejected', 'offer'].includes(row.status);
-}
-
 export function ApplicationTracker({ initialRows }: { initialRows: ApplicationTrackerRow[] }) {
   const [rows, setRows] = useState(initialRows);
   const [query, setQuery] = useState('');
@@ -59,15 +54,10 @@ export function ApplicationTracker({ initialRows }: { initialRows: ApplicationTr
 
   const counts = useMemo(() => {
     const submitted = rows.filter(wasSubmitted).length;
-    const responses = rows.filter(receivedResponse).length;
     const interviews = rows.filter((row) => row.status === 'interview').length;
     const offers = rows.filter((row) => row.status === 'offer').length;
-    return { submitted, responses, interviews, offers };
+    return { submitted, interviews, offers };
   }, [rows]);
-
-  const stageCounts = useMemo(() => Object.fromEntries(
-    TRACKED_STAGES.map(({ value }) => [value, rows.filter((row) => row.status === value).length]),
-  ) as Record<Exclude<ApplicationStatus, 'discovered'>, number>, [rows]);
 
   const visibleRows = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -104,38 +94,14 @@ export function ApplicationTracker({ initialRows }: { initialRows: ApplicationTr
     }
   }
 
-  const funnelMax = Math.max(1, ...Object.values(stageCounts));
-
   return <>
-    <div className="grid metrics" style={{ gridTemplateColumns: 'repeat(4,minmax(120px,1fr))' }}>
-      <MetricCard label="Submitted" value={counts.submitted} />
-      <MetricCard label="Responses" value={counts.responses} />
-      <MetricCard label="Interviews" value={counts.interviews} />
-      <MetricCard label="Offers" value={counts.offers} />
+    <div className="summary-strip">
+      <div className="summary-item"><b>{counts.submitted}</b><span>Applications sent</span></div>
+      <div className="summary-item"><b>{counts.interviews}</b><span>Interviews</span></div>
+      <div className="summary-item"><b>{counts.offers}</b><span>Offers</span></div>
     </div>
 
-    <div className="grid detail-grid">
-      <div className="card">
-        <div className="kicker">Pipeline</div>
-        <div className="funnel">
-          {TRACKED_STAGES.map(({ value, label }) => <div className="funnel-row" key={value}>
-            <span>{label}</span>
-            <div className="funnel-bar"><span style={{ width: `${(stageCounts[value] / funnelMax) * 100}%` }} /></div>
-            <b>{stageCounts[value]}</b>
-          </div>)}
-        </div>
-      </div>
-      <div className="card">
-        <div className="kicker">Tracker status</div>
-        <h3>{rows.length} job{rows.length === 1 ? '' : 's'} being tracked</h3>
-        <p className="small muted" style={{ lineHeight: 1.7 }}>
-          Change a stage here as soon as you submit, receive an interview, get a decision, or withdraw. Updates are saved to the same application record used throughout the dashboard.
-        </p>
-        <a className="btn ghost" href="/jobs">Find another job to track →</a>
-      </div>
-    </div>
-
-    <div className="section-head"><h2>Tracked applications</h2><span className="small muted">Most recently updated first.</span></div>
+    <div className="section-head"><h2>{rows.length} tracked application{rows.length === 1 ? '' : 's'}</h2><a className="small muted" href="/recommended">Find jobs →</a></div>
     <div className="searchbar">
       <input className="input" placeholder="Search company, role or location" value={query} onChange={(event) => setQuery(event.target.value)} />
       <select className="select" style={{ maxWidth: 210 }} value={stage} onChange={(event) => setStage(event.target.value as typeof stage)}>
@@ -144,28 +110,13 @@ export function ApplicationTracker({ initialRows }: { initialRows: ApplicationTr
       </select>
     </div>
 
-    {visibleRows.length ? <div className="grid" style={{ gap: 12 }}>
-      {visibleRows.map((row) => <div className="card" key={row.id}>
-        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div className="job-title">{row.title}</div>
-            <div className="job-company">{row.company}{row.location ? ` · ${row.location}` : ''}</div>
-          </div>
-          <div className="row">
-            {typeof row.match === 'number' ? <span className="tag">Match <b>{row.match}</b></span> : null}
-            <span className="tag"><b>{applicationLabel({ status: row.status })}</b></span>
-          </div>
+    {visibleRows.length ? <div className="tracker-list">
+      {visibleRows.map((row) => <div className="card tracker-card" key={row.id}>
+        <div>
+          <div className="job-title">{row.title}</div>
+          <div className="job-company">{row.company}{row.location ? ` · ${row.location}` : ''}{typeof row.match === 'number' ? ` · ${row.match}/100 match` : ''}</div>
         </div>
-
-        <div className="row" style={{ marginTop: 13 }}>
-          <span className="small muted">Applied: <b style={{ color: 'var(--text)' }}>{formatDate(row.appliedAt)}</b></span>
-          <span className="small muted">Response: <b style={{ color: 'var(--text)' }}>{formatDate(row.responseAt)}</b></span>
-          <span className="small muted">Updated: <b style={{ color: 'var(--text)' }}>{formatDate(row.updatedAt)}</b></span>
-        </div>
-
-        {row.notes ? <div className="notice" style={{ marginTop: 13, marginBottom: 0 }}><b>Notes:</b> {row.notes}</div> : null}
-
-        <div className="row" style={{ marginTop: 14 }}>
+        <div className="tracker-actions">
           <select
             className="select"
             style={{ maxWidth: 220 }}
@@ -175,10 +126,16 @@ export function ApplicationTracker({ initialRows }: { initialRows: ApplicationTr
           >
             {TRACKED_STAGES.map(({ value, label }) => <option value={value} key={value}>{label}</option>)}
           </select>
-          <a className="btn ghost" href={`/jobs/${row.id}`}>Open job →</a>
+          <a className="btn ghost" href={`/jobs/${row.id}`}>View job</a>
           {busyId === row.id ? <span className="small muted">Saving…</span> : null}
           {messages[row.id] ? <span className="small muted">{messages[row.id]}</span> : null}
         </div>
+        <div className="tracker-details">
+          <span>Status: <b>{applicationLabel({ status: row.status })}</b></span>
+          <span>Applied: <b>{formatDate(row.appliedAt)}</b></span>
+          <span>Updated: <b>{formatDate(row.updatedAt)}</b></span>
+        </div>
+        {row.notes ? <details className="advanced-panel" style={{ gridColumn: '1 / -1', marginTop: 0 }}><summary>Notes</summary><div className="advanced-panel-body small">{row.notes}</div></details> : null}
       </div>)}
     </div> : <div className="notice">
       {rows.length ? 'No tracked applications match these filters.' : 'No applications are being tracked yet. Open a job and change its application stage to Reviewing, Ready to apply, Applied, Interview, Offer, Rejected, or Withdrawn.'}

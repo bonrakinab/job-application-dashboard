@@ -49,7 +49,7 @@ export function SearchProfilesClient({ initialProfiles }: { initialProfiles: Sea
     try {
       const payload: SearchProfile = {
         ...draft,
-        id: draft.id.trim().toLowerCase().replace(/\s+/g, '-'),
+        id: (draft.id.trim() || draft.name.trim()).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
         targetTitles: splitValues(targetText),
         includeKeywords: splitValues(keywordText),
       };
@@ -87,39 +87,40 @@ export function SearchProfilesClient({ initialProfiles }: { initialProfiles: Sea
 
   return <>
     <div className="card">
-      <div className="kicker">{draft.id ? 'Edit search profile' : 'Create search profile'}</div>
+      <h2>{draft.id ? 'Edit saved search' : 'Add a saved search'}</h2>
       <div className="grid" style={{ gap: 10 }}>
+        <input className="input" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Search name, e.g. ERP and Oracle" />
+        <input className="input" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="Optional description" />
+        <textarea className="input" style={{ minHeight: 120, resize: 'vertical' }} value={targetText} onChange={(event) => setTargetText(event.target.value)} placeholder={'Target job titles, one per line\nOracle Fusion Analyst\nERP Consultant'} />
+        <details className="advanced-panel" style={{ marginTop: 0 }}>
+          <summary>Additional filters</summary>
+          <div className="advanced-panel-body grid" style={{ gap: 10 }}>
+            <input className="input" value={keywordText} onChange={(event) => setKeywordText(event.target.value)} placeholder="Keywords, comma-separated" />
+            <div className="row">
+              <label className="small muted">Minimum match <input className="input" style={{ width: 90, marginLeft: 8 }} type="number" min={0} max={100} value={draft.minMatch} onChange={(event) => setDraft({ ...draft, minMatch: Number(event.target.value) })} /></label>
+              <label className="small"><input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} /> Enabled</label>
+            </div>
+          </div>
+        </details>
         <div className="row">
-          <input className="input" value={draft.id} onChange={(event) => setDraft({ ...draft, id: event.target.value })} placeholder="id, e.g. erp-oracle" disabled={Boolean(profiles.find((profile) => profile.id === draft.id))} />
-          <input className="input" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Profile name" />
-        </div>
-        <input className="input" value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="What this search is for" />
-        <textarea className="input" style={{ minHeight: 135, resize: 'vertical' }} value={targetText} onChange={(event) => setTargetText(event.target.value)} placeholder={'Target job titles, one per line\nOracle Fusion Analyst\nERP Consultant'} />
-        <input className="input" value={keywordText} onChange={(event) => setKeywordText(event.target.value)} placeholder="JD/title keywords, comma-separated" />
-        <div className="row">
-          <label className="small muted">Minimum match <input className="input" style={{ width: 90, marginLeft: 8 }} type="number" min={0} max={100} value={draft.minMatch} onChange={(event) => setDraft({ ...draft, minMatch: Number(event.target.value) })} /></label>
-          <label className="small"><input type="checkbox" checked={draft.enabled} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} /> Enabled</label>
-        </div>
-        <div className="row">
-          <button className="btn primary" onClick={save} disabled={busy || !draft.id.trim() || !draft.name.trim()}>{busy ? 'Saving…' : 'Save profile'}</button>
-          {draft.id ? <button className="btn ghost" onClick={reset} disabled={busy}>New profile</button> : null}
+          <button className="btn primary" onClick={save} disabled={busy || !draft.name.trim() || !targetText.trim()}>{busy ? 'Saving…' : 'Save search'}</button>
+          {draft.id ? <button className="btn ghost" onClick={reset} disabled={busy}>New search</button> : null}
         </div>
         {message ? <div className="small muted">{message}</div> : null}
       </div>
     </div>
 
-    <div className="section-head"><h2>Saved profiles</h2><span className="small muted">Selecting one narrows the recommendation view without changing your master résumé profile.</span></div>
+    <div className="section-head"><h2>Saved searches</h2><span className="small muted">{profiles.length} total</span></div>
     <div className="recommendation-grid">
       {profiles.map((profile) => <article className="card recommendation-card" key={profile.id}>
         <div>
-          <div className="kicker">{profile.enabled ? 'Enabled' : 'Disabled'} · min match {profile.minMatch}</div>
           <h3>{profile.name}</h3>
           <p className="small muted" style={{ lineHeight: 1.55 }}>{profile.description}</p>
         </div>
-        <div className="tag-list">{profile.targetTitles.slice(0, 8).map((title) => <span className="tag" key={title}>{title}</span>)}</div>
-        {profile.includeKeywords.length ? <div className="small muted">Keywords: {profile.includeKeywords.join(', ')}</div> : null}
+        <div className="tag-list">{profile.targetTitles.slice(0, 4).map((title) => <span className="tag" key={title}>{title}</span>)}</div>
+        <div className="small muted">Minimum match {profile.minMatch}/100 · {profile.enabled ? 'Enabled' : 'Disabled'}</div>
         <div className="row recommendation-actions">
-          <a className="btn primary" href={`/recommended?profile=${encodeURIComponent(profile.id)}`}>Open filtered jobs →</a>
+          <a className="btn primary" href={`/recommended?profile=${encodeURIComponent(profile.id)}`}>View jobs</a>
           <button className="btn ghost" onClick={() => edit(profile)}>Edit</button>
           <button className="btn danger" onClick={() => remove(profile.id)} disabled={busy}>Delete</button>
         </div>

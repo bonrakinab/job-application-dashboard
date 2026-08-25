@@ -1,4 +1,5 @@
 import { FreshOpeningsClient } from '@/components/FreshOpeningsClient';
+import { JobsNav } from '@/components/JobsNav';
 import { FRESH_OPENINGS_WINDOW_HOURS, freshOpenings } from '@/lib/fresh-openings';
 import { listJobs } from '@/lib/store';
 
@@ -11,19 +12,14 @@ export default async function FreshOpeningsPage() {
   return <>
     <div className="topbar simple-topbar">
       <div>
-        <div className="eyebrow">Strict rolling {FRESH_OPENINGS_WINDOW_HOURS}-hour feed</div>
         <h1 className="title">Fresh openings</h1>
-        <div className="sub">Only jobs first discovered within the last 24 hours and carrying a source-reported posting time from the same 24-hour window appear here. Older jobs and listings without a usable posting time remain available in the full inventory.</div>
+        <div className="sub">Jobs posted and discovered during the last {FRESH_OPENINGS_WINDOW_HOURS} hours.</div>
       </div>
       <a className="btn ghost" href="/recommended">Find best matches →</a>
     </div>
 
-    <div className="grid metrics" style={{ marginBottom: '1rem' }}>
-      <div className="metric"><span>Verified fresh</span><strong>{jobs.length}</strong><small>posted and discovered within 24 hours</small></div>
-      <div className="metric"><span>Maximum age</span><strong>{FRESH_OPENINGS_WINDOW_HOURS}h</strong><small>rolling source-posted window</small></div>
-    </div>
-
-    <div className="section-head"><h2>Newest source postings first</h2><a className="btn ghost" href="/jobs">View full inventory →</a></div>
+    <JobsNav />
+    <div className="section-head"><h2>{jobs.length} fresh job{jobs.length === 1 ? '' : 's'}</h2></div>
     <FreshOpeningsClient jobs={tableJobs} />
   </>;
 }
