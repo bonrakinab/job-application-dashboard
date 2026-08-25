@@ -1,0 +1,30 @@
+.table {
+  min-width: 1420px;
+}
+
+.filterRow th {
+  padding: 8px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.control {
+  min-width: 105px;
+  padding: 7px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.stack {
+  display: grid;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.clear {
+  padding: 8px 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
