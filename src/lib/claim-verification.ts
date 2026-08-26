@@ -52,6 +52,12 @@ function evidenceChunks(profile: CandidateProfile, job: Job): EvidenceChunk[] {
       text: [degree.degree, degree.field, degree.institution, degree.end, ...(degree.coursework ?? [])].filter(Boolean).join(' '),
     })),
     ...(profile.certifications ?? []).map((certification) => ({ label: 'Certification', text: certification })),
+    ...(profile.languages ?? []).map((language) => ({ label: 'Language', text: language })),
+    ...(profile.courses ?? []).map((course) => ({ label: 'Course', text: course })),
+    ...(profile.awards ?? []).map((award) => ({ label: 'Honor or award', text: award })),
+    ...(profile.publications ?? []).map((publication) => ({ label: 'Publication', text: publication })),
+    ...(profile.profileSources?.linkedin?.headline ? [{ label: 'LinkedIn headline', text: profile.profileSources.linkedin.headline }] : []),
+    ...(profile.profileSources?.linkedin?.summary ? [{ label: 'LinkedIn summary', text: profile.profileSources.linkedin.summary }] : []),
     ...(profile.workAuthorization ?? []).map((authorization) => ({ label: 'Work authorization', text: authorization })),
     { label: 'Job posting', text: [job.title, job.company, job.location, job.employmentType, job.department].filter(Boolean).join(' ') },
   ].filter((chunk) => chunk.text.trim());

@@ -80,6 +80,26 @@ export interface SkillGroup {
   skills: string[];
 }
 
+export interface LinkedInImportSummary {
+  profileUrl?: string;
+  importedAt: string;
+  sourceFiles: string[];
+  headline?: string;
+  summary?: string;
+  industry?: string;
+  added: {
+    skills: number;
+    experience: number;
+    education: number;
+    projects: number;
+    certifications: number;
+    languages: number;
+    courses: number;
+    awards: number;
+    publications: number;
+  };
+}
+
 export interface CandidateProfile {
   name: string;
   email?: string;
@@ -96,9 +116,16 @@ export interface CandidateProfile {
   experience?: ExperienceItem[];
   projects?: ProjectItem[];
   certifications?: string[];
+  languages?: string[];
+  courses?: string[];
+  awards?: string[];
+  publications?: string[];
   workAuthorization?: string[];
   links?: Record<string, string>;
   excludedKeywords?: string[];
+  profileSources?: {
+    linkedin?: LinkedInImportSummary;
+  };
 }
 
 export interface MatchScore {
