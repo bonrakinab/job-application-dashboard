@@ -32,12 +32,19 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
     degrees: initial.degrees ?? [],
     projects: initial.projects ?? [],
     certifications: initial.certifications ?? [],
+    languages: initial.languages ?? [],
+    courses: initial.courses ?? [],
+    awards: initial.awards ?? [],
+    publications: initial.publications ?? [],
     workAuthorization: initial.workAuthorization ?? [],
     excludedKeywords: initial.excludedKeywords ?? [],
   });
   const [linksText, setLinksText] = useState(linksToText(initial.links));
+  const [linkedinFiles, setLinkedinFiles] = useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
 
   function updateExperience(index: number, patch: Partial<ExperienceItem>) {
     setProfile((current) => ({
@@ -73,6 +80,10 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
         degrees: (profile.degrees ?? []).map((item) => ({ ...item, coursework: cleanList(item.coursework) })),
         projects: (profile.projects ?? []).map((item) => ({ ...item, bullets: cleanList(item.bullets), skills: cleanList(item.skills) })),
         certifications: cleanList(profile.certifications),
+        languages: cleanList(profile.languages),
+        courses: cleanList(profile.courses),
+        awards: cleanList(profile.awards),
+        publications: cleanList(profile.publications),
         workAuthorization: cleanList(profile.workAuthorization),
         excludedKeywords: cleanList(profile.excludedKeywords),
         links: linksFromText(linksText),
@@ -94,7 +105,63 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
     }
   }
 
+  async function importLinkedIn() {
+    if (!linkedinFiles.length) return;
+    setImportBusy(true);
+    setMessage('');
+    try {
+      const form = new FormData();
+      const { linkedinProfileFilesForUpload } = await import('@/lib/linkedin-browser-files');
+      const profileFiles = await linkedinProfileFilesForUpload(linkedinFiles);
+      profileFiles.forEach((file) => form.append('files', file));
+      const response = await fetch('/api/profile/linkedin-import', { method: 'POST', body: form });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error || 'Could not import LinkedIn data.');
+      const imported = json.profile as CandidateProfile;
+      setProfile(imported);
+      setLinksText(linksToText(imported.links));
+      setLinkedinFiles([]);
+      setFileInputKey((current) => current + 1);
+      const added = Object.values(json.import?.added ?? {}).reduce((sum: number, value) => sum + Number(value || 0), 0);
+      setMessage(`LinkedIn imported and saved. ${added} new profile items were added.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  const linkedinImport = profile.profileSources?.linkedin;
+  const linkedinAdded = linkedinImport ? Object.values(linkedinImport.added).reduce((sum, value) => sum + value, 0) : 0;
+
   return <div className="profile-editor">
+    <section className="card profile-section linkedin-import-card">
+      <div className="profile-section-head">
+        <div><h2>Import from LinkedIn</h2><p className="small muted">Add LinkedIn skills, roles, education, projects, certifications, courses, languages, awards, and publications to your résumé profile.</p></div>
+        {linkedinImport ? <span className="pill strong">LinkedIn merged</span> : null}
+      </div>
+      {linkedinImport ? <div className="linkedin-import-status">
+        <b>{linkedinAdded} LinkedIn-only items added</b>
+        <span>Last imported {linkedinImport.importedAt.slice(0, 10)} from {linkedinImport.sourceFiles.length} profile file{linkedinImport.sourceFiles.length === 1 ? '' : 's'}.</span>
+      </div> : null}
+      <div className="linkedin-import-controls">
+        <label className="linkedin-file-picker">
+          <span>{linkedinFiles.length ? `${linkedinFiles.length} file${linkedinFiles.length === 1 ? '' : 's'} selected` : 'Choose LinkedIn archive'}</span>
+          <input
+            type="file"
+            key={fileInputKey}
+            multiple
+            accept=".zip,.csv,application/zip,text/csv"
+            onChange={(event) => setLinkedinFiles(Array.from(event.target.files ?? []))}
+          />
+        </label>
+        <button className="btn primary" type="button" onClick={importLinkedIn} disabled={importBusy || !linkedinFiles.length}>
+          {importBusy ? 'Importing…' : 'Import and merge'}
+        </button>
+      </div>
+      <p className="small muted linkedin-import-help">Use LinkedIn’s downloaded ZIP archive, or select its profile CSV files. The browser removes messages, connections, and other private archive files before upload. Existing résumé facts are preserved when the sources overlap.</p>
+    </section>
+
     <section className="card profile-section">
       <div className="profile-section-head"><h2>Basic information</h2></div>
       <div className="form-grid">
@@ -174,6 +241,10 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
       <summary>Additional profile details</summary>
       <div className="advanced-panel-body form-grid">
         <label className="field-label wide">Certifications<textarea className="input" rows={3} value={(profile.certifications ?? []).join('\n')} onChange={(event) => setProfile({ ...profile, certifications: event.target.value.split('\n') })} placeholder="One certification per line" /></label>
+        <label className="field-label wide">Languages<textarea className="input" rows={3} value={(profile.languages ?? []).join('\n')} onChange={(event) => setProfile({ ...profile, languages: event.target.value.split('\n') })} placeholder="One language per line" /></label>
+        <label className="field-label wide">Courses<textarea className="input" rows={3} value={(profile.courses ?? []).join('\n')} onChange={(event) => setProfile({ ...profile, courses: event.target.value.split('\n') })} placeholder="One LinkedIn course per line" /></label>
+        <label className="field-label wide">Honors and awards<textarea className="input" rows={3} value={(profile.awards ?? []).join('\n')} onChange={(event) => setProfile({ ...profile, awards: event.target.value.split('\n') })} placeholder="One honor or award per line" /></label>
+        <label className="field-label wide">Publications<textarea className="input" rows={3} value={(profile.publications ?? []).join('\n')} onChange={(event) => setProfile({ ...profile, publications: event.target.value.split('\n') })} placeholder="One publication per line" /></label>
         <label className="field-label wide">Work authorization<textarea className="input" rows={3} value={(profile.workAuthorization ?? []).join('\n')} onChange={(event) => setProfile({ ...profile, workAuthorization: event.target.value.split('\n') })} placeholder="One statement per line" /></label>
         <label className="field-label wide">Links<textarea className="input" rows={3} value={linksText} onChange={(event) => setLinksText(event.target.value)} placeholder={'LinkedIn=https://linkedin.com/in/...\nGitHub=https://github.com/...'} /></label>
         <label className="field-label wide">Exclude jobs containing<textarea className="input" rows={3} value={(profile.excludedKeywords ?? []).join('\n')} onChange={(event) => setProfile({ ...profile, excludedKeywords: event.target.value.split('\n') })} placeholder="One keyword per line" /></label>
