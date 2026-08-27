@@ -50,6 +50,7 @@ function pack(skills: string[]): ApplicationPack {
     skills,
     experience: [{ organization: 'Example Co', title: 'Software Development Intern', bullets: ['Built TypeScript application components and integrated PostgreSQL-backed APIs.'] }],
     projects: [{ name: 'Dashboard', bullets: ['Built a React and TypeScript dashboard backed by PostgreSQL.'] }],
+    certifications: ['Google IT Support'],
     coverLetter: 'Dear Hiring Manager,\n\nI am applying for the Software Engineer role because my TypeScript and React work aligns with the position.\n\nIn my recent work, I built application components and PostgreSQL-backed APIs, giving me practical experience relevant to the team.\n\nI would welcome the opportunity to discuss how I can contribute to Example. Thank you for your consideration.\n\nSincerely,\nArnob Banik',
     outreachMessage: 'Hello', interviewThemes: [], claimsAudit: [],
   };
