@@ -3,6 +3,7 @@ import { demoJobs, demoProfile } from './demo';
 import { jsonEnv } from './utils';
 import { deleteRows, insertIgnoreRows, insertRows, patchRows, supabaseConfigured, supabaseRequest, upsertRows } from './supabase-rest';
 import { dispatchAutomationEvent } from './automations';
+import { curateCandidateProfile } from './profile-curation';
 
 function jobToRow(job: Job) {
   return {
@@ -101,14 +102,27 @@ function rowToJob(row: any): JobWithMatch {
 export function isLiveMode() { return supabaseConfigured; }
 
 export async function getCandidateProfile(): Promise<CandidateProfile> {
-  if (!supabaseConfigured) return jsonEnv<CandidateProfile>('CANDIDATE_PROFILE_JSON') ?? demoProfile;
+  if (!supabaseConfigured) return curateCandidateProfile(jsonEnv<CandidateProfile>('CANDIDATE_PROFILE_JSON') ?? demoProfile);
   const rows = await supabaseRequest<Array<{ profile: CandidateProfile }>>('candidate_profiles?id=eq.default&select=profile&limit=1');
-  return rows[0]?.profile ?? jsonEnv<CandidateProfile>('CANDIDATE_PROFILE_JSON') ?? demoProfile;
+  return curateCandidateProfile(rows[0]?.profile ?? jsonEnv<CandidateProfile>('CANDIDATE_PROFILE_JSON') ?? demoProfile);
 }
 
 export async function saveCandidateProfile(profile: CandidateProfile) {
   if (!supabaseConfigured) throw new Error('Supabase is required to persist the candidate profile.');
-  await upsertRows('candidate_profiles', [{ id: 'default', profile, updated_at: new Date().toISOString() }], 'id');
+  await upsertRows('candidate_profiles', [{ id: 'default', profile: curateCandidateProfile(profile), updated_at: new Date().toISOString() }], 'id');
+}
+
+export function jobMatchNeedsRefresh(match: MatchScore | undefined) {
+  return !match || match.model?.startsWith('stale:') === true;
+}
+
+export async function markJobMatchesStale(reason = 'profile-updated') {
+  if (!supabaseConfigured) return;
+  await supabaseRequest('job_matches?job_id=not.is.null', {
+    method: 'PATCH',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({ model: `stale:${reason}` }),
+  });
 }
 
 export async function saveDiscoveredJobs(jobs: Job[]) {
@@ -185,7 +199,7 @@ export async function getJob(id: string): Promise<JobWithMatch | null> {
 
 export async function listUnanalyzedJobs(limit = 40): Promise<JobWithMatch[]> {
   const jobs = await listJobs(300);
-  return jobs.filter((job) => !job.match).slice(0, limit);
+  return jobs.filter((job) => jobMatchNeedsRefresh(job.match)).slice(0, limit);
 }
 
 export async function updateApplicationStatus(jobId: string, status: ApplicationStatus, notes?: string) {
