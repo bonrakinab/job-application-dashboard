@@ -62,7 +62,19 @@ export interface ProjectItem {
   skills?: string[];
   url?: string;
   linkLabel?: string;
+  roleFamilies?: ProjectRoleFamily[];
 }
+
+export type ProjectRoleFamily =
+  | 'ai-ml'
+  | 'data-analytics'
+  | 'software'
+  | 'erp-enterprise'
+  | 'it-systems'
+  | 'cloud-devops'
+  | 'cybersecurity'
+  | 'systems-algorithms'
+  | 'business-analysis';
 
 export interface EducationItem {
   institution: string;
@@ -229,6 +241,9 @@ export interface ApplicationPack {
     field?: string;
     coursework: string[];
   }>;
+  certifications?: string[];
+  publications?: string[];
+  awards?: string[];
   coverLetter: string;
   outreachMessage: string;
   interviewThemes: string[];
