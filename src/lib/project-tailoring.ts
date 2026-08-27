@@ -1,16 +1,7 @@
-import type { CandidateProfile, Job, ProjectItem } from './types';
+import type { CandidateProfile, Job, ProjectItem, ProjectRoleFamily } from './types';
 import { normalizeText } from './utils';
 
-export type ProjectRoleFamily =
-  | 'ai-ml'
-  | 'data-analytics'
-  | 'software'
-  | 'erp-enterprise'
-  | 'it-systems'
-  | 'cloud-devops'
-  | 'cybersecurity'
-  | 'systems-algorithms'
-  | 'business-analysis';
+export type { ProjectRoleFamily } from './types';
 
 type TaggedProject = ProjectItem & {
   roleFamilies?: ProjectRoleFamily[];
