@@ -7,6 +7,7 @@ import type {
   ProjectItem,
 } from './types';
 import { importFileBaseName, isSupportedLinkedInCsvFile } from './linkedin-import-files';
+import { cleanLinkedInText, curateCandidateProfile } from './profile-curation';
 import { normalizeText } from './utils';
 
 export type LinkedInImportFile = {
@@ -129,9 +130,9 @@ function value(row: CsvRow, ...aliases: string[]) {
 
 function splitDescription(description?: string) {
   if (!description) return [];
-  const lines = description
-    .split(/\r?\n|\s+[•●▪]\s*/)
-    .map((line) => line.replace(/^[\s\-–—•●▪]+/, '').trim())
+  const lines = description.normalize('NFKC')
+    .split(/\r?\n|\s+[•●▪◦]\s*|\s+-\s+(?=[A-Z])/)
+    .map((line) => cleanLinkedInText(line))
     .filter(Boolean);
   return unique(lines.length ? lines : [description]);
 }
@@ -437,21 +438,22 @@ export function mergeLinkedInProfile(
   linkedin: LinkedInProfileData,
   importedAt = new Date().toISOString(),
 ): LinkedInMergeResult {
-  const profile: CandidateProfile = {
-    ...current,
-    name: current.name || linkedin.name || 'Candidate',
-    location: current.location || linkedin.location,
-    skills: mergeStrings(current.skills, linkedin.skills),
-    experience: mergeExperience(current.experience, linkedin.experience),
-    degrees: mergeEducation(current.degrees, linkedin.degrees),
-    projects: mergeProjects(current.projects, linkedin.projects),
-    certifications: mergeStrings(current.certifications, linkedin.certifications),
-    languages: mergeStrings(current.languages, linkedin.languages),
-    courses: mergeStrings(current.courses, linkedin.courses),
-    awards: mergeStrings(current.awards, linkedin.awards),
-    publications: mergeStrings(current.publications, linkedin.publications),
-    links: { ...linkedin.links, ...(current.links ?? {}) },
-  };
+  const baseline = curateCandidateProfile(current);
+  const profile = curateCandidateProfile({
+    ...baseline,
+    name: baseline.name || linkedin.name || 'Candidate',
+    location: baseline.location || linkedin.location,
+    skills: mergeStrings(baseline.skills, linkedin.skills),
+    experience: mergeExperience(baseline.experience, linkedin.experience),
+    degrees: mergeEducation(baseline.degrees, linkedin.degrees),
+    projects: mergeProjects(baseline.projects, linkedin.projects),
+    certifications: mergeStrings(baseline.certifications, linkedin.certifications),
+    languages: mergeStrings(baseline.languages, linkedin.languages),
+    courses: mergeStrings(baseline.courses, linkedin.courses),
+    awards: mergeStrings(baseline.awards, linkedin.awards),
+    publications: mergeStrings(baseline.publications, linkedin.publications),
+    links: { ...linkedin.links, ...(baseline.links ?? {}) },
+  });
   const summary: LinkedInImportSummary = {
     profileUrl: profile.links?.linkedin,
     importedAt,
@@ -459,7 +461,7 @@ export function mergeLinkedInProfile(
     headline: linkedin.headline,
     summary: linkedin.summary,
     industry: linkedin.industry,
-    added: additions(current, profile),
+    added: additions(baseline, profile),
   };
   profile.profileSources = { ...current.profileSources, linkedin: summary };
   return { profile, summary };
