@@ -94,6 +94,8 @@ function userPrompt(job: Job, profile: CandidateProfile, pack: ApplicationPack, 
     skills: pack.skills,
     experience: pack.experience,
     projects: pack.projects,
+    certifications: pack.certifications ?? [],
+    publications: pack.publications ?? [],
   })}\n\nJOB\n${JSON.stringify({
     title: job.title,
     company: cleanCompanyName(job.company),
