@@ -74,7 +74,8 @@ function resumeText(profile: CandidateProfile, pack: ApplicationPack) {
     ...pack.experience.flatMap((item) => [item.organization, item.title, ...item.bullets]),
     ...pack.projects.flatMap((project) => [project.name, ...project.bullets]),
     ...(profile.degrees ?? []).flatMap((degree) => [degree.degree, degree.field ?? '', degree.institution]),
-    ...(profile.certifications ?? []),
+    ...(pack.certifications ?? []),
+    ...(pack.publications ?? []),
   ].join(' '));
 }
 
