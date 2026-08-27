@@ -8,8 +8,9 @@ import type {
 } from './types';
 import { normalizeText } from './utils';
 import { RESUME_TEMPLATE_VERSION } from './resume-template';
+import { selectApplicationSupplements } from './application-supplements';
 
-export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-25.requirement-evidence.v4';
+export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-27.linkedin-curation.v5';
 export { RESUME_TEMPLATE_VERSION } from './resume-template';
 
 export interface ApplicationPackPlan {
@@ -242,13 +243,12 @@ function rankedSkills(job: Job, profile: CandidateProfile, match?: MatchScore) {
 
 function rankedExperienceEvidence(job: Job, profile: CandidateProfile, match?: MatchScore) {
   const context = jobContext(job, match);
-  return (profile.experience ?? []).map((item, experienceIndex) => ({
-    organization: item.organization,
-    title: item.title,
-    evidence: item.bullets
+  return (profile.experience ?? []).map((item, experienceIndex) => {
+    const evidence = item.bullets
       .map((text, bulletIndex) => ({ id: `EXP:${experienceIndex}:${bulletIndex}`, score: relevanceScore(`${text} ${(item.skills ?? []).join(' ')}`, context), bulletIndex }))
-      .sort((a, b) => b.score - a.score || a.bulletIndex - b.bulletIndex),
-  }));
+      .sort((a, b) => b.score - a.score || a.bulletIndex - b.bulletIndex);
+    return { organization: item.organization, title: item.title, evidence, score: evidence[0]?.score ?? 0, experienceIndex };
+  }).sort((a, b) => b.score - a.score || a.experienceIndex - b.experienceIndex);
 }
 
 function rankedProjects(job: Job, profile: CandidateProfile, match?: MatchScore) {
@@ -341,11 +341,15 @@ export function deterministicTailoringPlan(job: Job, profile: CandidateProfile, 
   const relevant = ranked.filter((item) => item.score > 0).map((item) => item.skill);
   const skills = (relevant.length >= 8 ? relevant : ranked.map((item) => item.skill)).slice(0, 18);
 
-  const experience = rankedExperienceEvidence(job, profile, match).map((item) => ({
-    organization: item.organization,
-    title: item.title,
-    evidenceIds: item.evidence.filter((entry) => entry.score > 0).slice(0, 3).map((entry) => entry.id),
-  }));
+  const rankedRoles = rankedExperienceEvidence(job, profile, match);
+  const positiveRoles = rankedRoles.filter((item) => item.score > 0);
+  const experience = (positiveRoles.length ? positiveRoles : rankedRoles.filter((item) => item.evidence.length).slice(0, 2))
+    .slice(0, 4)
+    .map((item) => ({
+      organization: item.organization,
+      title: item.title,
+      evidenceIds: (item.score > 0 ? item.evidence.filter((entry) => entry.score > 0) : item.evidence).slice(0, 3).map((entry) => entry.id),
+    }));
 
   const rankedProjectItems = rankedProjects(job, profile, match);
   const positiveProjects = rankedProjectItems.filter((item) => item.score > 0);
@@ -400,7 +404,7 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
     `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
     item,
   ]));
-  const experience = (profile.experience ?? []).map((source, experienceIndex) => {
+  const experienceCandidates = (profile.experience ?? []).map((source, experienceIndex) => {
     const key = `${normalizeText(source.organization)}|${normalizeText(source.title)}`;
     const requested = requestedExperience.get(key);
     let ids = validEvidenceIds(requested?.evidenceIds, records, (record) => record.kind === 'experience' && record.parentIndex === experienceIndex);
@@ -413,6 +417,18 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
       bullets: ids.slice(0, 3).map((id) => records.get(id)!.text),
     };
   });
+  const requestedOrder = new Map((plan.experience ?? []).map((item, index) => [
+    `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
+    index,
+  ]));
+  const experience = experienceCandidates
+    .filter((item) => item.bullets.length > 0)
+    .sort((a, b) => {
+      const aKey = `${normalizeText(a.organization)}|${normalizeText(a.title)}`;
+      const bKey = `${normalizeText(b.organization)}|${normalizeText(b.title)}`;
+      return (requestedOrder.get(aKey) ?? 999) - (requestedOrder.get(bKey) ?? 999);
+    })
+    .slice(0, 4);
 
   const sourceProjects = new Map((profile.projects ?? []).map((project, index) => [normalizeText(project.name), { project, index }]));
   const materializedProjects: ApplicationPack['projects'] = [];
@@ -455,6 +471,7 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
       evidence: ids.map((id) => `${id}: ${records.get(id)!.text}`).join(' | '),
     }];
   }).slice(0, 20);
+  const supplements = selectApplicationSupplements(job, profile, match);
 
   return {
     summary: plan.summary?.trim() || `Tailored application pack for ${job.title} at ${job.company}.`,
@@ -463,6 +480,9 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
     skills,
     experience,
     projects: materializedProjects.slice(0, 4),
+    certifications: supplements.certifications,
+    publications: supplements.publications,
+    awards: supplements.awards,
     coverLetter,
     outreachMessage,
     interviewThemes: [...new Set((plan.interviewThemes ?? []).filter(Boolean))].slice(0, 6),

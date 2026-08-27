@@ -11,6 +11,7 @@ import {
   type ApplicationPackPlan,
 } from './resume-tailoring';
 import { resumePdf } from './pdf';
+import { profileWithTailoredCourseworkForResume } from './education-tailoring';
 
 const profile: CandidateProfile = {
   name: 'Arnob Banik',
@@ -137,4 +138,33 @@ test('resume PDF preserves the reference-template section order on one page', ()
   assert.deepEqual([...positions].sort((a, b) => a - b), positions);
   assert.equal((pdfText.match(/\/Type \/Page\b/g) ?? []).length, 1);
   assert.doesNotMatch(pdfText, /Tailored for/);
+});
+
+test('LinkedIn-expanded profiles are capped to a one-page set of employer-facing evidence', () => {
+  const expanded: CandidateProfile = {
+    ...profile,
+    experience: Array.from({ length: 14 }, (_, index) => ({
+      organization: `Organization ${index + 1}`,
+      title: index < 5 ? 'Software Developer' : 'Volunteer',
+      bullets: [`Built TypeScript software workflow ${index + 1}.`],
+      skills: index < 5 ? ['TypeScript'] : [],
+    })),
+    degrees: [
+      ...(profile.degrees ?? []),
+      { institution: 'Vellore Institute of Technology', degree: 'Bachelor of Technology', field: 'Computer Science' },
+      { institution: 'School', degree: 'O-Levels and A-Levels' },
+    ],
+    certifications: Array.from({ length: 24 }, (_, index) => index === 0
+      ? 'AWS Academy Graduate - AWS Academy Cloud Foundations'
+      : `Unrelated Certificate ${index}`),
+  };
+  const plan = deterministicTailoringPlan(softwareJob, expanded);
+  const pack = materializeApplicationPack(plan, expanded, softwareJob);
+  const renderedProfile = profileWithTailoredCourseworkForResume(expanded, pack);
+
+  assert.ok(pack.experience.length <= 4);
+  assert.ok((pack.certifications ?? []).length <= 3);
+  assert.ok((renderedProfile.degrees ?? []).length <= 2);
+  const pdf = resumePdf(renderedProfile, softwareJob, pack).toString('utf8');
+  assert.equal((pdf.match(/\/Type \/Page\b/g) ?? []).length, 1);
 });

@@ -1,5 +1,6 @@
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
 import { normalizeText } from './utils';
+import { resumeEducation } from './profile-curation';
 
 export interface TailoredEducationItem {
   institution: string;
@@ -141,7 +142,7 @@ export function profileWithTailoredCourseworkForResume(profile: CandidateProfile
 
   return {
     ...profile,
-    degrees: (profile.degrees ?? []).map((degree) => {
+    degrees: resumeEducation(profile).map((degree) => {
       const key = `${normalizeText(degree.institution)}|${normalizeText(degree.degree)}`;
       const courses = (selected.get(key) ?? []).slice(0, 2);
       return {

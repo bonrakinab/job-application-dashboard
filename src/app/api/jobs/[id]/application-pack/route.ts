@@ -30,11 +30,12 @@ import type { MatchScore } from '@/lib/types';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-function needsDetailedRequirementAnalysis(match: MatchScore | undefined, description: string) {
+export function needsDetailedRequirementAnalysis(match: MatchScore | undefined, description: string) {
   if (!match) return true;
   const model = match.model ?? '';
   const noRequirements = !(match.mustHave?.length || match.preferred?.length || match.missingSkills?.length);
-  return description.trim().length >= 300 && (model.startsWith('deterministic') || noRequirements);
+  return model.startsWith('stale:')
+    || (description.trim().length >= 300 && (model.startsWith('deterministic') || noRequirements));
 }
 
 async function safeLogActivity(event: string, jobId: string | undefined, payload: unknown) {

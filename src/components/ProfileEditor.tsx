@@ -95,8 +95,9 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
       });
       const json = await response.json();
       if (!response.ok) throw new Error(json.error || 'Could not save profile.');
-      setProfile(cleanedProfile);
-      setLinksText(linksToText(cleanedProfile.links));
+      const saved = (json.profile ?? cleanedProfile) as CandidateProfile;
+      setProfile(saved);
+      setLinksText(linksToText(saved.links));
       setMessage('Profile saved. New application documents will use these details.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));

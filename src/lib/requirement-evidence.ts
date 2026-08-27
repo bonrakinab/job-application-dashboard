@@ -12,7 +12,7 @@ type EvidenceRecord = {
   label: string;
   excerpt: string;
   text: string;
-  kind: 'experience' | 'project' | 'skill' | 'education' | 'certification' | 'profile';
+  kind: 'experience' | 'project' | 'skill' | 'education' | 'certification' | 'course' | 'language' | 'award' | 'publication' | 'profile';
 };
 
 const STOP_WORDS = new Set([
@@ -92,6 +92,18 @@ function evidenceRecords(profile: CandidateProfile): EvidenceRecord[] {
     excerpt: certification,
     text: certification,
     kind: 'certification',
+  }));
+  (profile.courses ?? []).forEach((course, index) => records.push({
+    id: `COURSE:${index}`, label: 'Course', excerpt: course, text: course, kind: 'course',
+  }));
+  (profile.languages ?? []).forEach((language, index) => records.push({
+    id: `LANG:${index}`, label: 'Language', excerpt: language, text: language, kind: 'language',
+  }));
+  (profile.awards ?? []).forEach((award, index) => records.push({
+    id: `AWARD:${index}`, label: 'Honor or award', excerpt: award, text: award, kind: 'award',
+  }));
+  (profile.publications ?? []).forEach((publication, index) => records.push({
+    id: `PUB:${index}`, label: 'Publication', excerpt: publication, text: publication, kind: 'publication',
   }));
   if (profile.yearsExperience != null) records.push({
     id: 'PROFILE:YEARS',

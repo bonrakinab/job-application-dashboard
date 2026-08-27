@@ -8,6 +8,7 @@ import {
 } from './openai';
 import { deterministicTailoringPlan, materializeApplicationPack } from './resume-tailoring';
 import { deterministicScore } from './scoring';
+import { employerFacingCandidateProfile } from './profile-curation';
 
 export type AIProvider = 'gemini' | 'openai';
 
@@ -32,11 +33,12 @@ export function aiStatus(env: NodeJS.ProcessEnv = process.env) {
 }
 
 export async function analyzeJobWithAI(job: Job, profile: CandidateProfile): Promise<MatchScore> {
+  const safeProfile = employerFacingCandidateProfile(profile);
   const provider = selectedAIProvider();
-  if (!aiProviderConfigured()) return deterministicScore(job, profile);
+  if (!aiProviderConfigured()) return deterministicScore(job, safeProfile);
   return provider === 'gemini'
-    ? analyzeJobWithGemini(job, profile)
-    : analyzeJobWithOpenAI(job, profile);
+    ? analyzeJobWithGemini(job, safeProfile)
+    : analyzeJobWithOpenAI(job, safeProfile);
 }
 
 export function deterministicApplicationPack(job: Job, profile: CandidateProfile, match?: MatchScore): ApplicationPack {

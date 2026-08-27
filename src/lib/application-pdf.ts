@@ -252,13 +252,17 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
   if (pack.projects.length) { canvas.section('Projects'); renderProjects(canvas, profile, pack, options); }
   canvas.section('Education');
   renderEducation(canvas, profile);
-  if ((profile.certifications ?? []).length) {
+  if ((pack.certifications ?? []).length) {
     canvas.section('Certifications');
-    for (const certification of profile.certifications ?? []) {
+    for (const certification of (pack.certifications ?? []).slice(0, 3)) {
       canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.6));
       canvas.text(certification, MARGIN + 11, canvas.y, canvas.size(7.15));
       canvas.consume(7.7);
     }
+  }
+  if ((pack.publications ?? []).length) {
+    canvas.section('Selected Publication');
+    for (const publication of (pack.publications ?? []).slice(0, 1)) canvas.subBulletText(publication, MARGIN + 18, 7.05, 7.7);
   }
   canvas.center('1', 16, canvas.size(6.8));
   return { stream: canvas.commands.join('\n'), overflow: canvas.overflow, bottomY: canvas.y };

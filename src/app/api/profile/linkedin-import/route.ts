@@ -1,5 +1,5 @@
 import { parseLinkedInArchiveFiles, mergeLinkedInProfile } from '@/lib/linkedin-import';
-import { getCandidateProfile, logActivity, saveCandidateProfile } from '@/lib/store';
+import { getCandidateProfile, logActivity, markJobMatchesStale, saveCandidateProfile } from '@/lib/store';
 
 export const runtime = 'nodejs';
 
@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     const linkedin = parseLinkedInArchiveFiles(importFiles);
     const merged = mergeLinkedInProfile(current, linkedin);
     await saveCandidateProfile(merged.profile);
+    await markJobMatchesStale('linkedin-imported');
     await logActivity('profile.linkedin.imported', undefined, {
       sourceFiles: merged.summary.sourceFiles,
       added: merged.summary.added,

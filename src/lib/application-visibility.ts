@@ -1,4 +1,5 @@
 import type { CandidateProfile, ProjectItem } from './types';
+import { employerFacingCandidateProfile } from './profile-curation';
 import { normalizeText } from './utils';
 
 /**
@@ -22,8 +23,9 @@ export function isExternalApplicationProject(project: ProjectItem): boolean {
 }
 
 export function externalApplicationProfile(profile: CandidateProfile): CandidateProfile {
+  const safe = employerFacingCandidateProfile(profile);
   return {
-    ...profile,
-    projects: (profile.projects ?? []).filter(isExternalApplicationProject),
+    ...safe,
+    projects: (safe.projects ?? []).filter(isExternalApplicationProject),
   };
 }
