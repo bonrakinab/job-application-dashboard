@@ -183,6 +183,37 @@ function dedupeExperience(items: ExperienceItem[] | undefined) {
   return result;
 }
 
+const NON_RESUME_EXPERIENCE_TITLES = /\b(?:active general member|appointment committee|general secretary|head of finance|senior adviser|student representative|volunteer)\b/i;
+
+const CORE_RESUME_EXPERIENCE = [
+  { organization: /\bbanglalink\b/i, title: /enterprise solutions and services specialist engineer/i },
+  { organization: /\bbanglalink\b/i, title: /information technology intern/i },
+  { organization: /\bgaotek\b/i, title: /software development intern.*team leader/i },
+] as const;
+
+/**
+ * Keep the complete LinkedIn history in the master profile while excluding
+ * extracurricular, volunteer, and empty records from employer-facing resumes.
+ * Genuine technical/enterprise employment remains available for job-specific
+ * ranking, including graduate-assistant work when it is relevant.
+ */
+export function isResumeExperience(item: ExperienceItem) {
+  if (!(item.bullets ?? []).some((bullet) => cleanLinkedInText(bullet).length >= 20)) return false;
+  return !NON_RESUME_EXPERIENCE_TITLES.test(item.title);
+}
+
+export function resumeExperience(profile: CandidateProfile) {
+  const eligible = dedupeExperience(profile.experience).filter(isResumeExperience);
+  const core = CORE_RESUME_EXPERIENCE
+    .map((expected) => eligible.find((item) => expected.organization.test(item.organization) && expected.title.test(item.title)))
+    .filter((item): item is ExperienceItem => Boolean(item));
+
+  // This is a personal dashboard with an established three-role resume. Keep
+  // extra LinkedIn positions as profile evidence without letting them replace
+  // the verified employment chronology in generated documents.
+  return core.length === CORE_RESUME_EXPERIENCE.length ? core : eligible;
+}
+
 function degreeLevel(value: string) {
   const normalized = normalizeText(value);
   if (/master|msc|ms\b/.test(normalized)) return 'master';
