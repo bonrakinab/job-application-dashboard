@@ -20,6 +20,12 @@ const profile: CandidateProfile = {
   targetTitles: [],
   preferredLocations: [],
   skills: ['Python', 'Machine Learning'],
+  experience: [
+    { organization: 'Banglalink', title: 'Enterprise Solutions and Services Specialist Engineer, IT', start: 'Sept 2023', end: 'June 2024', location: 'Dhaka, Bangladesh', bullets: ['Supported enterprise systems and reduced approximately 15,000 tax conditions to 460 rules.'] },
+    { organization: 'Banglalink', title: 'Information Technology Intern', start: 'June 2023', end: 'Sept 2023', location: 'Dhaka, Bangladesh', bullets: ['Built an internal support chatbot and maintained ERP documentation.'] },
+    { organization: 'GAOTek Inc.', title: 'Software Development Intern - Team Leader', start: 'Dec 2022', end: 'March 2023', location: 'Remote', bullets: ['Led Angular component delivery and defect triage.'] },
+    { organization: 'University of Windsor', title: 'Student Representative', start: 'Sept 2024', end: 'Dec 2025', location: 'Windsor, Ontario, Canada', bullets: ['Supported committee activities.'] },
+  ],
   degrees: [
     {
       institution: 'University of Windsor',
@@ -63,4 +69,19 @@ test('coursework renders as dedicated education text instead of being concatenat
   assert.match(pdf, /Relevant Coursework: Software Engineering/);
   assert.doesNotMatch(pdf, /AI Specialization; Relevant Coursework/);
   assert.doesNotMatch(pdf, /Computer Science and Engineering; Relevant Coursework/);
+});
+
+test('renderer defensively caps experience and keeps every content baseline on the A4 page', () => {
+  const crowded: ApplicationPack = {
+    ...pack,
+    experience: profile.experience!.map((item) => ({ organization: item.organization, title: item.title, bullets: item.bullets })),
+  };
+  const pdf = resumePdf(profile, job, crowded).toString('utf8');
+  assert.match(pdf, /\/MediaBox \[0 0 595\.28 841\.89\]/);
+  assert.match(pdf, /\/Subtype \/TrueType/);
+  assert.match(pdf, /\/FontFile2/);
+  assert.doesNotMatch(pdf, /Student Representative/);
+  const baselines = [...pdf.matchAll(/\s(-?\d+(?:\.\d+)?)\s(-?\d+(?:\.\d+)?)\sTd\s/g)].map((match) => Number(match[2]));
+  assert.ok(baselines.length > 0);
+  assert.ok(Math.min(...baselines) >= 16);
 });
