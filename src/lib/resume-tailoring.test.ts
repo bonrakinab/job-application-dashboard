@@ -10,7 +10,7 @@ import {
   materializeApplicationPack,
   type ApplicationPackPlan,
 } from './resume-tailoring';
-import { resumePdf } from './pdf';
+import { resumePdf } from './application-pdf';
 import { profileWithTailoredCourseworkForResume } from './education-tailoring';
 
 const profile: CandidateProfile = {
@@ -162,7 +162,7 @@ test('LinkedIn-expanded profiles are capped to a one-page set of employer-facing
   const pack = materializeApplicationPack(plan, expanded, softwareJob);
   const renderedProfile = profileWithTailoredCourseworkForResume(expanded, pack);
 
-  assert.ok(pack.experience.length <= 4);
+  assert.ok(pack.experience.length <= 3);
   assert.ok((pack.certifications ?? []).length <= 3);
   assert.ok((renderedProfile.degrees ?? []).length <= 2);
   const pdf = resumePdf(renderedProfile, softwareJob, pack).toString('utf8');
