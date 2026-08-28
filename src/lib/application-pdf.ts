@@ -1,7 +1,8 @@
 import type { ApplicationPack, CandidateProfile, Job } from './types';
 import { normalizeText } from './utils';
-import { RESUME_PAGE } from './resume-template';
+import { RESUME_LAYOUT_ATTEMPTS, RESUME_PAGE } from './resume-template';
 import { coverLetterBodyParagraphs, coverLetterDate } from './cover-letter';
+import { EMBEDDED_RESUME_FONTS } from './resume-fonts';
 
 const A4_WIDTH = RESUME_PAGE.width;
 const A4_HEIGHT = RESUME_PAGE.height;
@@ -35,8 +36,14 @@ function escapePdf(text: string) {
 }
 
 function width(text: string, size: number, font: FontName = 'TR') {
-  const factor = font === 'TB' || font === 'TBI' || font === 'HB' ? 0.47 : 0.44;
-  return ascii(text).length * size * factor;
+  const metrics = font === 'TB' || font === 'TBI' || font === 'HB'
+    ? EMBEDDED_RESUME_FONTS.bold
+    : EMBEDDED_RESUME_FONTS.regular;
+  const units = [...ascii(text)].reduce((total, character) => {
+    const code = character.charCodeAt(0);
+    return total + (metrics.widths[code - 32] ?? metrics.widths[0]);
+  }, 0);
+  return units * size / 1000;
 }
 
 function wrapWidth(text: string, maxWidth: number, size: number, font: FontName = 'TR') {
@@ -72,13 +79,17 @@ function dateRange(start?: string, end?: string) {
 
 class ResumeCanvas {
   commands: string[] = [];
-  y = 810;
+  y = 808;
   overflow = false;
   constructor(readonly scale: number) {}
   size(value: number) { return value * this.scale; }
   gap(value: number) { return value * this.scale; }
   text(text: string, x: number, y: number, size: number, font: FontName = 'TR') {
-    if (text) this.commands.push(`BT /${font} ${size.toFixed(2)} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${escapePdf(text)}) Tj ET`);
+    if (!text) return;
+    const position = font === 'TI' || font === 'TBI'
+      ? `1 0 0.18 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm`
+      : `${x.toFixed(2)} ${y.toFixed(2)} Td`;
+    this.commands.push(`BT /${font} ${size.toFixed(2)} Tf ${position} (${escapePdf(text)}) Tj ET`);
   }
   right(text: string, y: number, size: number, font: FontName = 'TR') {
     this.text(text, Math.max(MARGIN, RIGHT - width(text, size, font)), y, size, font);
@@ -87,20 +98,24 @@ class ResumeCanvas {
     this.text(text, Math.max(MARGIN, (A4_WIDTH - width(text, size, font)) / 2), y, size, font);
   }
   rule(y: number) { this.commands.push(`0.35 w ${MARGIN} ${y.toFixed(2)} m ${RIGHT} ${y.toFixed(2)} l S`); }
-  mainBullet(x: number, y: number) { this.commands.push(`${(x - 1.4).toFixed(2)} ${(y - 1.4).toFixed(2)} 2.8 2.8 re f`); }
+  mainBullet(x: number, y: number) {
+    const r = 1.5;
+    const k = r * 0.55228475;
+    this.commands.push(`${(x + r).toFixed(2)} ${y.toFixed(2)} m ${(x + r).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + r).toFixed(2)} ${x.toFixed(2)} ${(y + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(y + r).toFixed(2)} ${(x - r).toFixed(2)} ${(y + k).toFixed(2)} ${(x - r).toFixed(2)} ${y.toFixed(2)} c ${(x - r).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - r).toFixed(2)} ${x.toFixed(2)} ${(y - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(y - r).toFixed(2)} ${(x + r).toFixed(2)} ${(y - k).toFixed(2)} ${(x + r).toFixed(2)} ${y.toFixed(2)} c f`);
+  }
   subBullet(x: number, y: number) { this.text('o', x - 0.3, y - 1.2, this.size(6), 'TR'); }
   consume(amount: number) { this.y -= this.gap(amount); if (this.y < BOTTOM) this.overflow = true; }
   section(label: string) {
     this.consume(1.5);
-    this.text(label.toUpperCase(), MARGIN, this.y, this.size(9.5), 'TR');
+    this.text(label.toUpperCase(), MARGIN, this.y, this.size(10.5), 'TR');
     this.rule(this.y - this.gap(2));
-    this.consume(11);
+    this.consume(12.2);
   }
-  paragraph(text: string, baseSize = 7.85, lineHeight = 8.9) {
+  paragraph(text: string, baseSize = 9.15, lineHeight = 10.35) {
     const size = this.size(baseSize);
     for (const line of wrapWidth(text, RIGHT - MARGIN, size)) { this.text(line, MARGIN, this.y, size); this.consume(lineHeight); }
   }
-  subBulletText(text: string, left = MARGIN + 30, baseSize = 7.55, lineHeight = 8.3) {
+  subBulletText(text: string, left = MARGIN + 30, baseSize = 8.65, lineHeight = 9.65) {
     const size = this.size(baseSize);
     const lines = wrapWidth(text, RIGHT - left, size);
     if (!lines.length) return;
@@ -130,13 +145,13 @@ function roleSource(profile: CandidateProfile, organization: string, title: stri
 function addRole(canvas: ResumeCanvas, profile: CandidateProfile, item: ApplicationPack['experience'][number], maxBullets: number) {
   const source = roleSource(profile, item.organization, item.title);
   canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-  canvas.text(item.organization, MARGIN + 11, canvas.y, canvas.size(8.7), 'TB');
-  if (source?.location) canvas.right(source.location, canvas.y, canvas.size(7.65));
-  canvas.consume(8.7);
-  canvas.text(item.title, MARGIN + 11, canvas.y, canvas.size(7.85), 'TI');
+  canvas.text(item.organization, MARGIN + 11, canvas.y, canvas.size(9.7), 'TB');
+  if (source?.location) canvas.right(source.location, canvas.y, canvas.size(8.5));
+  canvas.consume(10);
+  canvas.text(item.title, MARGIN + 11, canvas.y, canvas.size(8.85), 'TI');
   const dates = dateRange(source?.start, source?.end);
-  if (dates) canvas.right(dates, canvas.y, canvas.size(7.65), 'TI');
-  canvas.consume(8.1);
+  if (dates) canvas.right(dates, canvas.y, canvas.size(8.5), 'TI');
+  canvas.consume(9.4);
   for (const bullet of item.bullets.slice(0, maxBullets)) canvas.subBulletText(bullet);
   canvas.consume(1);
 }
@@ -150,23 +165,23 @@ function renderSkills(canvas: ResumeCanvas, profile: CandidateProfile, pack: App
     skills.forEach((skill) => rendered.add(normalizeText(skill)));
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.7));
     const label = `${group.label}:`;
-    const labelSize = canvas.size(7.7);
+    const labelSize = canvas.size(8.75);
     canvas.text(label, MARGIN + 11, canvas.y, labelSize, 'TB');
     const left = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
-    const bodySize = canvas.size(7.45);
+    const bodySize = canvas.size(8.4);
     const lines = wrapWidth(skills.join(', '), RIGHT - left, bodySize);
-    lines.forEach((line, index) => { canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize); canvas.consume(8); });
+    lines.forEach((line, index) => { canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize); canvas.consume(9.35); });
   }
   const extras = pack.skills.filter((skill) => !rendered.has(normalizeText(skill)));
   if (extras.length) {
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.7));
     const label = 'Additional:';
-    const labelSize = canvas.size(7.7);
+    const labelSize = canvas.size(8.75);
     canvas.text(label, MARGIN + 11, canvas.y, labelSize, 'TB');
     const left = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
-    const bodySize = canvas.size(7.45);
+    const bodySize = canvas.size(8.4);
     const lines = wrapWidth(extras.join(', '), RIGHT - left, bodySize);
-    lines.forEach((line, index) => { canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize); canvas.consume(8); });
+    lines.forEach((line, index) => { canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize); canvas.consume(9.35); });
   }
 }
 
@@ -176,13 +191,13 @@ function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: A
     const source = sources.get(normalizeText(item.name));
     if (!source) continue;
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-    canvas.text(source.name, MARGIN + 11, canvas.y, canvas.size(8.1), 'TB');
+    canvas.text(source.name, MARGIN + 11, canvas.y, canvas.size(9.25), 'TB');
     const tech = (source.skills ?? []).filter((skill) => pack.skills.some((selected) => normalizeText(selected) === normalizeText(skill))).slice(0, 6);
     const technology = tech.length ? ` / ${tech.join(', ')}` : '';
-    const nameWidth = width(source.name, canvas.size(8.1), 'TB');
-    if (technology && nameWidth + width(technology, canvas.size(7), 'TI') < RIGHT - (MARGIN + 11)) canvas.text(technology, MARGIN + 14 + nameWidth, canvas.y, canvas.size(7), 'TI');
-    if (source.linkLabel) canvas.right(source.linkLabel, canvas.y, canvas.size(7), 'TI');
-    canvas.consume(8.7);
+    const nameWidth = width(source.name, canvas.size(9.25), 'TB');
+    if (technology && nameWidth + width(technology, canvas.size(7.8), 'TI') < RIGHT - (MARGIN + 11)) canvas.text(technology, MARGIN + 14 + nameWidth, canvas.y, canvas.size(7.8), 'TI');
+    if (source.linkLabel) canvas.right(source.linkLabel, canvas.y, canvas.size(7.8), 'TI');
+    canvas.consume(10);
     for (const bullet of item.bullets.slice(0, options.maxProjectBullets)) canvas.subBulletText(bullet);
     canvas.consume(0.8);
   }
@@ -191,22 +206,22 @@ function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: A
 function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
   for (const degree of profile.degrees ?? []) {
     const left = MARGIN + 11;
-    const institutionSize = canvas.size(8.45);
-    const locationSize = canvas.size(7.4);
-    const degreeSize = canvas.size(7.55);
-    const dateSize = canvas.size(7.4);
-    const courseSize = canvas.size(7.15);
+    const institutionSize = canvas.size(9.45);
+    const locationSize = canvas.size(8.2);
+    const degreeSize = canvas.size(8.45);
+    const dateSize = canvas.size(8.2);
+    const courseSize = canvas.size(8.05);
 
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
     canvas.text(degree.institution, left, canvas.y, institutionSize, 'TB');
     if (degree.location && fitsSideBySide(degree.institution, degree.location, institutionSize, locationSize, 'TB', 'TR', left)) {
       canvas.right(degree.location, canvas.y, locationSize);
-      canvas.consume(8.6);
+      canvas.consume(9.8);
     } else {
-      canvas.consume(8.6);
+      canvas.consume(9.8);
       if (degree.location) {
         canvas.right(degree.location, canvas.y, locationSize);
-        canvas.consume(7.8);
+        canvas.consume(8.7);
       }
     }
 
@@ -215,12 +230,12 @@ function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
     canvas.text(degreeText, left, canvas.y, degreeSize, 'TI');
     if (dates && fitsSideBySide(degreeText, dates, degreeSize, dateSize, 'TI', 'TI', left)) {
       canvas.right(dates, canvas.y, dateSize, 'TI');
-      canvas.consume(8.5);
+      canvas.consume(9.6);
     } else {
-      canvas.consume(8.5);
+      canvas.consume(9.6);
       if (dates) {
         canvas.right(dates, canvas.y, dateSize, 'TI');
-        canvas.consume(7.8);
+        canvas.consume(8.7);
       }
     }
 
@@ -229,7 +244,7 @@ function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
       const courseworkText = `Relevant Coursework: ${courses.join(', ')}`;
       for (const line of wrapWidth(courseworkText, RIGHT - left, courseSize, 'TI')) {
         canvas.text(line, left, canvas.y, courseSize, 'TI');
-        canvas.consume(7.7);
+        canvas.consume(8.8);
       }
     }
     canvas.consume(0.8);
@@ -238,15 +253,15 @@ function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
 
 function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
   const canvas = new ResumeCanvas(options.scale);
-  canvas.center(profile.name, canvas.y, canvas.size(24.5), 'TB');
-  canvas.consume(17);
+  canvas.center(profile.name, canvas.y, canvas.size(25.5), 'TB');
+  canvas.consume(18.5);
   const contact = [profile.phone, profile.email, profile.links?.linkedin ? 'LinkedIn' : undefined, profile.links?.github ? 'GitHub' : undefined, profile.links?.portfolio ? 'Portfolio' : undefined].filter(Boolean) as string[];
-  canvas.center(contact.join('   |   '), canvas.y, canvas.size(7.25));
-  canvas.consume(9);
+  canvas.center(contact.join('   |   '), canvas.y, canvas.size(8.15));
+  canvas.consume(10.5);
   canvas.section('Professional Summary');
   canvas.paragraph(pack.resumeSummary);
   canvas.section('Experience');
-  for (const item of pack.experience) addRole(canvas, profile, item, options.maxExperienceBullets);
+  for (const item of pack.experience.slice(0, 3)) addRole(canvas, profile, item, options.maxExperienceBullets);
   canvas.section('Skills');
   renderSkills(canvas, profile, pack);
   if (pack.projects.length) { canvas.section('Projects'); renderProjects(canvas, profile, pack, options); }
@@ -256,22 +271,37 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
     canvas.section('Certifications');
     for (const certification of (pack.certifications ?? []).slice(0, 3)) {
       canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.6));
-      canvas.text(certification, MARGIN + 11, canvas.y, canvas.size(7.15));
-      canvas.consume(7.7);
+      canvas.text(certification, MARGIN + 11, canvas.y, canvas.size(8.05));
+      canvas.consume(8.8);
     }
   }
   if ((pack.publications ?? []).length) {
     canvas.section('Selected Publication');
-    for (const publication of (pack.publications ?? []).slice(0, 1)) canvas.subBulletText(publication, MARGIN + 18, 7.05, 7.7);
+    for (const publication of (pack.publications ?? []).slice(0, 1)) canvas.subBulletText(publication, MARGIN + 18, 7.85, 8.7);
   }
   canvas.center('1', 16, canvas.size(6.8));
   return { stream: canvas.commands.join('\n'), overflow: canvas.overflow, bottomY: canvas.y };
 }
 
-function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Record<FontName, string>) {
-  const objects: string[] = [];
-  const add = (body: string) => { objects.push(body); return objects.length; };
-  const fontIds = Object.fromEntries(Object.entries(fonts).map(([key, base]) => [key, add(`<< /Type /Font /Subtype /Type1 /BaseFont /${base} >>`)]));
+function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Record<FontName, 'regular' | 'bold'>) {
+  const objects: Buffer[] = [];
+  const add = (body: string | Buffer) => {
+    objects.push(typeof body === 'string' ? Buffer.from(body, 'ascii') : body);
+    return objects.length;
+  };
+  const variantIds = new Map<'regular' | 'bold', number>();
+  for (const variant of [...new Set(Object.values(fonts))]) {
+    const definition = EMBEDDED_RESUME_FONTS[variant];
+    const fontFileId = add(Buffer.concat([
+      Buffer.from(`<< /Length ${definition.data.length} /Length1 ${definition.data.length} >>\nstream\n`, 'ascii'),
+      definition.data,
+      Buffer.from('\nendstream', 'ascii'),
+    ]));
+    const descriptorId = add(`<< /Type /FontDescriptor /FontName /${definition.baseFont} /Flags ${definition.flags} /FontBBox [${definition.bbox.join(' ')}] /ItalicAngle ${definition.italicAngle} /Ascent ${definition.ascent} /Descent ${definition.descent} /CapHeight ${definition.capHeight} /StemV ${definition.stemV} /MissingWidth ${definition.widths[0]} /FontFile2 ${fontFileId} 0 R >>`);
+    const fontId = add(`<< /Type /Font /Subtype /TrueType /BaseFont /${definition.baseFont} /FirstChar 32 /LastChar 126 /Widths [${definition.widths.join(' ')}] /Encoding /WinAnsiEncoding /FontDescriptor ${descriptorId} 0 R >>`);
+    variantIds.set(variant, fontId);
+  }
+  const fontIds = Object.fromEntries(Object.entries(fonts).map(([key, variant]) => [key, variantIds.get(variant)!]));
   const pagesId = add('');
   const pageIds: number[] = [];
   for (const stream of streams) {
@@ -279,34 +309,34 @@ function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Re
     const resources = Object.entries(fontIds).map(([key, id]) => `/${key} ${id} 0 R`).join(' ');
     pageIds.push(add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageSize[0]} ${pageSize[1]}] /Resources << /Font << ${resources} >> >> /Contents ${contentId} 0 R >>`));
   }
-  objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+  objects[pagesId - 1] = Buffer.from(`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`, 'ascii');
   const catalogId = add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
-  let pdf = '%PDF-1.4\n';
+  const chunks: Buffer[] = [Buffer.from('%PDF-1.4\n%\xFF\xFF\xFF\xFF\n', 'binary')];
   const offsets = [0];
-  objects.forEach((body, i) => { offsets.push(Buffer.byteLength(pdf, 'utf8')); pdf += `${i + 1} 0 obj\n${body}\nendobj\n`; });
-  const xref = Buffer.byteLength(pdf, 'utf8');
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (let i = 1; i <= objects.length; i++) pdf += `${String(offsets[i]).padStart(10, '0')} 00000 n \n`;
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return Buffer.from(pdf, 'utf8');
+  let length = chunks[0].length;
+  objects.forEach((body, index) => {
+    offsets.push(length);
+    const object = Buffer.concat([Buffer.from(`${index + 1} 0 obj\n`, 'ascii'), body, Buffer.from('\nendobj\n', 'ascii')]);
+    chunks.push(object);
+    length += object.length;
+  });
+  const xref = length;
+  let trailer = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (let index = 1; index <= objects.length; index += 1) trailer += `${String(offsets[index]).padStart(10, '0')} 00000 n \n`;
+  trailer += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  chunks.push(Buffer.from(trailer, 'ascii'));
+  return Buffer.concat(chunks);
 }
 
-const FONT_MAP: Record<FontName, string> = { TR: 'Times-Roman', TB: 'Times-Bold', TI: 'Times-Italic', TBI: 'Times-BoldItalic', HR: 'Helvetica', HB: 'Helvetica-Bold' };
+const FONT_MAP: Record<FontName, 'regular' | 'bold'> = { TR: 'regular', TB: 'bold', TI: 'regular', TBI: 'bold', HR: 'regular', HB: 'bold' };
 
 export function resumePdf(profile: CandidateProfile, _job: Job, pack: ApplicationPack): Buffer {
-  const variants = [
-    { maxExperienceBullets: 3, maxProjects: 4, maxProjectBullets: 2 },
-    { maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 2 },
-    { maxExperienceBullets: 2, maxProjects: 3, maxProjectBullets: 2 },
-    { maxExperienceBullets: 2, maxProjects: 3, maxProjectBullets: 1 },
-  ];
-  const scales = [1.24, 1.20, 1.16, 1.12, 1.08, 1.04, 1.00, 0.96, 0.92, 0.88, 0.85];
-  let best = buildResumeStream(profile, pack, { scale: 0.85, ...variants[variants.length - 1] });
-  outer: for (const variant of variants) {
-    for (const scale of scales) {
-      const candidate = buildResumeStream(profile, pack, { scale, ...variant });
-      if (!candidate.overflow && candidate.bottomY >= BOTTOM) { best = candidate; break outer; }
-    }
+  const attempts: LayoutOptions[] = RESUME_LAYOUT_ATTEMPTS.map((attempt) => ({ ...attempt }));
+  let best = buildResumeStream(profile, pack, attempts[attempts.length - 1]);
+  for (const attempt of attempts) {
+    const candidate = buildResumeStream(profile, pack, attempt);
+    best = candidate;
+    if (!candidate.overflow && candidate.bottomY >= BOTTOM) break;
   }
   return pdfFromStreams([best.stream], [A4_WIDTH, A4_HEIGHT], FONT_MAP);
 }

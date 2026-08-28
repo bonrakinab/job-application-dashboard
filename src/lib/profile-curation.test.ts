@@ -17,6 +17,8 @@ function importedProfile(): CandidateProfile {
     experience: [
       { organization: 'Banglalink', title: 'Enterprise Solutions and Services Specialist Engineer, IT', start: 'Sept 2023', end: 'June 2024', location: 'Dhaka, Bangladesh', bullets: ['Verified ERP achievement.'], skills: ['Oracle Fusion ERP Cloud'] },
       { organization: 'banglalink', title: 'Enterprise Solutions and Services Specialist Engineer', start: 'Sep 2023', end: 'Jun 2024', location: 'Tigers Den, Dhaka 1212, Bangladesh', bullets: ['A very long LinkedIn duplicate responsibility that should not replace the verified resume evidence.'], skills: [] },
+      { organization: 'Banglalink', title: 'Information Technology Intern', start: 'June 2023', end: 'Sept 2023', location: 'Dhaka, Bangladesh', bullets: ['Built an internal support chatbot and maintained ERP documentation.'], skills: ['Python'] },
+      { organization: 'GAOTek Inc.', title: 'Software Development Intern - Team Leader', start: 'Dec 2022', end: 'March 2023', location: 'Remote', bullets: ['Led Angular component delivery and defect triage.'], skills: ['Angular'] },
       { organization: 'University of Windsor', title: 'Graduate Assistant', start: 'May 2025', end: 'Aug 2025', location: '401 Sunset Ave, Windsor, ON N9B 3P4', bullets: ['Supported Operating System Fundamentals.'] },
       { organization: 'Student Club', title: 'Head of Finance', bullets: [`Managed finances. ${'Prepared budgets and sponsorship documentation. '.repeat(30)}`] },
     ],
@@ -46,10 +48,10 @@ function importedProfile(): CandidateProfile {
 test('profile curation merges LinkedIn variants and removes noisy aliases without losing useful evidence', () => {
   const curated = curateCandidateProfile(importedProfile());
   assert.deepEqual(curated.skills, ['Python', 'AWS', 'TypeScript', 'Oracle Fusion ERP Cloud']);
-  assert.equal(curated.experience?.length, 3);
+  assert.equal(curated.experience?.length, 5);
   assert.equal(curated.experience?.[0].bullets[0], 'Verified ERP achievement.');
-  assert.equal(curated.experience?.[1].location, 'Windsor, Ontario, Canada');
-  assert.ok((curated.experience?.[2].bullets[0].length ?? 999) <= 360);
+  assert.equal(curated.experience?.find((item) => item.title === 'Graduate Assistant')?.location, 'Windsor, Ontario, Canada');
+  assert.ok((curated.experience?.find((item) => item.title === 'Head of Finance')?.bullets[0].length ?? 999) <= 360);
   assert.equal(curated.degrees?.length, 3);
   assert.equal(curated.projects?.length, 2);
   assert.ok(curated.projects?.find((project) => project.name === 'Smart Parking Application')?.skills?.includes('PHP'));
@@ -60,6 +62,11 @@ test('profile curation merges LinkedIn variants and removes noisy aliases withou
 test('employer-facing profile excludes raw LinkedIn prose and limits resume education to post-secondary degrees', () => {
   const safe = externalApplicationProfile(importedProfile());
   assert.equal(safe.profileSources, undefined);
+  assert.deepEqual(safe.experience?.map((item) => item.title), [
+    'Enterprise Solutions and Services Specialist Engineer, IT',
+    'Information Technology Intern',
+    'Software Development Intern - Team Leader',
+  ]);
   assert.equal(resumeEducation(safe).length, 2);
   assert.ok(resumeEducation(safe).every((degree) => !/o-level/i.test(degree.degree)));
 });

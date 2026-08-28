@@ -93,13 +93,43 @@ function rankBullets(bullets: string[], parentSkills: string[], jobContext: stri
     .map((item) => item.text);
 }
 
-function optimizedExperience(profile: CandidateProfile, jobContext: string, attempt: number) {
+function experienceKey(organization: string, title: string) {
+  return `${normalizeText(organization)}|${normalizeText(title)}`;
+}
+
+function optimizedExperience(profile: CandidateProfile, pack: ApplicationPack, jobContext: string, attempt: number) {
   const limit = attempt >= 2 ? 3 : 2;
-  return (profile.experience ?? []).map((item) => ({
-    organization: item.organization,
-    title: item.title,
-    bullets: rankBullets(item.bullets, item.skills ?? [], jobContext, limit),
-  }));
+  const sources = new Map((profile.experience ?? []).map((item, sourceIndex) => [
+    experienceKey(item.organization, item.title),
+    { item, sourceIndex },
+  ]));
+
+  return pack.experience
+    .map((selected, selectedIndex) => {
+      const source = sources.get(experienceKey(selected.organization, selected.title));
+      const sourceBullets = source?.item.bullets ?? selected.bullets;
+      const sourceSkills = source?.item.skills ?? [];
+      const bullets = rankBullets(sourceBullets, sourceSkills, jobContext, limit);
+      const score = relevance([
+        selected.organization,
+        selected.title,
+        ...sourceSkills,
+        ...bullets,
+      ].join(' '), jobContext);
+      return {
+        organization: selected.organization,
+        title: selected.title,
+        bullets,
+        score,
+        selectedIndex,
+        sourceIndex: source?.sourceIndex ?? Number.MAX_SAFE_INTEGER,
+      };
+    })
+    .filter((item) => item.bullets.length > 0)
+    .sort((a, b) => b.score - a.score || a.selectedIndex - b.selectedIndex)
+    .slice(0, 3)
+    .sort((a, b) => a.sourceIndex - b.sourceIndex || a.selectedIndex - b.selectedIndex)
+    .map(({ organization, title, bullets }) => ({ organization, title, bullets }));
 }
 
 function optimizedProjects(profile: CandidateProfile, jobContext: string, attempt: number) {
@@ -135,7 +165,9 @@ function retunePack(job: Job, profile: CandidateProfile, pack: ApplicationPack, 
     resumeHeadline: targetedHeadline(job, skills),
     resumeSummary: targetedSummary(job, profile, jdSkills),
     skills,
-    experience: optimizedExperience(profile, jobContext, attempt),
+    // ATS retuning may improve bullet order, but it must never replace the
+    // evidence shortlist with every role in the master LinkedIn history.
+    experience: optimizedExperience(profile, pack, jobContext, attempt),
     projects: optimizedProjects(profile, jobContext, attempt),
   };
 }

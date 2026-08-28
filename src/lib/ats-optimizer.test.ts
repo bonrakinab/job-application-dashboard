@@ -117,3 +117,25 @@ test('optimizer stops below 90 rather than inventing an unsupported mandatory te
   assert.ok(!result.pack.skills.includes('Java'));
   assert.ok(result.score.unsupportedMustHaves.includes('Java'));
 });
+
+test('optimizer preserves the selected professional shortlist instead of appending the full LinkedIn history', () => {
+  const expandedProfile: CandidateProfile = {
+    ...profile,
+    experience: [
+      ...(profile.experience ?? []),
+      { organization: 'University', title: 'Student Representative', bullets: ['Supported committee hiring discussions.'] },
+      { organization: 'Student Club', title: 'Head of Finance', bullets: ['Prepared budgets and reports.'] },
+      { organization: 'Foundation', title: 'Volunteer', bullets: ['Supported community programs.'] },
+    ],
+  };
+  const selected = weakPack();
+  selected.experience = [{
+    organization: 'Example Co',
+    title: 'Software Development Intern',
+    bullets: ['Built TypeScript application components and integrated PostgreSQL-backed APIs.'],
+  }];
+
+  const result = optimizeApplicationPackForAts(job, expandedProfile, selected, match);
+  assert.deepEqual(result.pack.experience.map((item) => item.title), ['Software Development Intern']);
+  assert.ok(result.pack.experience.length <= 3);
+});

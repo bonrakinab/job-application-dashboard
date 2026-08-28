@@ -10,7 +10,7 @@ import { normalizeText } from './utils';
 import { RESUME_TEMPLATE_VERSION } from './resume-template';
 import { selectApplicationSupplements } from './application-supplements';
 
-export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-27.linkedin-curation.v5';
+export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-28.resume-experience-selection.v6';
 export { RESUME_TEMPLATE_VERSION } from './resume-template';
 
 export interface ApplicationPackPlan {
@@ -107,7 +107,7 @@ CRITICAL METHOD
 2. Select candidate evidence for those requirements. Relevance to this exact JD matters more than generic keyword density.
 2a. Use the supplied REQUIREMENT-TO-EVIDENCE MATRIX as the grounding guide. Prioritize supported evidence, use partial evidence only as transferable experience, and never present a gap as candidate experience.
 3. The supplied experience/project bullets have evidence IDs. In experience.evidenceIds and projects.evidenceIds, output ONLY those IDs. Never rewrite a bullet and never invent an ID.
-4. Preserve organization names, job titles, and project names exactly. You may omit weakly relevant projects. Keep professional employment history concise and select only the strongest relevant bullets for each role.
+4. Preserve organization names, job titles, and project names exactly. Select the 3 supplied professional experience roles when all are available, ordered in the candidate's original chronology, and use only the strongest relevant bullets. Never substitute committee, club, volunteer, assistantship, or unrelated LinkedIn history. You may omit weakly relevant projects.
 5. skills must contain ONLY exact skill strings from the supplied profile, ordered by relevance. Prefer 10-20 strong skills; do not pad with unrelated skills.
 6. resumeSummary must be 2-3 concise sentences and specific to the role. It may use only facts, technologies, domains, degree status, and metrics supported by the master evidence. If a degree is Expected, the candidate is NOT a graduate and does not yet hold that degree.
 7. resumeHeadline should position the candidate for the target role without claiming an unsupported current title or missing technology.
@@ -342,9 +342,9 @@ export function deterministicTailoringPlan(job: Job, profile: CandidateProfile, 
   const skills = (relevant.length >= 8 ? relevant : ranked.map((item) => item.skill)).slice(0, 18);
 
   const rankedRoles = rankedExperienceEvidence(job, profile, match);
-  const positiveRoles = rankedRoles.filter((item) => item.score > 0);
-  const experience = (positiveRoles.length ? positiveRoles : rankedRoles.filter((item) => item.evidence.length).slice(0, 2))
-    .slice(0, 4)
+  const experience = rankedRoles
+    .filter((item) => item.evidence.length)
+    .slice(0, 3)
     .map((item) => ({
       organization: item.organization,
       title: item.title,
@@ -396,39 +396,40 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
   const fallbackSkills = deterministic.skills;
   const skills = [...new Set([...requestedSkills, ...fallbackSkills])].slice(0, 20);
 
-  const requestedExperience = new Map((plan.experience ?? []).map((item) => [
+  const sourceExperience = new Map((profile.experience ?? []).map((item, experienceIndex) => [
     `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
-    item,
+    { item, experienceIndex },
   ]));
   const deterministicExperience = new Map(deterministic.experience.map((item) => [
     `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
     item,
   ]));
-  const experienceCandidates = (profile.experience ?? []).map((source, experienceIndex) => {
-    const key = `${normalizeText(source.organization)}|${normalizeText(source.title)}`;
-    const requested = requestedExperience.get(key);
-    let ids = validEvidenceIds(requested?.evidenceIds, records, (record) => record.kind === 'experience' && record.parentIndex === experienceIndex);
+  const selectedExperience = new Map<number, ApplicationPack['experience'][number]>();
+  const addExperience = (key: string, requestedIds: string[] | undefined) => {
+    const source = sourceExperience.get(key);
+    if (!source || selectedExperience.has(source.experienceIndex) || selectedExperience.size >= 3) return;
+    let ids = validEvidenceIds(requestedIds, records, (record) => record.kind === 'experience' && record.parentIndex === source.experienceIndex);
     if (!ids.length) {
-      ids = validEvidenceIds(deterministicExperience.get(key)?.evidenceIds, records, (record) => record.kind === 'experience' && record.parentIndex === experienceIndex);
+      ids = validEvidenceIds(deterministicExperience.get(key)?.evidenceIds, records, (record) => record.kind === 'experience' && record.parentIndex === source.experienceIndex);
     }
-    return {
-      organization: source.organization,
-      title: source.title,
+    if (!ids.length) return;
+    selectedExperience.set(source.experienceIndex, {
+      organization: source.item.organization,
+      title: source.item.title,
       bullets: ids.slice(0, 3).map((id) => records.get(id)!.text),
-    };
-  });
-  const requestedOrder = new Map((plan.experience ?? []).map((item, index) => [
-    `${normalizeText(item.organization)}|${normalizeText(item.title)}`,
-    index,
-  ]));
-  const experience = experienceCandidates
-    .filter((item) => item.bullets.length > 0)
-    .sort((a, b) => {
-      const aKey = `${normalizeText(a.organization)}|${normalizeText(a.title)}`;
-      const bKey = `${normalizeText(b.organization)}|${normalizeText(b.title)}`;
-      return (requestedOrder.get(aKey) ?? 999) - (requestedOrder.get(bKey) ?? 999);
-    })
-    .slice(0, 4);
+    });
+  };
+
+  for (const requested of plan.experience ?? []) {
+    addExperience(`${normalizeText(requested.organization)}|${normalizeText(requested.title)}`, requested.evidenceIds);
+  }
+  for (const fallback of deterministic.experience) {
+    if (selectedExperience.size >= 3) break;
+    addExperience(`${normalizeText(fallback.organization)}|${normalizeText(fallback.title)}`, fallback.evidenceIds);
+  }
+  const experience = [...selectedExperience.entries()]
+    .sort(([leftIndex], [rightIndex]) => leftIndex - rightIndex)
+    .map(([, item]) => item);
 
   const sourceProjects = new Map((profile.projects ?? []).map((project, index) => [normalizeText(project.name), { project, index }]));
   const materializedProjects: ApplicationPack['projects'] = [];
