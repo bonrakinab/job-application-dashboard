@@ -3,6 +3,7 @@ const links = [
   { href: '/fresh-openings', label: 'Fresh' },
   { href: '/jobs', label: 'All jobs' },
   { href: '/target-jobs', label: 'Target companies' },
+  { href: '/jobs/new', label: 'Add job' },
 ];
 
 export function JobsNav() {
