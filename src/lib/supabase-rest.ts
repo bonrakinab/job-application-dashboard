@@ -7,14 +7,26 @@ const READ_ATTEMPTS = 3;
 const REQUEST_TIMEOUT_MS = 3500;
 const RETRY_DELAYS_MS = [150, 450];
 
+export function supabaseAuthHeaders(key: string) {
+  const authHeaders: Record<string, string> = { apikey: key };
+  const jwtSegments = key.split('.');
+  const isLegacyJwt = jwtSegments.length === 3 && jwtSegments.every(Boolean);
+
+  // Supabase's sb_secret_* keys belong only in the apikey header. The
+  // Authorization header is retained for legacy JWT service-role keys.
+  if (isLegacyJwt) authHeaders.Authorization = `Bearer ${key}`;
+  return authHeaders;
+}
+
 function headers(extra?: HeadersInit) {
   if (!apiKey) throw new Error('Supabase secret key is not configured.');
-  return {
-    apikey: apiKey,
-    Authorization: `Bearer ${apiKey}`,
+
+  const result = new Headers({
+    ...supabaseAuthHeaders(apiKey),
     'Content-Type': 'application/json',
-    ...extra,
-  } as HeadersInit;
+  });
+  new Headers(extra).forEach((value, key) => result.set(key, value));
+  return result;
 }
 
 function sleep(ms: number) {
