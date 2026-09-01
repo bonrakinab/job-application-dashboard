@@ -69,7 +69,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
       </div>
       <div className="row job-header-actions">
         {match ? <StatusPill value={match.recommendation}/> : null}
-        <a className="btn ghost" target="_blank" rel="noreferrer" href={job.url}>View original ↗</a>
+        {job.url && job.url !== '#' ? <a className="btn ghost" target="_blank" rel="noreferrer" href={job.url}>View original ↗</a> : null}
       </div>
     </div>
 
