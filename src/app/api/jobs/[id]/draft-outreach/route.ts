@@ -1,12 +1,14 @@
 import { createOutreachDraft } from '@/lib/gmail';
 import { getApplicationPack, getJob } from '@/lib/store';
+import { profileIdForJob } from '@/lib/part-time-jobs';
 
 export const runtime = 'nodejs';
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [job, pack] = await Promise.all([getJob(id), getApplicationPack(id)]);
+  const job = await getJob(id);
   if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
+  const pack = await getApplicationPack(id, profileIdForJob(job));
   if (!pack) return Response.json({ error: 'Generate the application pack first.' }, { status: 400 });
   try {
     const result = await createOutreachDraft(`Interest in ${job.title} — ${job.company}`, pack.outreachMessage);

@@ -176,6 +176,23 @@ export function buildProfessionalFallbackCoverLetter(
   _research?: CompanyIntelligence | null,
 ) {
   const company = cleanCompanyName(job.company);
+  if (profile.profilePurpose === 'part-time') {
+    const experience = bestExperienceEvidence(pack, job, match);
+    const secondExperience = (pack.experience ?? []).flatMap((item) => (item.bullets ?? []).map((bullet) => ({ ...item, bullet })))
+      .find((item) => item.bullet !== experience?.bullet);
+    const strengths = (pack.skills ?? []).slice(0, 5);
+    const opening = `I am writing to apply for the ${job.title} position at ${company}. The opportunity interests me because it aligns with the experience and workplace skills documented in my part-time résumé.`;
+    const experienceParagraph = experience
+      ? `In my role as ${experience.title} at ${experience.organization}, ${firstPersonEvidence(experience.bullet)}. This is the most relevant example from my background for the responsibilities of this position, and I would bring the same practical approach to the work at ${company}.`
+      : `My uploaded résumé provides the work and education history supporting this application. I would bring a practical approach, follow the role's procedures carefully, and learn the team's way of working.`;
+    const skillsParagraph = secondExperience
+      ? `My background also includes work as ${secondExperience.title} at ${secondExperience.organization}, where ${firstPersonEvidence(secondExperience.bullet)}. ${strengths.length ? `The relevant skills reflected in my résumé include ${strengths.join(', ')}.` : ''}`
+      : strengths.length
+        ? `The relevant skills reflected in my résumé include ${strengths.join(', ')}. I am prepared to apply those strengths to the day-to-day needs of this role and continue learning where the position requires it.`
+        : `I am prepared to learn the position's procedures, contribute consistently, and discuss how the experience shown in my résumé applies to the role.`;
+    const closing = `I would appreciate the opportunity to discuss the ${job.title} position and how my documented experience could support ${company}. Thank you for considering my application.`;
+    return ['Dear Hiring Manager,', opening, experienceParagraph, skillsParagraph, closing, `Sincerely,\n${profile.name}`].join('\n\n').replace(/\.\./g, '.');
+  }
   const graduation = expectedGraduationSentence(profile);
   const experience = bestExperienceEvidence(pack, job, match);
   const project = topRelevantProjects(profile, pack, job, match)[0];

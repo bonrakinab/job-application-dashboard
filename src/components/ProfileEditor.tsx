@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { CandidateProfile, EducationItem, ExperienceItem, ProjectItem } from '@/lib/types';
+import type { CandidateProfile, CandidateProfileId, EducationItem, ExperienceItem, ProjectItem } from '@/lib/types';
 
 function cleanList(values?: string[]) {
   return [...new Set((values ?? []).map((item) => item.trim()).filter(Boolean))];
@@ -22,7 +22,15 @@ const emptyExperience = (): ExperienceItem => ({ organization: '', title: '', bu
 const emptyEducation = (): EducationItem => ({ institution: '', degree: '' });
 const emptyProject = (): ProjectItem => ({ name: '', description: '', bullets: [] });
 
-export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
+export function ProfileEditor({
+  initial,
+  profileId = 'default',
+  showLinkedInImport = true,
+}: {
+  initial: CandidateProfile;
+  profileId?: CandidateProfileId;
+  showLinkedInImport?: boolean;
+}) {
   const [profile, setProfile] = useState<CandidateProfile>({
     ...initial,
     targetTitles: initial.targetTitles ?? [],
@@ -88,7 +96,7 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
         excludedKeywords: cleanList(profile.excludedKeywords),
         links: linksFromText(linksText),
       };
-      const response = await fetch('/api/profile', {
+      const response = await fetch(`/api/profile?profile=${encodeURIComponent(profileId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cleanedProfile),
@@ -98,7 +106,9 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
       const saved = (json.profile ?? cleanedProfile) as CandidateProfile;
       setProfile(saved);
       setLinksText(linksToText(saved.links));
-      setMessage('Profile saved. New application documents will use these details.');
+      setMessage(profileId === 'part-time'
+        ? 'Part-time résumé profile saved. Only part-time applications will use these details.'
+        : 'Profile saved. New application documents will use these details.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -136,7 +146,7 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
   const linkedinAdded = linkedinImport ? Object.values(linkedinImport.added).reduce((sum, value) => sum + value, 0) : 0;
 
   return <div className="profile-editor">
-    <section className="card profile-section linkedin-import-card">
+    {showLinkedInImport ? <section className="card profile-section linkedin-import-card">
       <div className="profile-section-head">
         <div><h2>Import from LinkedIn</h2><p className="small muted">Add LinkedIn skills, roles, education, projects, certifications, courses, languages, awards, and publications to your résumé profile.</p></div>
         {linkedinImport ? <span className="pill strong">LinkedIn merged</span> : null}
@@ -161,7 +171,7 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
         </button>
       </div>
       <p className="small muted linkedin-import-help">Use LinkedIn’s downloaded ZIP archive, or select its profile CSV files. The browser removes messages, connections, and other private archive files before upload. Existing résumé facts are preserved when the sources overlap.</p>
-    </section>
+    </section> : null}
 
     <section className="card profile-section">
       <div className="profile-section-head"><h2>Basic information</h2></div>
@@ -253,8 +263,8 @@ export function ProfileEditor({ initial }: { initial: CandidateProfile }) {
     </details>
 
     <div className="profile-savebar">
-      <span className="small muted">{message || 'Changes affect future résumé and cover-letter generation.'}</span>
-      <button className="btn primary" type="button" onClick={save} disabled={busy || !profile.name.trim() || !cleanList(profile.targetTitles).length || !cleanList(profile.skills).length}>{busy ? 'Saving…' : 'Save profile'}</button>
+      <span className="small muted">{message || (profileId === 'part-time' ? 'Changes affect only future part-time applications.' : 'Changes affect future résumé and cover-letter generation.')}</span>
+      <button className="btn primary" type="button" onClick={save} disabled={busy || !profile.name.trim() || !cleanList(profile.targetTitles).length || (profileId === 'default' && !cleanList(profile.skills).length)}>{busy ? 'Saving…' : 'Save profile'}</button>
     </div>
   </div>;
 }

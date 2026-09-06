@@ -6,7 +6,7 @@ import styles from './ManualJobForm.module.css';
 
 type Stage = 'idle' | 'saving' | 'generating';
 
-export function ManualJobForm() {
+export function ManualJobForm({ initialProfileId = 'default' }: { initialProfileId?: 'default' | 'part-time' }) {
   const [stage, setStage] = useState<Stage>('idle');
   const [message, setMessage] = useState('');
   const [savedJobId, setSavedJobId] = useState('');
@@ -64,6 +64,13 @@ export function ManualJobForm() {
         <input className="input" id="manual-job-location" name="location" maxLength={200} placeholder="e.g. Windsor, Ontario or Remote Canada" />
       </label>
 
+      <label className={styles.label} htmlFor="manual-job-profile">Application résumé
+        <select className="select" id="manual-job-profile" name="applicationProfileId" defaultValue={initialProfileId}>
+          <option value="default">Main career résumé</option>
+          <option value="part-time">Windsor part-time résumé</option>
+        </select>
+      </label>
+
       <label className={styles.label} htmlFor="manual-job-url"><span className={styles.heading}>Job link <small>Optional</small></span>
         <input className="input" id="manual-job-url" name="url" inputMode="url" maxLength={2048} placeholder="https://company.com/jobs/..." />
       </label>
@@ -84,7 +91,7 @@ export function ManualJobForm() {
     <div className={styles.submit}>
       <div>
         <b>Uses the full application policy</b>
-        <span>Verified evidence only · ATS optimization · claim checks · résumé and cover letter</span>
+        <span>Uses only the selected résumé · ATS optimization · claim checks · résumé and cover letter</span>
       </div>
       <button className="btn primary" type="submit" disabled={busy}>{buttonLabel}</button>
     </div>

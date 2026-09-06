@@ -1,9 +1,16 @@
-import type { AnswerBankEntry, ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobValidityVerification, JobWithMatch, MatchScore, SearchProfile, WebhookIntegration } from './types';
+import type { AnswerBankEntry, ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CandidateProfileId, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobValidityVerification, JobWithMatch, MatchScore, SearchProfile, WebhookIntegration } from './types';
 import { demoJobs, demoProfile } from './demo';
 import { jsonEnv } from './utils';
 import { deleteRows, insertIgnoreRows, insertRows, patchRows, supabaseConfigured, supabaseRequest, upsertRows } from './supabase-rest';
 import { dispatchAutomationEvent } from './automations';
-import { curateCandidateProfile } from './profile-curation';
+import { curateCandidateProfile, normalizePartTimeCandidateProfile } from './profile-curation';
+import { DEFAULT_PROFILE_ID, PART_TIME_PROFILE_ID, profileIdForJob } from './part-time-jobs';
+
+function normalizeCandidateProfile(profile: CandidateProfile, profileId: CandidateProfileId) {
+  return profileId === PART_TIME_PROFILE_ID
+    ? normalizePartTimeCandidateProfile({ ...profile, profilePurpose: 'part-time' })
+    : curateCandidateProfile({ ...profile, profilePurpose: 'career' });
+}
 
 function jobToRow(job: Job) {
   return {
@@ -34,6 +41,7 @@ function jobToRow(job: Job) {
     verification_signals: job.verificationSignals,
     closure_reason: job.closureReason,
     verification_method: job.verificationMethod,
+    application_profile_id: job.applicationProfileId ?? profileIdForJob(job),
     raw: job.raw,
   };
 }
@@ -60,6 +68,7 @@ function rowToJob(row: any): JobWithMatch {
     explanation: matchRow.explanation ?? '',
     analyzedAt: matchRow.analyzed_at,
     model: matchRow.model,
+    profileId: matchRow.profile_id ?? undefined,
   } : undefined;
   const application: ApplicationRecord | undefined = appRow ? {
     id: String(appRow.id), jobId: row.id, status: appRow.status, appliedAt: appRow.applied_at, responseAt: appRow.response_at, notes: appRow.notes, createdAt: appRow.created_at, updatedAt: appRow.updated_at,
@@ -93,6 +102,7 @@ function rowToJob(row: any): JobWithMatch {
     verificationSignals: row.verification_signals ?? [],
     closureReason: row.closure_reason,
     verificationMethod: row.verification_method,
+    applicationProfileId: row.application_profile_id ?? undefined,
     raw: row.raw,
     match,
     application,
@@ -101,24 +111,39 @@ function rowToJob(row: any): JobWithMatch {
 
 export function isLiveMode() { return supabaseConfigured; }
 
-export async function getCandidateProfile(): Promise<CandidateProfile> {
-  if (!supabaseConfigured) return curateCandidateProfile(jsonEnv<CandidateProfile>('CANDIDATE_PROFILE_JSON') ?? demoProfile);
-  const rows = await supabaseRequest<Array<{ profile: CandidateProfile }>>('candidate_profiles?id=eq.default&select=profile&limit=1');
-  return curateCandidateProfile(rows[0]?.profile ?? jsonEnv<CandidateProfile>('CANDIDATE_PROFILE_JSON') ?? demoProfile);
+export async function getCandidateProfileOptional(profileId: CandidateProfileId = DEFAULT_PROFILE_ID): Promise<CandidateProfile | null> {
+  if (!supabaseConfigured) {
+    const configured = profileId === PART_TIME_PROFILE_ID
+      ? jsonEnv<CandidateProfile>('PART_TIME_CANDIDATE_PROFILE_JSON')
+      : jsonEnv<CandidateProfile>('CANDIDATE_PROFILE_JSON') ?? demoProfile;
+    return configured ? normalizeCandidateProfile(configured, profileId) : null;
+  }
+  const rows = await supabaseRequest<Array<{ profile: CandidateProfile }>>(
+    `candidate_profiles?id=eq.${encodeURIComponent(profileId)}&select=profile&limit=1`,
+  );
+  return rows[0]?.profile ? normalizeCandidateProfile(rows[0].profile, profileId) : null;
 }
 
-export async function saveCandidateProfile(profile: CandidateProfile) {
+export async function getCandidateProfile(profileId: CandidateProfileId = DEFAULT_PROFILE_ID): Promise<CandidateProfile> {
+  const profile = await getCandidateProfileOptional(profileId);
+  if (profile) return profile;
+  throw new Error(profileId === PART_TIME_PROFILE_ID
+    ? 'Upload the separate part-time résumé before analyzing this job or generating documents.'
+    : 'Candidate profile is not configured.');
+}
+
+export async function saveCandidateProfile(profile: CandidateProfile, profileId: CandidateProfileId = DEFAULT_PROFILE_ID) {
   if (!supabaseConfigured) throw new Error('Supabase is required to persist the candidate profile.');
-  await upsertRows('candidate_profiles', [{ id: 'default', profile: curateCandidateProfile(profile), updated_at: new Date().toISOString() }], 'id');
+  await upsertRows('candidate_profiles', [{ id: profileId, profile: normalizeCandidateProfile(profile, profileId), updated_at: new Date().toISOString() }], 'id');
 }
 
-export function jobMatchNeedsRefresh(match: MatchScore | undefined) {
-  return !match || match.model?.startsWith('stale:') === true;
+export function jobMatchNeedsRefresh(match: MatchScore | undefined, profileId?: CandidateProfileId) {
+  return !match || match.model?.startsWith('stale:') === true || Boolean(profileId && (match.profileId ?? DEFAULT_PROFILE_ID) !== profileId);
 }
 
-export async function markJobMatchesStale(reason = 'profile-updated') {
+export async function markJobMatchesStale(reason = 'profile-updated', profileId: CandidateProfileId = DEFAULT_PROFILE_ID) {
   if (!supabaseConfigured) return;
-  await supabaseRequest('job_matches?job_id=not.is.null', {
+  await supabaseRequest(`job_matches?profile_id=eq.${encodeURIComponent(profileId)}`, {
     method: 'PATCH',
     headers: { Prefer: 'return=minimal' },
     body: JSON.stringify({ model: `stale:${reason}` }),
@@ -132,7 +157,7 @@ export async function saveDiscoveredJobs(jobs: Job[]) {
   return jobs;
 }
 
-export async function saveMatch(jobId: string, match: MatchScore) {
+export async function saveMatch(jobId: string, match: MatchScore, profileId: CandidateProfileId = DEFAULT_PROFILE_ID) {
   if (!supabaseConfigured) return;
   await upsertRows('job_matches', [{
     job_id: jobId,
@@ -152,6 +177,7 @@ export async function saveMatch(jobId: string, match: MatchScore) {
     missing_skills: match.missingSkills,
     explanation: match.explanation,
     model: match.model,
+    profile_id: profileId,
     analyzed_at: new Date().toISOString(),
   }], 'job_id');
   void dispatchAutomationEvent('job.match.updated', {
@@ -160,6 +186,7 @@ export async function saveMatch(jobId: string, match: MatchScore) {
     recommendation: match.recommendation,
     matchedSkills: match.matchedSkills,
     blockers: match.blockers,
+    profileId,
   });
 }
 
@@ -197,9 +224,11 @@ export async function getJob(id: string): Promise<JobWithMatch | null> {
   return rows[0] ? rowToJob(rows[0]) : null;
 }
 
-export async function listUnanalyzedJobs(limit = 40): Promise<JobWithMatch[]> {
+export async function listUnanalyzedJobs(limit = 40, profileId: CandidateProfileId = DEFAULT_PROFILE_ID): Promise<JobWithMatch[]> {
   const jobs = await listJobs(300);
-  return jobs.filter((job) => jobMatchNeedsRefresh(job.match)).slice(0, limit);
+  return jobs
+    .filter((job) => profileIdForJob(job) === profileId && jobMatchNeedsRefresh(job.match, profileId))
+    .slice(0, limit);
 }
 
 export async function updateApplicationStatus(jobId: string, status: ApplicationStatus, notes?: string) {
@@ -213,17 +242,18 @@ export async function updateApplicationStatus(jobId: string, status: Application
   void dispatchAutomationEvent('application.status.changed', { jobId, status, notes: notes ?? null, changedAt: now });
 }
 
-export async function saveApplicationPack(jobId: string, pack: ApplicationPack, model?: string) {
+export async function saveApplicationPack(jobId: string, pack: ApplicationPack, model?: string, profileId: CandidateProfileId = DEFAULT_PROFILE_ID) {
   if (!supabaseConfigured) return;
   await upsertRows('documents', [
-    { job_id: jobId, kind: 'application_pack', content_json: pack, content_text: pack.coverLetter, model, created_at: new Date().toISOString() },
+    { job_id: jobId, kind: 'application_pack', profile_id: profileId, content_json: pack, content_text: pack.coverLetter, model, created_at: new Date().toISOString() },
   ], 'job_id,kind');
 }
 
-export async function startApplicationPackRun(jobId: string) {
+export async function startApplicationPackRun(jobId: string, profileId: CandidateProfileId = DEFAULT_PROFILE_ID) {
   if (!supabaseConfigured) return undefined;
   const rows = await insertRows<{ id: string }>('application_pack_runs', [{
     job_id: jobId,
+    profile_id: profileId,
     status: 'running',
     current_step: 'started',
     updated_at: new Date().toISOString(),
@@ -268,9 +298,10 @@ export async function finishApplicationPackRun(
   });
 }
 
-export async function getApplicationPack(jobId: string): Promise<ApplicationPack | null> {
+export async function getApplicationPack(jobId: string, profileId?: CandidateProfileId): Promise<ApplicationPack | null> {
   if (!supabaseConfigured) return null;
-  const rows = await supabaseRequest<Array<{ content_json: ApplicationPack }>>(`documents?job_id=eq.${encodeURIComponent(jobId)}&kind=eq.application_pack&select=content_json&limit=1`);
+  const profileFilter = profileId ? `&profile_id=eq.${encodeURIComponent(profileId)}` : '';
+  const rows = await supabaseRequest<Array<{ content_json: ApplicationPack }>>(`documents?job_id=eq.${encodeURIComponent(jobId)}&kind=eq.application_pack${profileFilter}&select=content_json&limit=1`);
   return rows[0]?.content_json ?? null;
 }
 

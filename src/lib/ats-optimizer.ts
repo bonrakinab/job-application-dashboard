@@ -52,6 +52,10 @@ function relevance(value: string, jobContext: string) {
 }
 
 function expectedDegreeLine(profile: CandidateProfile) {
+  if (profile.profilePurpose === 'part-time') {
+    const titles = [...new Set((profile.experience ?? []).map((item) => item.title).filter(Boolean))].slice(0, 2);
+    return profile.headline?.trim() || (titles.length ? `Candidate with experience as ${titles.join(' and ')}` : 'Part-time job candidate');
+  }
   const degree = (profile.degrees ?? []).find((item) => /master|msc/i.test(`${item.degree} ${item.field ?? ''}`));
   if (!degree) return 'Computer Science candidate';
   const expected = /expected|present|current/i.test(degree.end ?? '');
@@ -74,6 +78,13 @@ function supportedJobSkills(job: Job, profile: CandidateProfile, match?: MatchSc
 }
 
 function targetedSummary(job: Job, profile: CandidateProfile, skills: string[]) {
+  if (profile.profilePurpose === 'part-time') {
+    const first = `${expectedDegreeLine(profile)} with documented experience relevant to ${job.title}.`;
+    const second = skills.length
+      ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')}.`
+      : 'The résumé presents only the experience and qualifications supplied in the separate part-time profile.';
+    return `${first} ${second}`;
+  }
   const first = `${expectedDegreeLine(profile)} with hands-on experience relevant to ${job.title}.`;
   const second = skills.length
     ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')} across professional, academic, and project work.`
@@ -139,6 +150,7 @@ function optimizedProjects(profile: CandidateProfile, jobContext: string, attemp
     score: relevance([project.name, project.description, ...(project.skills ?? []), ...(project.bullets ?? [])].join(' '), jobContext),
     thesis: /msc thesis|thesis/i.test(project.name),
   })).sort((a, b) => {
+    if (profile.profilePurpose === 'part-time') return b.score - a.score || a.index - b.index;
     if (a.thesis !== b.thesis) return a.thesis ? -1 : 1;
     return b.score - a.score || a.index - b.index;
   });

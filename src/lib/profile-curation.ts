@@ -203,6 +203,9 @@ export function isResumeExperience(item: ExperienceItem) {
 }
 
 export function resumeExperience(profile: CandidateProfile) {
+  if (profile.profilePurpose === 'part-time') {
+    return normalizePartTimeCandidateProfile(profile).experience ?? [];
+  }
   const eligible = dedupeExperience(profile.experience).filter(isResumeExperience);
   const core = CORE_RESUME_EXPERIENCE
     .map((expected) => eligible.find((item) => expected.organization.test(item.organization) && expected.title.test(item.title)))
@@ -351,8 +354,86 @@ export function curateCandidateProfile(profile: CandidateProfile): CandidateProf
   };
 }
 
+/**
+ * A part-time profile is sourced from a separate uploaded resume. Preserve
+ * customer-service and general workplace skills that are intentionally removed
+ * from the technical-career profile, while still cleaning exact duplicates and
+ * formatting artifacts.
+ */
+export function normalizePartTimeCandidateProfile(profile: CandidateProfile): CandidateProfile {
+  const strings = (values: string[] | undefined) => unique(
+    (values ?? []).map(cleanLinkedInText).filter(Boolean),
+    normalizeText,
+  );
+  const experience = unique((profile.experience ?? []).flatMap((item) => {
+    const organization = cleanLinkedInText(item.organization ?? '');
+    const title = cleanLinkedInText(item.title ?? '');
+    if (!organization || !title) return [];
+    return [{
+      ...item,
+      organization,
+      title,
+      location: cleanLocation(item.location),
+      bullets: cleanBullets(item.bullets),
+      skills: strings(item.skills),
+    }];
+  }), (item) => [item.organization, item.title, item.start ?? '', item.end ?? ''].map(normalizeText).join('|'));
+  const degrees = unique((profile.degrees ?? []).flatMap((item) => {
+    const institution = cleanLinkedInText(item.institution ?? '');
+    const degree = cleanLinkedInText(item.degree ?? '');
+    if (!institution || !degree) return [];
+    return [{
+      ...item,
+      institution,
+      degree,
+      field: item.field ? cleanLinkedInText(item.field) : undefined,
+      location: cleanLocation(item.location),
+      coursework: strings(item.coursework),
+    }];
+  }), (item) => [item.institution, item.degree, item.field ?? ''].map(normalizeText).join('|'));
+  const projects = unique((profile.projects ?? []).flatMap((item) => {
+    const name = cleanLinkedInText(item.name ?? '');
+    if (!name) return [];
+    return [{
+      ...item,
+      name,
+      description: cleanLinkedInText(item.description ?? ''),
+      bullets: cleanBullets(item.bullets),
+      skills: strings(item.skills),
+    }];
+  }), (item) => normalizeText(item.name));
+
+  return {
+    ...profile,
+    profilePurpose: 'part-time',
+    name: cleanLinkedInText(profile.name ?? ''),
+    email: profile.email?.trim() || undefined,
+    phone: profile.phone?.trim() || undefined,
+    location: cleanLocation(profile.location),
+    headline: profile.headline ? cleanLinkedInText(profile.headline) : undefined,
+    summary: profile.summary ? cleanLinkedInText(profile.summary) : undefined,
+    targetTitles: strings(profile.targetTitles),
+    preferredLocations: strings(profile.preferredLocations),
+    skills: unique((profile.skills ?? []).map(canonicalSkill).filter(Boolean), normalizeText),
+    experience,
+    degrees,
+    projects,
+    certifications: strings(profile.certifications),
+    languages: strings(profile.languages),
+    courses: strings(profile.courses),
+    awards: strings(profile.awards),
+    publications: strings(profile.publications),
+    workAuthorization: strings(profile.workAuthorization),
+    excludedKeywords: strings(profile.excludedKeywords),
+    links: dedupeLinks(profile.links),
+    profileSources: undefined,
+  };
+}
+
 export function employerFacingCandidateProfile(profile: CandidateProfile): CandidateProfile {
-  const curated = curateCandidateProfile(profile);
+  const curated = profile.profilePurpose === 'part-time'
+    ? normalizePartTimeCandidateProfile(profile)
+    : curateCandidateProfile(profile);
   const { profileSources: _profileSources, ...safe } = curated;
   return safe;
 }

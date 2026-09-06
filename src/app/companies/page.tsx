@@ -1,4 +1,5 @@
 import { CompanyWatchlistClient } from '@/components/CompanyWatchlistClient';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { listCompanyWatchlist, listJobs } from '@/lib/store';
 import { sameCompany } from '@/lib/target-company-jobs';
 
@@ -20,7 +21,8 @@ function LoadFailure() {
 
 export default async function CompaniesPage() {
   try {
-    const [companies, jobs] = await Promise.all([listCompanyWatchlist(), listJobs(2000)]);
+    const [companies, allJobs] = await Promise.all([listCompanyWatchlist(), listJobs(2000)]);
+    const jobs = allJobs.filter(isMainCareerJob);
     const coverage = companies.map((company) => {
       const matchingJobs = jobs.filter((job) => sameCompany(company.company, job.company));
       return {

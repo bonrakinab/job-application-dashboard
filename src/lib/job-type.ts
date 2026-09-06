@@ -21,8 +21,8 @@ function hasOnSiteSignal(text: string) {
 export function jobMatchesType(job: Pick<Job, 'title' | 'location' | 'employmentType' | 'workplaceType' | 'remote'>, filter: JobTypeFilter) {
   if (filter === 'all') return true;
   const text = normalizedJobText(job);
-  if (filter === 'full-time') return /\b(full[ -]?time|permanent)\b/.test(text);
-  if (filter === 'part-time') return /\b(part[ -]?time)\b/.test(text);
+  if (filter === 'full-time') return /\b(full[\s_-]*time|permanent)\b/.test(text);
+  if (filter === 'part-time') return /\b(part[\s_-]*time|casual)\b/.test(text);
   if (filter === 'contract') return /\b(contract|contractor|contractual|temporary|temp\b|fixed[ -]?term|freelance)\b/.test(text);
   if (filter === 'remote') return job.remote === true || hasRemoteSignal(text);
   if (filter === 'hybrid') return hasHybridSignal(text);

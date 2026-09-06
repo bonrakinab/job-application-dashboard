@@ -2,6 +2,7 @@ export type Recommendation = 'exceptional' | 'strong' | 'reasonable' | 'stretch'
 export type ApplicationStatus = 'discovered' | 'reviewing' | 'approved' | 'applied' | 'interview' | 'rejected' | 'offer' | 'withdrawn';
 export type SourceKind = 'greenhouse' | 'lever' | 'ashby';
 export type JobValidityStatus = 'active' | 'likely_active' | 'unknown' | 'likely_closed' | 'closed';
+export type CandidateProfileId = 'default' | 'part-time';
 
 export interface JobValidityVerification {
   validityStatus: JobValidityStatus;
@@ -42,6 +43,7 @@ export interface Job {
   verificationSignals?: string[];
   closureReason?: string;
   verificationMethod?: string;
+  applicationProfileId?: CandidateProfileId;
   raw?: unknown;
 }
 
@@ -113,6 +115,7 @@ export interface LinkedInImportSummary {
 }
 
 export interface CandidateProfile {
+  profilePurpose?: 'career' | 'part-time';
   name: string;
   email?: string;
   phone?: string;
@@ -160,6 +163,7 @@ export interface MatchScore {
   explanation: string;
   analyzedAt?: string;
   model?: string;
+  profileId?: CandidateProfileId;
 }
 
 export interface JobWithMatch extends Job {
@@ -186,6 +190,7 @@ export interface ApplicationPackGenerationMeta {
   model: string;
   provider: 'gemini' | 'openai';
   workflowRunId?: string;
+  profileId?: CandidateProfileId;
 }
 
 export interface AtsOptimizationMeta {

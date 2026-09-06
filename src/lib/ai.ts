@@ -1,10 +1,11 @@
 import type { ApplicationPack, CandidateProfile, CompanyIntelligence, Job, MatchScore, RequirementEvidence } from './types';
 import { applicationPackEligibility } from './application-pack-eligibility';
-import { analyzeJobWithGemini, createApplicationPackWithGemini } from './gemini';
+import { analyzeJobWithGemini, createApplicationPackWithGemini, extractResumeProfileWithGemini } from './gemini';
 import {
   analyzeJobWithAI as analyzeJobWithOpenAI,
   createApplicationPack as createApplicationPackWithOpenAI,
   researchCompanyAndHiringTeam as researchCompanyAndHiringTeamWithOpenAI,
+  extractResumeProfileWithOpenAI,
 } from './openai';
 import { deterministicTailoringPlan, materializeApplicationPack } from './resume-tailoring';
 import { deterministicScore } from './scoring';
@@ -98,4 +99,11 @@ export async function researchCompanyAndHiringTeam(job: Job): Promise<{ research
     throw new Error('OpenAI must be configured for grounded company web research.');
   }
   return researchCompanyAndHiringTeamWithOpenAI(job);
+}
+
+export async function extractPartTimeResumeProfile(text: string, fileName: string) {
+  if (!aiProviderConfigured()) throw new Error('Connect an AI provider before importing a résumé.');
+  return selectedAIProvider() === 'gemini'
+    ? extractResumeProfileWithGemini(text, fileName)
+    : extractResumeProfileWithOpenAI(text, fileName);
 }

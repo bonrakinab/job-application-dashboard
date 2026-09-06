@@ -1,9 +1,10 @@
 import { discoverJobs } from '@/connectors/registry';
 import { analyzeJobWithAI } from './ai';
 import { deterministicScore, locationMatchesPreference, titleMatchesTarget } from './scoring';
-import { getCandidateProfile, listUnanalyzedJobs, logActivity, saveDiscoveredJobs, saveMatch } from './store';
+import { getCandidateProfile, getCandidateProfileOptional, listUnanalyzedJobs, logActivity, saveDiscoveredJobs, saveMatch } from './store';
 import type { CandidateProfile, Job } from './types';
 import { daysSince } from './utils';
+import { profileIdForJob } from './part-time-jobs';
 
 function relevant(job: Job, profile: CandidateProfile) {
   const titleHit = titleMatchesTarget(job.title, profile.targetTitles);
@@ -13,11 +14,14 @@ function relevant(job: Job, profile: CandidateProfile) {
   return titleHit && locationHit && fresh;
 }
 
-async function analyzeOne(job: Job, profile: CandidateProfile) {
+async function analyzeOne(job: Job) {
   if (!job.id) return null;
+  const profileId = profileIdForJob(job);
+  const profile = await getCandidateProfileOptional(profileId);
+  if (!profile) return null;
   const pre = deterministicScore(job, profile);
   const match = pre.blockers.length ? pre : await analyzeJobWithAI(job, profile);
-  await saveMatch(job.id, match);
+  await saveMatch(job.id, match, profileId);
   return { id: job.id, score: match.overall, recommendation: match.recommendation };
 }
 
@@ -35,7 +39,7 @@ export async function runDiscoveryAndAnalysis() {
 
   for (let index = 0; index < pending.length; index += concurrency) {
     const batch = pending.slice(index, index + concurrency);
-    const results = await Promise.all(batch.map((job) => analyzeOne(job, profile)));
+    const results = await Promise.all(batch.map((job) => analyzeOne(job)));
     analyzed.push(...results.filter((result): result is NonNullable<typeof result> => Boolean(result)));
   }
 

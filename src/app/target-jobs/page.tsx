@@ -1,5 +1,6 @@
 import { TargetCompanyJobsClient } from '@/components/TargetCompanyJobsClient';
 import { JobsNav } from '@/components/JobsNav';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { getCandidateProfile, listCompanyWatchlist, listJobs } from '@/lib/store';
 import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
 
@@ -33,7 +34,7 @@ export default async function TargetCompanyJobsPage({
       getCandidateProfile(),
       listCompanyWatchlist(),
     ]);
-    const items = rankTargetCompanyJobs(jobs, watchlist, profile);
+    const items = rankTargetCompanyJobs(jobs.filter(isMainCareerJob), watchlist, profile);
     return <>
       <div className="topbar">
         <div>

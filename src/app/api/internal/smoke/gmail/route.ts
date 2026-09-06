@@ -1,5 +1,6 @@
 import { createOutreachDraft, gmailRuntimeStatus, validateGmailOAuth } from '@/lib/gmail';
 import { verifyGitHubActionsOidc } from '@/lib/github-actions-oidc';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { getApplicationPack, listJobs, logActivity } from '@/lib/store';
 
 export const runtime = 'nodejs';
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
 
     await validateGmailOAuth();
 
-    const jobs = await listJobs(200);
+    const jobs = (await listJobs(200)).filter(isMainCareerJob);
     let selected: (typeof jobs)[number] | undefined;
     let pack: Awaited<ReturnType<typeof getApplicationPack>> | undefined;
 

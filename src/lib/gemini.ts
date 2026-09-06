@@ -3,11 +3,17 @@ import { deterministicScore } from './scoring';
 import { clamp } from './utils';
 import {
   applicationPackPlanSchema,
-  applicationPackSystemPrompt,
+  applicationPackSystemPromptForProfile,
   applicationPackUserPrompt,
   materializeApplicationPack,
   type ApplicationPackPlan,
 } from './resume-tailoring';
+import {
+  resumeProfileExtractionSchema,
+  resumeProfileExtractionSystemPrompt,
+  resumeProfileExtractionUserPrompt,
+  type ResumeProfileExtraction,
+} from './resume-profile-import';
 
 const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
 
@@ -184,11 +190,25 @@ export async function createApplicationPackWithGemini(job: Job, profile: Candida
   const plan = await structuredInteraction<ApplicationPackPlan>({
     model,
     schema: applicationPackPlanSchema,
-    system: applicationPackSystemPrompt,
+    system: applicationPackSystemPromptForProfile(profile),
     user: applicationPackUserPrompt(job, profile, match, requirementEvidence),
     maxOutputTokens: 6500,
     thinkingLevel: 'high',
   });
 
   return { pack: materializeApplicationPack(plan, profile, job, match), model };
+}
+
+export async function extractResumeProfileWithGemini(text: string, fileName: string) {
+  if (!process.env.GEMINI_API_KEY) throw new Error('Gemini must be configured to import a résumé.');
+  const model = process.env.GEMINI_MODEL_PROFILE_IMPORT || process.env.GEMINI_MODEL_APPLICATION_PACK || 'gemini-3.6-flash';
+  const extraction = await structuredInteraction<ResumeProfileExtraction>({
+    model,
+    schema: resumeProfileExtractionSchema,
+    system: resumeProfileExtractionSystemPrompt,
+    user: resumeProfileExtractionUserPrompt(fileName, text),
+    maxOutputTokens: 6500,
+    thinkingLevel: 'low',
+  });
+  return { extraction, model };
 }

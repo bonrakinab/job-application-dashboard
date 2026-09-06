@@ -1,5 +1,6 @@
 import { analyzeJobWithAI, aiStatus, createApplicationPack } from '@/lib/ai';
 import { verifyGitHubActionsOidc } from '@/lib/github-actions-oidc';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { getCandidateProfile, listJobs, logActivity, saveApplicationPack, saveMatch } from '@/lib/store';
 import { supabaseRequest } from '@/lib/supabase-rest';
 import type { JobWithMatch } from '@/lib/types';
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
 
     const [profile, jobs] = await Promise.all([getCandidateProfile(), listJobs(200)]);
     const candidates = jobs
+      .filter(isMainCareerJob)
       .filter(eligible)
       .sort((a, b) => (titlePriority(b) + (b.match?.overall ?? 0)) - (titlePriority(a) + (a.match?.overall ?? 0)))
       .slice(0, 5);

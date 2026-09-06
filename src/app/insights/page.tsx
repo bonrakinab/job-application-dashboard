@@ -1,10 +1,12 @@
 import { buildMarketInsights } from '@/lib/market-insights';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { getCandidateProfile, listJobs } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
 export default async function InsightsPage() {
-  const [jobs, profile] = await Promise.all([listJobs(1200), getCandidateProfile()]);
+  const [allJobs, profile] = await Promise.all([listJobs(1200), getCandidateProfile()]);
+  const jobs = allJobs.filter(isMainCareerJob);
   const insights = buildMarketInsights(jobs, profile);
   const coveredSkills = insights.skills.filter((row) => row.owned).length;
 

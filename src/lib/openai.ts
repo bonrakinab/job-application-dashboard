@@ -3,11 +3,17 @@ import { deterministicScore } from './scoring';
 import { clamp } from './utils';
 import {
   applicationPackPlanSchema,
-  applicationPackSystemPrompt,
+  applicationPackSystemPromptForProfile,
   applicationPackUserPrompt,
   materializeApplicationPack,
   type ApplicationPackPlan,
 } from './resume-tailoring';
+import {
+  resumeProfileExtractionSchema,
+  resumeProfileExtractionSystemPrompt,
+  resumeProfileExtractionUserPrompt,
+  type ResumeProfileExtraction,
+} from './resume-profile-import';
 
 const OPENAI_URL = 'https://api.openai.com/v1/responses';
 type ReasoningEffort = 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
@@ -132,12 +138,27 @@ export async function createApplicationPack(job: Job, profile: CandidateProfile,
     model,
     name: 'application_pack_selection_plan',
     schema: applicationPackPlanSchema,
-    system: applicationPackSystemPrompt,
+    system: applicationPackSystemPromptForProfile(profile),
     user: applicationPackUserPrompt(job, profile, match, requirementEvidence),
     maxOutputTokens: 5200,
     reasoningEffort: 'high',
   });
   return { pack: materializeApplicationPack(plan, profile, job, match), model };
+}
+
+export async function extractResumeProfileWithOpenAI(text: string, fileName: string) {
+  if (!process.env.OPENAI_API_KEY) throw new Error('OpenAI must be configured to import a résumé.');
+  const model = process.env.OPENAI_MODEL_PROFILE_IMPORT || process.env.OPENAI_MODEL_APPLICATION_PACK || 'gpt-5.6-sol';
+  const extraction = await structuredResponse<ResumeProfileExtraction>({
+    model,
+    name: 'part_time_resume_profile',
+    schema: resumeProfileExtractionSchema,
+    system: resumeProfileExtractionSystemPrompt,
+    user: resumeProfileExtractionUserPrompt(fileName, text),
+    maxOutputTokens: 5200,
+    reasoningEffort: 'low',
+  });
+  return { extraction, model };
 }
 
 export async function researchCompanyAndHiringTeam(job: Job): Promise<{ research: CompanyIntelligence; model: string }> {
