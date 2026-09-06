@@ -1,12 +1,13 @@
 import { FreshOpeningsClient } from '@/components/FreshOpeningsClient';
 import { JobsNav } from '@/components/JobsNav';
 import { FRESH_OPENINGS_WINDOW_HOURS, freshOpenings } from '@/lib/fresh-openings';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { listJobs } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
 export default async function FreshOpeningsPage() {
-  const jobs = freshOpenings(await listJobs(3000));
+  const jobs = freshOpenings((await listJobs(3000)).filter(isMainCareerJob));
   const tableJobs = jobs.map((job) => ({ ...job, description: '', raw: undefined }));
 
   return <>

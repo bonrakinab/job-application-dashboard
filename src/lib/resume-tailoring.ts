@@ -2,6 +2,7 @@ import type {
   ApplicationPack,
   ApplicationPackGenerationMeta,
   CandidateProfile,
+  CandidateProfileId,
   Job,
   MatchScore,
   RequirementEvidence,
@@ -116,6 +117,14 @@ CRITICAL METHOD
 10. Cover letter: concise, concrete, role-specific, and evidence-backed. Outreach: under 90 words. Interview themes must reflect actual evidence and acknowledged gaps.
 
 The objective is the strongest truthful one-page resume for THIS exact JD, not a generic resume and not a resume that pretends the candidate qualifies for everything.`;
+
+export function applicationPackSystemPromptForProfile(profile: CandidateProfile) {
+  if (profile.profilePurpose !== 'part-time') return applicationPackSystemPrompt;
+  return applicationPackSystemPrompt.replace(
+    'Select the 3 supplied professional experience roles when all are available, ordered in the candidate\'s original chronology, and use only the strongest relevant bullets. Never substitute committee, club, volunteer, assistantship, or unrelated LinkedIn history. You may omit weakly relevant projects.',
+    'Select up to 3 of the most relevant experience roles from this separate part-time resume, preserve their original chronology, and use only supplied evidence bullets. Do not assume any role from the main career profile exists. You may omit weakly relevant projects.',
+  );
+}
 
 export function applicationEvidenceProfile(profile: CandidateProfile) {
   const { email: _email, phone: _phone, links: _links, ...safe } = profile;
@@ -301,6 +310,13 @@ function authoredTextLooksSupported(text: string, profile: CandidateProfile, mat
 }
 
 function fallbackSummary(job: Job, profile: CandidateProfile, skills: string[]) {
+  if (profile.profilePurpose === 'part-time') {
+    const roles = [...new Set((profile.experience ?? []).map((item) => item.title).filter(Boolean))].slice(0, 2);
+    const background = roles.length ? ` with experience as ${roles.join(' and ')}` : '';
+    const topSkills = skills.slice(0, 6).join(', ');
+    const first = `${profile.headline?.trim() || 'Reliable part-time candidate'}${background}.`;
+    return topSkills ? `${first} Relevant strengths for ${job.title} include ${topSkills}.` : first;
+  }
   const degree = expectedDegree(profile)
     ? 'currently completing an MSc in Computer Science (AI)'
     : 'with a Computer Science background';
@@ -314,6 +330,19 @@ function fallbackHeadline(job: Job, skills: string[]) {
 }
 
 function fallbackCoverLetter(job: Job, profile: CandidateProfile, skills: string[], experienceBullets: string[], projectNames: string[]) {
+  if (profile.profilePurpose === 'part-time') {
+    const skillSentence = skills.length ? `My relevant strengths include ${skills.slice(0, 6).join(', ')}.` : '';
+    const evidenceSentence = experienceBullets[0]
+      ? `In my previous work, ${experienceBullets[0].charAt(0).toLowerCase()}${experienceBullets[0].slice(1)}`
+      : '';
+    return [
+      'Dear Hiring Manager,',
+      `I am applying for the ${job.title} position at ${job.company}.`,
+      [skillSentence, evidenceSentence].filter(Boolean).join(' '),
+      `I would welcome the opportunity to bring this experience to ${job.company}. Thank you for your consideration.`,
+      'Sincerely,\n' + profile.name,
+    ].filter(Boolean).join('\n\n');
+  }
   const degreeSentence = expectedDegree(profile)
     ? 'I am currently completing an MSc in Computer Science with an Artificial Intelligence specialization at the University of Windsor.'
     : 'My background combines computer science, enterprise IT, software development, and applied AI.';
@@ -332,6 +361,10 @@ function fallbackCoverLetter(job: Job, profile: CandidateProfile, skills: string
 }
 
 function fallbackOutreach(job: Job, profile: CandidateProfile, skills: string[]) {
+  if (profile.profilePurpose === 'part-time') {
+    const strengths = skills.slice(0, 4).join(', ');
+    return `Hi, I am interested in the ${job.title} role at ${job.company}.${strengths ? ` My relevant strengths include ${strengths}.` : ''} I would be glad to connect and learn more about the position. Best, ${profile.name}`.slice(0, 650);
+  }
   const degree = expectedDegree(profile) ? 'currently completing an MSc in Computer Science (AI)' : 'a computer science professional';
   return `Hi, I am ${degree} and am interested in the ${job.title} role at ${job.company}. My most relevant strengths include ${skills.slice(0, 4).join(', ')}. I would be glad to connect and learn more about the team's priorities. Best, ${profile.name}`.slice(0, 650);
 }
@@ -499,6 +532,7 @@ export function attachApplicationPackGenerationMeta(
     profileUpdatedAt?: string;
     generatedAt?: string;
     workflowRunId?: string;
+    profileId?: CandidateProfileId;
   },
 ): ApplicationPack {
   const generationMeta: ApplicationPackGenerationMeta = {
@@ -509,11 +543,12 @@ export function attachApplicationPackGenerationMeta(
     model: options.model,
     provider: options.provider,
     workflowRunId: options.workflowRunId,
+    profileId: options.profileId,
   };
   return { ...pack, generationMeta };
 }
 
-export function applicationPackStaleness(pack: ApplicationPack | null | undefined, profileUpdatedAt?: string) {
+export function applicationPackStaleness(pack: ApplicationPack | null | undefined, profileUpdatedAt?: string, profileId?: CandidateProfileId) {
   if (!pack) return { stale: false, reasons: [] as string[] };
   const reasons: string[] = [];
   const meta = pack.generationMeta;
@@ -522,6 +557,7 @@ export function applicationPackStaleness(pack: ApplicationPack | null | undefine
   } else {
     if (meta.tailoringVersion !== APPLICATION_PACK_TAILORING_VERSION) reasons.push('Tailoring logic has changed.');
     if (meta.templateVersion !== RESUME_TEMPLATE_VERSION) reasons.push('Resume template has changed.');
+    if (profileId && (meta.profileId ?? 'default') !== profileId) reasons.push('Application profile has changed.');
     if (profileUpdatedAt) {
       const profileTime = Date.parse(profileUpdatedAt);
       const generatedProfileTime = Date.parse(meta.profileUpdatedAt ?? meta.generatedAt);

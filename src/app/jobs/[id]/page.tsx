@@ -4,13 +4,14 @@ import { JobAnswerAssistant } from '@/components/JobAnswerAssistant';
 import { JobDescription } from '@/components/JobDescription';
 import { StatusPill } from '@/components/StatusPill';
 import { applicationPackEligibility } from '@/lib/application-pack-eligibility';
-import { getApplicationPackState, getCandidateProfileState } from '@/lib/application-pack-state';
+import { getApplicationPackState, getCandidateProfileStateOptional } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
 import { scoreTailoredResumeWithCoursework } from '@/lib/ats-coursework';
 import { buildInterviewPrep } from '@/lib/interview-prep';
+import { emptyPartTimeProfile, PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { buildRequirementEvidenceMatrix } from '@/lib/requirement-evidence';
-import { getJob } from '@/lib/store';
+import { getJob, jobMatchNeedsRefresh } from '@/lib/store';
 import type { JobValidityStatus, RequirementEvidence } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 import { notFound } from 'next/navigation';
@@ -37,14 +38,18 @@ function unique(values: string[]) {
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [job, profileState] = await Promise.all([getJob(id), getCandidateProfileState()]);
+  const job = await getJob(id);
   if (!job) notFound();
-  const packState = await getApplicationPackState(id, profileState.updatedAt);
+  const profileId = profileIdForJob(job);
+  const profileState = await getCandidateProfileStateOptional(profileId);
+  const profileReady = Boolean(profileState);
+  const packState = await getApplicationPackState(id, profileState?.updatedAt, profileId);
   const pack = packState.pack;
-  const match = job.match;
+  const match = jobMatchNeedsRefresh(job.match, profileId) ? undefined : job.match;
   const eligibility = applicationPackEligibility(match);
-  const packUsable = Boolean(pack && !packState.stale);
-  const applicationProfile = projectTailoredApplicationProfile(externalApplicationProfile(profileState.profile), job);
+  const packUsable = Boolean(profileReady && pack && !packState.stale);
+  const sourceProfile = profileState?.profile ?? emptyPartTimeProfile();
+  const applicationProfile = projectTailoredApplicationProfile(externalApplicationProfile(sourceProfile), job);
   const ats = packUsable && pack ? scoreTailoredResumeWithCoursework(job, applicationProfile, pack, match) : null;
   const requirements = pack?.requirementEvidence?.length
     ? pack.requirementEvidence
@@ -63,7 +68,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   return <>
     <div className="topbar simple-job-header">
       <div>
-        <div className="eyebrow">Job opportunity</div>
+        <div className="eyebrow">{profileId === PART_TIME_PROFILE_ID ? 'Windsor part-time opportunity' : 'Job opportunity'}</div>
         <h1 className="title">{job.title}</h1>
         <div className="sub">{metadata}</div>
       </div>
@@ -150,6 +155,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           atsScore={ats?.overall}
           packGenerationReason={eligibility.reason}
           packGenerationBlockers={eligibility.blockers}
+          profileReady={profileReady}
+          profileSetupUrl={profileId === PART_TIME_PROFILE_ID ? '/part-time-jobs/profile' : '/settings'}
         />
         {packUsable && pack ? <div className="card document-status-card">
           <div className="kicker">Application documents</div>

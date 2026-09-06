@@ -1,12 +1,14 @@
 import { DiscoverButton } from '@/components/DiscoverButton';
 import { applicationLabel } from '@/lib/application-state';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { rankRecommendedJobs } from '@/lib/recommendations';
 import { getCandidateProfile, getDashboardStats, isLiveMode, listJobs } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
-  const [jobs, profile] = await Promise.all([listJobs(1000), getCandidateProfile()]);
+  const [allJobs, profile] = await Promise.all([listJobs(1000), getCandidateProfile()]);
+  const jobs = allJobs.filter(isMainCareerJob);
   const stats = await getDashboardStats(jobs);
   const recommended = rankRecommendedJobs(jobs, profile).slice(0, 5);
 

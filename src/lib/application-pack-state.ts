@@ -1,23 +1,40 @@
-import type { CandidateProfile } from './types';
+import type { CandidateProfile, CandidateProfileId } from './types';
 import { coverLetterQualityIssues } from './cover-letter-tailoring';
-import { getApplicationPack, getCandidateProfile, getJob } from './store';
+import { getApplicationPack, getCandidateProfile, getCandidateProfileOptional, getJob } from './store';
 import { supabaseConfigured, supabaseRequest } from './supabase-rest';
 import { applicationPackStaleness } from './resume-tailoring';
-import { curateCandidateProfile } from './profile-curation';
+import { curateCandidateProfile, normalizePartTimeCandidateProfile } from './profile-curation';
+import { DEFAULT_PROFILE_ID, PART_TIME_PROFILE_ID, profileIdForJob } from './part-time-jobs';
 
-export async function getCandidateProfileState(): Promise<{ profile: CandidateProfile; updatedAt?: string }> {
-  if (!supabaseConfigured) return { profile: await getCandidateProfile() };
+export async function getCandidateProfileStateOptional(profileId: CandidateProfileId = DEFAULT_PROFILE_ID): Promise<{ profile: CandidateProfile; updatedAt?: string } | null> {
+  if (!supabaseConfigured) {
+    const profile = await getCandidateProfileOptional(profileId);
+    return profile ? { profile } : null;
+  }
   const rows = await supabaseRequest<Array<{ profile: CandidateProfile; updated_at?: string }>>(
-    'candidate_profiles?id=eq.default&select=profile,updated_at&limit=1',
+    `candidate_profiles?id=eq.${encodeURIComponent(profileId)}&select=profile,updated_at&limit=1`,
   );
-  if (rows[0]?.profile) return { profile: curateCandidateProfile(rows[0].profile), updatedAt: rows[0].updated_at };
-  return { profile: await getCandidateProfile() };
+  if (!rows[0]?.profile) return null;
+  return {
+    profile: profileId === PART_TIME_PROFILE_ID
+      ? normalizePartTimeCandidateProfile(rows[0].profile)
+      : curateCandidateProfile(rows[0].profile),
+    updatedAt: rows[0].updated_at,
+  };
 }
 
-export async function getApplicationPackState(jobId: string, profileUpdatedAt?: string) {
-  const [pack, job] = await Promise.all([getApplicationPack(jobId), getJob(jobId)]);
-  const effectiveProfileUpdatedAt = profileUpdatedAt ?? (await getCandidateProfileState()).updatedAt;
-  const freshness = applicationPackStaleness(pack, effectiveProfileUpdatedAt);
+export async function getCandidateProfileState(profileId: CandidateProfileId = DEFAULT_PROFILE_ID): Promise<{ profile: CandidateProfile; updatedAt?: string }> {
+  const state = await getCandidateProfileStateOptional(profileId);
+  if (state) return state;
+  return { profile: await getCandidateProfile(profileId) };
+}
+
+export async function getApplicationPackState(jobId: string, profileUpdatedAt?: string, requestedProfileId?: CandidateProfileId) {
+  const job = await getJob(jobId);
+  const profileId = requestedProfileId ?? (job ? profileIdForJob(job) : DEFAULT_PROFILE_ID);
+  const pack = await getApplicationPack(jobId, profileId);
+  const effectiveProfileUpdatedAt = profileUpdatedAt ?? (await getCandidateProfileStateOptional(profileId))?.updatedAt;
+  const freshness = applicationPackStaleness(pack, effectiveProfileUpdatedAt, profileId);
   const reasons = [...freshness.reasons];
 
   if (pack && job && coverLetterQualityIssues(pack.coverLetter ?? '', job).length) {

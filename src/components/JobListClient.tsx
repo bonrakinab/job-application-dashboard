@@ -31,23 +31,24 @@ function validityRank(status?: JobValidityStatus) {
   return 0;
 }
 
-export function JobListClient({ jobs }: { jobs: JobWithMatch[] }) {
+export function JobListClient({ jobs, fixedJobType }: { jobs: JobWithMatch[]; fixedJobType?: Exclude<JobTypeFilter, 'all'> }) {
   const [q,setQ]=useState('');
   const [filter,setFilter]=useState('all');
   const [source,setSource]=useState('all');
   const [careerStage,setCareerStage]=useState('all');
-  const [jobType,setJobType]=useState<JobTypeFilter>('all');
+  const [jobType,setJobType]=useState<JobTypeFilter>(fixedJobType ?? 'all');
   const [applicationState,setApplicationState]=useState<ApplicationFilter>('all');
   const [validity,setValidity]=useState('viable');
   const [page,setPage]=useState(1);
   const sources=useMemo(()=>[...new Set(jobs.map(job=>job.source))].sort(),[jobs]);
+  const effectiveJobType = fixedJobType ?? jobType;
   const visible=useMemo(()=>jobs.filter(j=>{
     const text=`${j.title} ${j.company} ${j.location}`.toLowerCase();
     const match=!q||text.includes(q.toLowerCase());
     const category=filter==='all'||j.match?.recommendation===filter;
     const sourceHit=source==='all'||j.source===source;
     const stageHit=careerStage==='all'||stage(j)===careerStage;
-    const typeHit=jobMatchesType(j,jobType);
+    const typeHit=jobMatchesType(j,effectiveJobType);
     const applicationHit=matchesApplicationFilter(j.application,applicationState);
     const validityHit=validity==='all'
       || (validity==='viable' && !['closed','likely_closed'].includes(j.validityStatus ?? 'unknown'))
@@ -57,11 +58,11 @@ export function JobListClient({ jobs }: { jobs: JobWithMatch[] }) {
     return match&&category&&sourceHit&&stageHit&&typeHit&&applicationHit&&validityHit;
   }).sort((a,b)=>validityRank(b.validityStatus)-validityRank(a.validityStatus)
     || (b.healthScore ?? 50)-(a.healthScore ?? 50)
-    || (b.match?.overall ?? -1)-(a.match?.overall ?? -1)),[jobs,q,filter,source,careerStage,jobType,applicationState,validity]);
+    || (b.match?.overall ?? -1)-(a.match?.overall ?? -1)),[jobs,q,filter,source,careerStage,effectiveJobType,applicationState,validity]);
   const totalPages=Math.max(1,Math.ceil(visible.length/PAGE_SIZE));
   const paged=useMemo(()=>visible.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE),[visible,page]);
 
-  useEffect(()=>setPage(1),[q,filter,source,careerStage,jobType,applicationState,validity]);
+  useEffect(()=>setPage(1),[q,filter,source,careerStage,effectiveJobType,applicationState,validity]);
   useEffect(()=>{ if(page>totalPages)setPage(totalPages); },[page,totalPages]);
 
   return <>
@@ -71,7 +72,7 @@ export function JobListClient({ jobs }: { jobs: JobWithMatch[] }) {
       <div className="filter-panel-body searchbar job-filters">
         <select className="select" aria-label="Match rating" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All match ratings</option><option value="exceptional">Exceptional</option><option value="strong">Strong</option><option value="reasonable">Reasonable</option><option value="stretch">Stretch</option><option value="skip">Skip</option></select>
         <select className="select" aria-label="Career stage" value={careerStage} onChange={e=>setCareerStage(e.target.value)}><option value="all">All stages</option><option value="internship">Internships</option><option value="new-grad">New grad</option><option value="entry-level">Entry level</option><option value="experienced">Experienced</option></select>
-        <select className="select" aria-label="Job type" value={jobType} onChange={e=>setJobType(e.target.value as JobTypeFilter)}><option value="all">All job types</option><option value="full-time">Full-time</option><option value="part-time">Part-time</option><option value="contract">Contract</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="on-site">On-site</option></select>
+        {!fixedJobType ? <select className="select" aria-label="Job type" value={jobType} onChange={e=>setJobType(e.target.value as JobTypeFilter)}><option value="all">All job types</option><option value="full-time">Full-time</option><option value="part-time">Part-time</option><option value="contract">Contract</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="on-site">On-site</option></select> : null}
         <select className="select" aria-label="Application state" value={applicationState} onChange={e=>setApplicationState(e.target.value as ApplicationFilter)}><option value="all">Any application status</option><option value="applied">Applied</option><option value="not-applied">Not applied</option></select>
         <select className="select" aria-label="Posting state" value={validity} onChange={e=>setValidity(e.target.value)}><option value="viable">Open or unverified</option><option value="verified">Verified active</option><option value="unknown">Unverified</option><option value="closed">Closed</option><option value="all">Any posting state</option></select>
         <select className="select" aria-label="Source" value={source} onChange={e=>setSource(e.target.value)}><option value="all">All sources</option>{sources.map(value=><option value={value} key={value}>{value}</option>)}</select>

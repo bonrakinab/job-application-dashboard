@@ -1,7 +1,7 @@
 import { analyzeJobWithAI, createApplicationPack, deterministicApplicationPack, researchCompanyAndHiringTeam } from '@/lib/ai';
 import { applicationPackEligibility } from '@/lib/application-pack-eligibility';
 import { withPersistentApplicationSkills } from '@/lib/application-skill-policy';
-import { getCandidateProfileState } from '@/lib/application-pack-state';
+import { getCandidateProfileStateOptional } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
 import { scoreTailoredResumeWithCoursework } from '@/lib/ats-coursework';
 import { optimizeApplicationPackForAts } from '@/lib/ats-optimizer';
@@ -9,6 +9,7 @@ import { verifyApplicationPackClaims } from '@/lib/claim-verification';
 import { buildProfessionalFallbackCoverLetter, hasUsableJobDescription } from '@/lib/cover-letter-tailoring';
 import { tailorRelevantCoursework } from '@/lib/education-tailoring';
 import { isJobClosed, verifyJobAvailability } from '@/lib/job-validity';
+import { DEFAULT_PROFILE_ID, PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-ai';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { buildRequirementEvidenceMatrix } from '@/lib/requirement-evidence';
@@ -25,16 +26,17 @@ import {
   saveMatch,
   startApplicationPackRun,
 } from '@/lib/store';
-import type { MatchScore } from '@/lib/types';
+import type { CandidateProfileId, MatchScore } from '@/lib/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-export function needsDetailedRequirementAnalysis(match: MatchScore | undefined, description: string) {
+export function needsDetailedRequirementAnalysis(match: MatchScore | undefined, description: string, profileId?: CandidateProfileId) {
   if (!match) return true;
   const model = match.model ?? '';
   const noRequirements = !(match.mustHave?.length || match.preferred?.length || match.missingSkills?.length);
   return model.startsWith('stale:')
+    || Boolean(profileId && (match.profileId ?? DEFAULT_PROFILE_ID) !== profileId)
     || (description.trim().length >= 300 && (model.startsWith('deterministic') || noRequirements));
 }
 
@@ -46,9 +48,9 @@ async function safeLogActivity(event: string, jobId: string | undefined, payload
   }
 }
 
-async function safeStartRun(jobId: string) {
+async function safeStartRun(jobId: string, profileId: CandidateProfileId) {
   try {
-    return await startApplicationPackRun(jobId);
+    return await startApplicationPackRun(jobId, profileId);
   } catch {
     return undefined;
   }
@@ -72,9 +74,19 @@ async function safeFinishRun(runId: string | undefined, status: 'completed' | 'b
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [job, profileState] = await Promise.all([getJob(id), getCandidateProfileState()]);
+  const job = await getJob(id);
   if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
-  const runId = await safeStartRun(id);
+  const profileId = profileIdForJob(job);
+  const profileState = await getCandidateProfileStateOptional(profileId);
+  if (!profileState) return Response.json({
+    error: profileId === PART_TIME_PROFILE_ID
+      ? 'Upload the separate part-time résumé before generating this application pack.'
+      : 'Candidate profile is not configured.',
+    code: 'CANDIDATE_PROFILE_REQUIRED',
+    profileId,
+    manageUrl: profileId === PART_TIME_PROFILE_ID ? '/part-time-jobs/profile' : '/settings',
+  }, { status: 409 });
+  const runId = await safeStartRun(id, profileId);
   try {
     const verification = await verifyJobAvailability(job);
     await saveJobValidity(id, verification);
@@ -93,12 +105,13 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
     const employerProfile = externalApplicationProfile(profileState.profile);
     let match = job.match;
-    if (needsDetailedRequirementAnalysis(match, job.description)) {
+    if (needsDetailedRequirementAnalysis(match, job.description, profileId)) {
+      const requiresProfileRefresh = !match || match.model?.startsWith('stale:') === true || (match.profileId ?? DEFAULT_PROFILE_ID) !== profileId;
       const refreshed = await analyzeJobWithAI(job, employerProfile);
       const isDetailedModel = Boolean(refreshed.model && !refreshed.model.startsWith('deterministic'));
-      if (isDetailedModel || !match) {
+      if (isDetailedModel || requiresProfileRefresh) {
         match = refreshed;
-        await saveMatch(id, refreshed);
+        await saveMatch(id, refreshed, profileId);
       }
     }
     await safeRecordStep(runId, 'requirement_analysis', {
@@ -203,8 +216,9 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       provider: generation.providerUsed,
       profileUpdatedAt: profileState.updatedAt,
       workflowRunId: runId,
+      profileId,
     });
-    await saveApplicationPack(id, pack, generation.model);
+    await saveApplicationPack(id, pack, generation.model, profileId);
     await safeRecordStep(runId, 'saved', { ats: finalScore.overall, atsStatus: finalScore.status });
     await safeFinishRun(runId, 'completed');
     await safeLogActivity('application_pack.completed', id, {

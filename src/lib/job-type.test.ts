@@ -15,6 +15,9 @@ const base = {
 test('matches employment types', () => {
   assert.equal(jobMatchesType({ ...base, employmentType: 'Full-time' }, 'full-time'), true);
   assert.equal(jobMatchesType({ ...base, employmentType: 'Part Time' }, 'part-time'), true);
+  assert.equal(jobMatchesType({ ...base, employmentType: 'PART_TIME' }, 'part-time'), true);
+  assert.equal(jobMatchesType({ ...base, title: 'Part-time Support Analyst' }, 'part-time'), true);
+  assert.equal(jobMatchesType({ ...base, employmentType: 'Casual' }, 'part-time'), true);
   assert.equal(jobMatchesType({ ...base, employmentType: '12 month contract' }, 'contract'), true);
 });
 

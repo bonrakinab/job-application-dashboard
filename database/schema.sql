@@ -62,6 +62,7 @@ create table if not exists jobs (
   verification_signals jsonb not null default '[]'::jsonb,
   closure_reason text,
   verification_method text,
+  application_profile_id text not null default 'default',
   raw jsonb,
   unique(source, source_key, external_id)
 );
@@ -72,6 +73,7 @@ create index if not exists jobs_company_idx on jobs(company);
 create index if not exists jobs_validity_status_idx on jobs(validity_status);
 create index if not exists jobs_last_verified_at_idx on jobs(last_verified_at asc nulls first);
 create index if not exists jobs_health_score_idx on jobs(health_score desc);
+create index if not exists jobs_application_profile_discovered_idx on jobs(application_profile_id, discovered_at desc);
 
 create table if not exists job_matches (
   job_id text primary key references jobs(id) on delete cascade,
@@ -91,11 +93,13 @@ create table if not exists job_matches (
   missing_skills jsonb not null default '[]'::jsonb,
   explanation text not null default '',
   model text,
+  profile_id text not null default 'default',
   analyzed_at timestamptz not null default now()
 );
 
 create index if not exists job_matches_overall_idx on job_matches(overall desc);
 create index if not exists job_matches_recommendation_idx on job_matches(recommendation);
+create index if not exists job_matches_profile_idx on job_matches(profile_id, analyzed_at desc);
 
 create table if not exists applications (
   id bigserial primary key,
@@ -117,6 +121,7 @@ create table if not exists documents (
   content_text text,
   content_json jsonb,
   model text,
+  profile_id text not null default 'default',
   created_at timestamptz not null default now(),
   unique(job_id, kind)
 );
@@ -124,6 +129,7 @@ create table if not exists documents (
 create table if not exists application_pack_runs (
   id uuid primary key default gen_random_uuid(),
   job_id text not null references jobs(id) on delete cascade,
+  profile_id text not null default 'default',
   status text not null default 'running' check (status in ('running','completed','blocked','failed')),
   current_step text not null default 'started',
   error text,

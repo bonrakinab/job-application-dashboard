@@ -24,6 +24,8 @@ export function JobActions({
   atsScore,
   packGenerationReason,
   packGenerationBlockers = [],
+  profileReady = true,
+  profileSetupUrl,
 }: {
   id: string;
   applyUrl?: string;
@@ -36,6 +38,8 @@ export function JobActions({
   atsScore?: number;
   packGenerationReason?: string;
   packGenerationBlockers?: string[];
+  profileReady?: boolean;
+  profileSetupUrl?: string;
 }) {
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
@@ -167,15 +171,21 @@ export function JobActions({
 
   return <div className="card application-actions">
     <div className="kicker">Application</div>
-    <h2>{usablePack ? 'Documents ready' : hasPack ? 'Documents need updating' : 'Prepare your application'}</h2>
+    <h2>{!profileReady ? 'Part-time résumé needed' : usablePack ? 'Documents ready' : hasPack ? 'Documents need updating' : 'Prepare your application'}</h2>
     <div className="action-status">
       <span>Posting <b>{healthLabel(currentValidity)}</b></span>
       {atsScore != null ? <span>Résumé score <b className={atsEligible ? 'text-success' : 'text-warning'}>{atsScore}/100</b></span> : null}
     </div>
 
-    <button className="btn primary action-primary" disabled={Boolean(busy) || closed} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
+    <button className="btn primary action-primary" disabled={Boolean(busy) || closed || !profileReady} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
       {hasPack ? 'Regenerate résumé + cover letter' : 'Generate résumé + cover letter'}
     </button>
+
+    {!profileReady ? <div className="compact-warning">
+      <b>Upload your separate part-time résumé first.</b>
+      <span>This job will not use skills or experience from the main career profile.</span>
+      {profileSetupUrl ? <a className="btn" href={profileSetupUrl}>Upload part-time résumé</a> : null}
+    </div> : null}
 
     {closed ? <p className="small muted">This posting appears closed. Verify it again if the employer has reopened the role.</p> : null}
     {packGenerationReason ? <div className="compact-warning">
@@ -209,7 +219,7 @@ export function JobActions({
       <summary>More actions</summary>
       <div className="advanced-panel-body grid" style={{ gap: 9 }}>
         <button className="btn" disabled={Boolean(busy)} onClick={verifyOnly}>Verify posting</button>
-        <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Refresh job analysis</button>
+        <button className="btn" disabled={Boolean(busy) || !profileReady} onClick={() => action(`/api/jobs/${id}/analyze`, 'Analysis')}>Refresh job analysis</button>
         <button className="btn" disabled={Boolean(busy) || !canResearch} onClick={() => action(`/api/jobs/${id}/research`, 'Company research')}>Research company</button>
         {usablePack ? <button className="btn" disabled={Boolean(busy)} onClick={() => action(`/api/jobs/${id}/draft-outreach`, 'Gmail outreach draft')}>Create outreach draft</button> : null}
         {!canResearch ? <span className="small muted">Company research is not connected.</span> : null}

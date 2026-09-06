@@ -1,4 +1,4 @@
-import type { Job } from './types';
+import type { CandidateProfileId, Job } from './types';
 import { normalizeText, stableJobId } from './utils';
 
 export interface ManualJobInput {
@@ -7,6 +7,7 @@ export interface ManualJobInput {
   description?: unknown;
   location?: unknown;
   url?: unknown;
+  applicationProfileId?: unknown;
 }
 
 export class ManualJobInputError extends Error {}
@@ -64,6 +65,8 @@ export function buildManualJob(input: ManualJobInput, now = new Date().toISOStri
   const description = cleanDescription(input.description);
   const location = optionalText(input.location, 'Location', 200);
   const url = cleanUrl(input.url);
+  const requestedProfile = text(input.applicationProfileId);
+  const applicationProfileId: CandidateProfileId = requestedProfile === 'part-time' ? 'part-time' : 'default';
   const externalId = stableJobId('manual-description', company, `${title}:${normalizeText(description)}`);
   const id = stableJobId('manual', 'dashboard', externalId);
 
@@ -76,14 +79,16 @@ export function buildManualJob(input: ManualJobInput, now = new Date().toISOStri
     applyUrl: url,
     title,
     company,
-    location,
+    location: location ?? (applicationProfileId === 'part-time' ? 'Windsor, Ontario' : undefined),
     description,
     discoveredAt: now,
     lastSeenAt: now,
     validityStatus: 'unknown',
     healthScore: url ? 50 : 40,
+    employmentType: applicationProfileId === 'part-time' ? 'Part Time' : undefined,
+    applicationProfileId,
     verificationSignals: ['Job description entered manually in the dashboard.'],
     verificationMethod: 'manual-entry',
-    raw: { manualEntry: true, enteredAt: now },
+    raw: { manualEntry: true, enteredAt: now, profile_id: applicationProfileId },
   };
 }

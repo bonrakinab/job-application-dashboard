@@ -1,6 +1,7 @@
 import { PortalSearchPanel } from '@/components/PortalSearchPanel';
 import { RecommendedJobsClient } from '@/components/RecommendedJobsClient';
 import { JobsNav } from '@/components/JobsNav';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { rankRecommendedJobs } from '@/lib/recommendations';
 import { filterJobsForSearchProfile, profileForSearch } from '@/lib/search-profiles';
 import { getCandidateProfile, listJobs, listSearchProfiles } from '@/lib/store';
@@ -9,7 +10,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function RecommendedJobsPage({ searchParams }: { searchParams: Promise<{ profile?: string }> }) {
   const params = await searchParams;
-  const [jobs, profile, searchProfiles] = await Promise.all([listJobs(700), getCandidateProfile(), listSearchProfiles()]);
+  const [allJobs, profile, searchProfiles] = await Promise.all([listJobs(700), getCandidateProfile(), listSearchProfiles()]);
+  const jobs = allJobs.filter(isMainCareerJob);
   const selectedProfile = params.profile ? searchProfiles.find((item) => item.id === params.profile && item.enabled) : undefined;
   const effectiveProfile = profileForSearch(profile, selectedProfile);
   const searchJobs = filterJobsForSearchProfile(jobs, selectedProfile);

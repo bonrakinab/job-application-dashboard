@@ -2,7 +2,8 @@ import { JobsNav } from '@/components/JobsNav';
 import { ManualJobForm } from '@/components/ManualJobForm';
 import styles from '@/components/ManualJobForm.module.css';
 
-export default function NewJobPage() {
+export default async function NewJobPage({ searchParams }: { searchParams: Promise<{ profile?: string }> }) {
+  const { profile } = await searchParams;
   return <>
     <div className="topbar simple-topbar">
       <div>
@@ -14,7 +15,7 @@ export default function NewJobPage() {
 
     <JobsNav />
     <div className={styles.page}>
-      <ManualJobForm />
+      <ManualJobForm initialProfileId={profile === 'part-time' ? 'part-time' : 'default'} />
     </div>
   </>;
 }

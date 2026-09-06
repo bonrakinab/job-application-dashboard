@@ -1,5 +1,6 @@
 import { collapseDuplicateJobs } from '@/lib/job-duplicates';
 import { sendDigest } from '@/lib/gmail';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { listJobs, logActivity } from '@/lib/store';
 
 export const runtime = 'nodejs';
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
   if (!authorizedCron(request)) return new Response('Unauthorized', { status: 401 });
   try {
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    const recentRaw = (await listJobs(500)).filter((job) => {
+    const recentRaw = (await listJobs(500)).filter(isMainCareerJob).filter((job) => {
       const discovered = job.discoveredAt ? Date.parse(job.discoveredAt) : 0;
       return discovered >= cutoff && !['closed', 'likely_closed'].includes(job.validityStatus ?? 'unknown');
     });

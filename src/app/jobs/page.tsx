@@ -1,12 +1,13 @@
 import { DiscoverButton } from '@/components/DiscoverButton';
 import { JobListClient } from '@/components/JobListClient';
 import { JobsNav } from '@/components/JobsNav';
+import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { listJobs } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AllJobsPage() {
-  const jobs = await listJobs(3000);
+  const jobs = (await listJobs(3000)).filter(isMainCareerJob);
   const tableJobs = jobs.map((job) => ({ ...job, description: '', raw: undefined }));
   return <>
     <div className="topbar simple-topbar">
