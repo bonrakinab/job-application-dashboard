@@ -21,8 +21,8 @@ export default async function PartTimeJobsPage() {
   return <>
     <div className="topbar simple-topbar">
       <div>
-        <h1 className="title">Part-time jobs</h1>
-        <div className="sub">Part-time and casual work in Windsor–Essex across retail, food service, warehouse, manufacturing, customer service, and other local employers.</div>
+        <h1 className="title">Local jobs</h1>
+        <div className="sub">Part-time and casual work in Windsor–Essex, plus part-time and full-time food-chain roles. Use Filters to choose a job type.</div>
       </div>
       <div className="row">
         <a className="btn ghost" href="/jobs/new?profile=part-time">Add a job</a>
@@ -36,7 +36,7 @@ export default async function PartTimeJobsPage() {
       <b>Windsor local search</b>
       <p className="small muted">Checks Workopolis, Workforce WindsorEssex/WEjobs, local community boards, and public employer career pages. New verified listings are deduplicated and added to this tab.</p>
     </div>
-    <div className="section-head"><h2>{jobs.length} part-time job{jobs.length === 1 ? '' : 's'}</h2></div>
-    <JobListClient jobs={tableJobs} fixedJobType="part-time" />
+    <div className="section-head"><h2>{jobs.length} local job{jobs.length === 1 ? '' : 's'}</h2></div>
+    <JobListClient jobs={tableJobs} />
   </>;
 }
