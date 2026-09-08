@@ -10,6 +10,7 @@ import type {
 import { normalizeText } from './utils';
 import { RESUME_TEMPLATE_VERSION } from './resume-template';
 import { selectApplicationSupplements } from './application-supplements';
+import { isYcJob } from './startup-fit';
 
 export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-28.resume-experience-selection.v6';
 export { RESUME_TEMPLATE_VERSION } from './resume-template';
@@ -118,12 +119,14 @@ CRITICAL METHOD
 
 The objective is the strongest truthful one-page resume for THIS exact JD, not a generic resume and not a resume that pretends the candidate qualifies for everything.`;
 
-export function applicationPackSystemPromptForProfile(profile: CandidateProfile) {
-  if (profile.profilePurpose !== 'part-time') return applicationPackSystemPrompt;
-  return applicationPackSystemPrompt.replace(
+export function applicationPackSystemPromptForProfile(profile: CandidateProfile, job?: Job) {
+  const base = profile.profilePurpose !== 'part-time' ? applicationPackSystemPrompt : applicationPackSystemPrompt.replace(
     'Select the 3 supplied professional experience roles when all are available, ordered in the candidate\'s original chronology, and use only the strongest relevant bullets. Never substitute committee, club, volunteer, assistantship, or unrelated LinkedIn history. You may omit weakly relevant projects.',
     'Select up to 3 of the most relevant experience roles from this separate part-time resume, preserve their original chronology, and use only supplied evidence bullets. Do not assume any role from the main career profile exists. You may omit weakly relevant projects.',
   );
+  return job && isYcJob(job)
+    ? `${base}\n\nYC STARTUP OUTREACH\nThe outreachMessage is a direct founder note, not a miniature cover letter. Keep it under 75 words. Mention one concrete aspect of the company or role and one or two verified candidate evidence points that demonstrate building, ownership, automation, or end-to-end delivery. Use a natural, specific tone; do not flatter, exaggerate, mention YC prestige, or claim startup experience unless the evidence explicitly supports it.`
+    : base;
 }
 
 export function applicationEvidenceProfile(profile: CandidateProfile) {
@@ -366,6 +369,10 @@ function fallbackOutreach(job: Job, profile: CandidateProfile, skills: string[])
     return `Hi, I am interested in the ${job.title} role at ${job.company}.${strengths ? ` My relevant strengths include ${strengths}.` : ''} I would be glad to connect and learn more about the position. Best, ${profile.name}`.slice(0, 650);
   }
   const degree = expectedDegree(profile) ? 'currently completing an MSc in Computer Science (AI)' : 'a computer science professional';
+  if (isYcJob(job)) {
+    const companyContext = job.yc?.companyOneLiner ? ` I was drawn to ${job.yc.companyOneLiner.trim().replace(/[.!]+$/, '').toLowerCase()}.` : '';
+    return `Hi, I’m ${degree} interested in the ${job.title} role at ${job.company}.${companyContext} My relevant hands-on strengths include ${skills.slice(0, 3).join(', ')}. I’d value the chance to discuss how I could contribute to the team. Best, ${profile.name}`.slice(0, 650);
+  }
   return `Hi, I am ${degree} and am interested in the ${job.title} role at ${job.company}. My most relevant strengths include ${skills.slice(0, 4).join(', ')}. I would be glad to connect and learn more about the team's priorities. Best, ${profile.name}`.slice(0, 650);
 }
 

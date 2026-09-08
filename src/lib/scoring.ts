@@ -89,8 +89,11 @@ export function hardEligibility(job: Job, profile: CandidateProfile) {
   }
 
   const requiredYears = statedYearsRequirement(text);
+  const ycYears = job.yc?.minimumExperience?.match(/\d{1,2}/)?.[0];
+  const ycRequiredYears = ycYears ? Number(ycYears) : 0;
   const candidateYears = profile.yearsExperience ?? 0;
-  if (requiredYears >= candidateYears + 4) blockers.push(`Job explicitly asks for about ${requiredYears}+ years of experience.`);
+  const effectiveRequiredYears = Math.max(requiredYears, ycRequiredYears);
+  if (effectiveRequiredYears >= candidateYears + 4) blockers.push(`Job explicitly asks for about ${effectiveRequiredYears}+ years of experience.`);
 
   for (const excluded of profile.excludedKeywords ?? []) {
     if (text.includes(normalizeText(excluded))) blockers.push(`Excluded requirement detected: ${excluded}.`);

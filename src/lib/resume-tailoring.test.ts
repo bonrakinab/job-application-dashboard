@@ -7,6 +7,7 @@ import {
   applicationPackStaleness,
   attachApplicationPackGenerationMeta,
   deterministicTailoringPlan,
+  applicationPackSystemPromptForProfile,
   materializeApplicationPack,
   type ApplicationPackPlan,
 } from './resume-tailoring';
@@ -70,6 +71,21 @@ function job(title: string, description: string): Job {
 const softwareJob = job('Software Engineer', 'Build production web applications with TypeScript, Next.js, React, REST APIs and PostgreSQL.');
 const mlJob = job('Machine Learning Engineer', 'Develop Python machine learning systems using BERT, vector search, CLIP and HNSW.');
 const erpJob = job('Oracle ERP Analyst', 'Support Oracle Fusion ERP Cloud Financials and Procurement, JIRA workflows, access controls and ISO 27001 documentation.');
+
+test('YC packs request a concise founder note while retaining verified evidence rules', () => {
+  const ycJob: Job = {
+    ...softwareJob,
+    source: 'ycombinator',
+    sourceKey: 'yc-startup-jobs',
+    company: 'Example YC Startup',
+    yc: { batch: 'W26', companyOneLiner: 'Automation for product teams.' },
+  };
+  const system = applicationPackSystemPromptForProfile(profile, ycJob);
+  const plan = deterministicTailoringPlan(ycJob, profile);
+  assert.match(system, /direct founder note/);
+  assert.ok(plan.outreachMessage.split(/\s+/).length <= 90);
+  assert.match(plan.outreachMessage, /Example YC Startup/);
+});
 
 test('deterministic evidence ranking changes materially with the JD', () => {
   const software = deterministicTailoringPlan(softwareJob, profile);

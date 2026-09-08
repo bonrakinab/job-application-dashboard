@@ -3,7 +3,7 @@
 ## Pipeline
 
 ```text
-Public ATS sources
+Public ATS sources + official YC startup-job pages
   → normalization + stable job IDs
   → target-role/location/freshness filter
   → deterministic hard blockers
@@ -38,3 +38,5 @@ Public ATS sources
 ## Data integrity
 
 Jobs use a deterministic SHA-256-derived ID from `source + board/site + external posting ID`. Re-discovery updates `last_seen_at` but preserves the original `discovered_at`. Application rows are inserted with conflict-ignore semantics so discovery can never reset an existing application status.
+
+YC jobs pass an additional Canada/Ontario eligibility gate after the job-detail page is loaded. Their batch, role type, company summary, industry tags, experience requirement, salary, visa label and activity metadata are retained in `jobs.raw.yc`. `job_matches.startup_fit` is a separate evidence-based builder/ownership score and never replaces the ordinary match or ATS score. Eligible YC employers are added to the company watchlist automatically.

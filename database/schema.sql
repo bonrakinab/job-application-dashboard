@@ -83,6 +83,7 @@ create table if not exists job_matches (
   education integer not null check (education between 0 and 100),
   domain integer not null check (domain between 0 and 100),
   location integer not null check (location between 0 and 100),
+  startup_fit integer check (startup_fit between 0 and 100),
   recommendation text not null,
   blockers jsonb not null default '[]'::jsonb,
   strengths jsonb not null default '[]'::jsonb,
@@ -204,7 +205,8 @@ select
   m.strengths,
   m.gaps,
   m.explanation,
-  a.status as application_status
+  a.status as application_status,
+  m.startup_fit
 from jobs j
 join job_matches m on m.job_id = j.id
 left join applications a on a.job_id = j.id

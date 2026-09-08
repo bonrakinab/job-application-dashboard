@@ -5,6 +5,7 @@ import { deleteRows, insertIgnoreRows, insertRows, patchRows, supabaseConfigured
 import { dispatchAutomationEvent } from './automations';
 import { curateCandidateProfile, normalizePartTimeCandidateProfile } from './profile-curation';
 import { DEFAULT_PROFILE_ID, PART_TIME_PROFILE_ID, profileIdForJob } from './part-time-jobs';
+import { isYcJob } from './startup-fit';
 
 function normalizeCandidateProfile(profile: CandidateProfile, profileId: CandidateProfileId) {
   return profileId === PART_TIME_PROFILE_ID
@@ -46,6 +47,16 @@ function jobToRow(job: Job) {
   };
 }
 
+function rowsByShape(rows: Record<string, unknown>[]) {
+  const groups = new Map<string, Record<string, unknown>[]>();
+  for (const row of rows) {
+    const compact = Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined));
+    const shape = Object.keys(compact).sort().join('|');
+    groups.set(shape, [...(groups.get(shape) ?? []), compact]);
+  }
+  return [...groups.values()];
+}
+
 function rowToJob(row: any): JobWithMatch {
   const matchRow = Array.isArray(row.job_matches) ? row.job_matches[0] : row.job_matches;
   const appRow = Array.isArray(row.applications) ? row.applications[0] : row.applications;
@@ -69,10 +80,13 @@ function rowToJob(row: any): JobWithMatch {
     analyzedAt: matchRow.analyzed_at,
     model: matchRow.model,
     profileId: matchRow.profile_id ?? undefined,
+    startupFit: matchRow.startup_fit == null ? undefined : Number(matchRow.startup_fit),
   } : undefined;
   const application: ApplicationRecord | undefined = appRow ? {
     id: String(appRow.id), jobId: row.id, status: appRow.status, appliedAt: appRow.applied_at, responseAt: appRow.response_at, notes: appRow.notes, createdAt: appRow.created_at, updatedAt: appRow.updated_at,
   } : undefined;
+  const raw = row.raw;
+  const yc = raw && typeof raw === 'object' && raw.yc && typeof raw.yc === 'object' ? raw.yc : undefined;
   return {
     id: row.id,
     externalId: row.external_id,
@@ -103,7 +117,8 @@ function rowToJob(row: any): JobWithMatch {
     closureReason: row.closure_reason,
     verificationMethod: row.verification_method,
     applicationProfileId: row.application_profile_id ?? undefined,
-    raw: row.raw,
+    yc,
+    raw,
     match,
     application,
   };
@@ -152,8 +167,19 @@ export async function markJobMatchesStale(reason = 'profile-updated', profileId:
 
 export async function saveDiscoveredJobs(jobs: Job[]) {
   if (!supabaseConfigured || !jobs.length) return jobs;
-  await upsertRows('jobs', jobs.map(jobToRow), 'id');
+  await Promise.all(rowsByShape(jobs.map(jobToRow)).map((rows) => upsertRows('jobs', rows, 'id')));
   await insertIgnoreRows('applications', jobs.map((j) => ({ job_id: j.id, status: 'discovered', updated_at: new Date().toISOString() })), 'job_id');
+  const ycCompanies = [...new Map(jobs.filter(isYcJob).map((job) => [job.company, {
+    company: job.company,
+    sector: job.yc?.industryTags?.join(' · ') || 'YC startup',
+    careers_url: job.yc?.companyUrl || job.url,
+    priority: 2,
+    enabled: true,
+    source: 'yc',
+    source_metadata: job.yc ?? {},
+    updated_at: new Date().toISOString(),
+  }])).values()];
+  if (ycCompanies.length) await upsertRows('company_watchlist', ycCompanies, 'company');
   return jobs;
 }
 
@@ -178,6 +204,7 @@ export async function saveMatch(jobId: string, match: MatchScore, profileId: Can
     explanation: match.explanation,
     model: match.model,
     profile_id: profileId,
+    startup_fit: match.startupFit,
     analyzed_at: new Date().toISOString(),
   }], 'job_id');
   void dispatchAutomationEvent('job.match.updated', {
@@ -334,13 +361,15 @@ export async function getCompanyIntelligence(company: string): Promise<CompanyIn
 
 export async function listCompanyWatchlist(): Promise<CompanyWatch[]> {
   if (!supabaseConfigured) return [];
-  const rows = await supabaseRequest<Array<{ company: string; sector: string; careers_url: string | null; priority: number; enabled: boolean }>>('company_watchlist?enabled=eq.true&select=company,sector,careers_url,priority,enabled&order=priority.asc,company.asc');
+  const rows = await supabaseRequest<Array<{ company: string; sector: string; careers_url: string | null; priority: number; enabled: boolean; source?: 'curated' | 'yc'; source_metadata?: Record<string, unknown> }>>('company_watchlist?enabled=eq.true&select=company,sector,careers_url,priority,enabled,source,source_metadata&order=priority.asc,company.asc');
   return rows.map((row) => ({
     company: row.company,
     sector: row.sector,
     careersUrl: row.careers_url ?? undefined,
     priority: Math.max(1, Math.min(3, row.priority)) as 1 | 2 | 3,
     enabled: row.enabled,
+    source: row.source ?? 'curated',
+    sourceMetadata: row.source_metadata ?? {},
   }));
 }
 
