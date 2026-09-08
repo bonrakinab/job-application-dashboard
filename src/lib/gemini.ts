@@ -190,7 +190,7 @@ export async function createApplicationPackWithGemini(job: Job, profile: Candida
   const plan = await structuredInteraction<ApplicationPackPlan>({
     model,
     schema: applicationPackPlanSchema,
-    system: applicationPackSystemPromptForProfile(profile),
+    system: applicationPackSystemPromptForProfile(profile, job),
     user: applicationPackUserPrompt(job, profile, match, requirementEvidence),
     maxOutputTokens: 6500,
     thinkingLevel: 'high',

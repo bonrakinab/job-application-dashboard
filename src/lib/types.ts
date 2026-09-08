@@ -44,7 +44,24 @@ export interface Job {
   closureReason?: string;
   verificationMethod?: string;
   applicationProfileId?: CandidateProfileId;
+  yc?: YcJobMetadata;
   raw?: unknown;
+}
+
+export interface YcJobMetadata {
+  batch?: string;
+  companySlug?: string;
+  companyUrl?: string;
+  companyOneLiner?: string;
+  companyStatus?: string;
+  industryTags?: string[];
+  teamSize?: number;
+  role?: string;
+  roleSpecificType?: string;
+  minimumExperience?: string;
+  visa?: string;
+  equityRange?: string;
+  lastActive?: string;
 }
 
 export interface ExperienceItem {
@@ -164,6 +181,7 @@ export interface MatchScore {
   analyzedAt?: string;
   model?: string;
   profileId?: CandidateProfileId;
+  startupFit?: number;
 }
 
 export interface JobWithMatch extends Job {
@@ -286,6 +304,8 @@ export interface CompanyWatch {
   careersUrl?: string;
   priority: 1 | 2 | 3;
   enabled: boolean;
+  source?: 'curated' | 'yc';
+  sourceMetadata?: Record<string, unknown>;
 }
 
 export interface CompanyIntelligence {

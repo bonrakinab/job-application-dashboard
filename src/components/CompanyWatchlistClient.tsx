@@ -15,6 +15,7 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
   const [sector, setSector] = useState('all');
   const [coverage, setCoverage] = useState('all');
   const [group, setGroup] = useState('all');
+  const [source, setSource] = useState('all');
   const sectors = useMemo(() => [...new Set(companies.map((company) => company.sector))].sort(), [companies]);
 
   const groupSummaries = useMemo(() => COMPANY_GROUPS.map((definition) => {
@@ -34,8 +35,9 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
     const sectorMatch = sector === 'all' || company.sector === sector;
     const coverageMatch = coverage === 'all' || (coverage === 'live' ? company.jobs > 0 : company.jobs === 0);
     const groupMatch = group === 'all' || groups.some((item) => item.id === group);
-    return queryMatch && sectorMatch && coverageMatch && groupMatch;
-  }), [companies, coverage, group, q, sector]);
+    const sourceMatch = source === 'all' || company.source === source;
+    return queryMatch && sectorMatch && coverageMatch && groupMatch && sourceMatch;
+  }), [companies, coverage, group, q, sector, source]);
 
   return <>
     <input className="input" aria-label="Search companies" placeholder="Search companies…" value={q} onChange={(event) => setQ(event.target.value)} />
@@ -45,6 +47,11 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
         <select className="select" aria-label="Company group" value={group} onChange={(event) => setGroup(event.target.value)}>
           <option value="all">All groups</option>
           {groupSummaries.map((value) => <option value={value.id} key={value.id}>{value.label} ({value.count})</option>)}
+        </select>
+        <select className="select" aria-label="Company source" value={source} onChange={(event) => setSource(event.target.value)}>
+          <option value="all">All company sources</option>
+          <option value="yc">YC startups</option>
+          <option value="curated">Curated employers</option>
         </select>
         <select className="select" aria-label="Sector" value={sector} onChange={(event) => setSector(event.target.value)}>
           <option value="all">All sectors</option>
@@ -67,6 +74,7 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
             <div>
               <div className="job-title">{company.company}</div>
               <div className="job-company">{company.sector}</div>
+              {company.source === 'yc' ? <span className="tag">YC startup</span> : null}
             </div>
             <span className={`pill ${company.jobs > 0 ? 'strong' : ''}`}>{company.jobs > 0 ? `${company.jobs} jobs` : 'watching'}</span>
           </div>

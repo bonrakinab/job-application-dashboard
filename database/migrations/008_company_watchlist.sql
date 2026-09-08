@@ -4,6 +4,8 @@ create table if not exists company_watchlist (
   careers_url text,
   priority smallint not null default 2 check (priority between 1 and 3),
   enabled boolean not null default true,
+  source text not null default 'curated' check (source in ('curated', 'yc')),
+  source_metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

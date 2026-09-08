@@ -5,6 +5,7 @@ import { getCandidateProfile, getCandidateProfileOptional, listUnanalyzedJobs, l
 import type { CandidateProfile, Job } from './types';
 import { daysSince } from './utils';
 import { profileIdForJob } from './part-time-jobs';
+import { calculateStartupFit } from './startup-fit';
 
 function relevant(job: Job, profile: CandidateProfile) {
   const titleHit = titleMatchesTarget(job.title, profile.targetTitles);
@@ -19,7 +20,8 @@ async function analyzeOne(job: Job) {
   const profileId = profileIdForJob(job);
   const profile = await getCandidateProfileOptional(profileId);
   if (!profile) return null;
-  const pre = deterministicScore(job, profile);
+  const deterministic = deterministicScore(job, profile);
+  const pre = { ...deterministic, startupFit: calculateStartupFit(job, profile) };
   const match = pre.blockers.length ? pre : await analyzeJobWithAI(job, profile);
   await saveMatch(job.id, match, profileId);
   return { id: job.id, score: match.overall, recommendation: match.recommendation };

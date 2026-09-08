@@ -8,6 +8,7 @@ import { fetchJobicyJobs } from './jobicy';
 import { fetchRemoteOkJobs } from './remoteok';
 import { fetchRemotiveJobs } from './remotive';
 import { fetchWeWorkRemotelyJobs } from './weworkremotely';
+import { fetchYcJobs } from './ycombinator';
 import type { JobSourceAdapter } from './job-source';
 
 const adapters: Record<SourceKind, JobSourceAdapter> = {
@@ -66,6 +67,7 @@ export async function discoverJobs() {
     fetchRemoteOkJobs(),
     fetchHimalayasJobs(),
     fetchWeWorkRemotelyJobs(),
+    fetchYcJobs(),
   ]);
   const jobs: Job[] = [];
   const errors: string[] = [];
@@ -80,5 +82,5 @@ export async function discoverJobs() {
   }
 
   const deduped = new Map(jobs.map((job) => [job.id ?? `${job.source}:${job.sourceKey}:${job.externalId}`, job]));
-  return { jobs: [...deduped.values()], errors, sources: sources.length + 5 };
+  return { jobs: [...deduped.values()], errors, sources: sources.length + 6 };
 }

@@ -73,6 +73,15 @@ test('large stated experience gaps are hard blockers', () => {
   assert.ok(blockers.some((value) => value.includes('8+ years')));
 });
 
+test('YC structured minimum experience is enforced even when omitted from prose', () => {
+  const blockers = hardEligibility(job({
+    source: 'ycombinator',
+    sourceKey: 'yc-startup-jobs',
+    yc: { minimumExperience: '6+ years' },
+  }), profile);
+  assert.ok(blockers.some((value) => value.includes('6+ years')));
+});
+
 test('hard blockers cap the score below recommendation threshold', () => {
   const score = deterministicScore(job({ title: 'Principal AI Engineer' }), profile);
   assert.equal(score.recommendation, 'skip');

@@ -68,7 +68,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   return <>
     <div className="topbar simple-job-header">
       <div>
-        <div className="eyebrow">{profileId === PART_TIME_PROFILE_ID ? 'Windsor part-time opportunity' : 'Job opportunity'}</div>
+        <div className="eyebrow">{profileId === PART_TIME_PROFILE_ID ? 'Windsor part-time opportunity' : job.yc ? `Y Combinator startup${job.yc.batch ? ` · ${job.yc.batch}` : ''}` : 'Job opportunity'}</div>
         <h1 className="title">{job.title}</h1>
         <div className="sub">{metadata}</div>
       </div>
@@ -93,6 +93,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
               <span>Posting <b>{postingState(job.validityStatus)}</b></span>
               <span>Documents <b>{packUsable ? 'Ready' : pack ? 'Regenerate' : 'Not generated'}</b></span>
               {ats ? <span>Resume <b className={ats.eligibleToApply ? 'text-success' : 'text-warning'}>{ats.overall}/100</b></span> : null}
+              {match?.startupFit != null ? <span>Startup fit <b>{match.startupFit}/100</b></span> : null}
             </div>
           </div>
 
@@ -167,6 +168,12 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             <span>{pack.claimVerification?.status === 'pass' ? '✓ Claims checked' : '△ Claims need review'}</span>
           </div>
           {pack.generationMeta?.generatedAt ? <p className="small muted">Generated {formatDate(pack.generationMeta.generatedAt)}</p> : null}
+        </div> : null}
+        {job.yc && packUsable && pack?.outreachMessage ? <div className="card document-status-card">
+          <div className="kicker">Founder outreach</div>
+          <h3>Short founder note</h3>
+          <p className="small">{pack.outreachMessage}</p>
+          <p className="small muted">Review and send manually. The dashboard never contacts a founder automatically.</p>
         </div> : null}
       </aside>
     </div>
