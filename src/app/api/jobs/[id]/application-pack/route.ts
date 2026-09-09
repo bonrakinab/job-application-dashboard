@@ -172,7 +172,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       });
     }
 
-    const skillsPolicyPack = withPersistentApplicationSkills(generation.pack, applicationProfile);
+    const skillsPolicyPack = withPersistentApplicationSkills(generation.pack, applicationProfile, job);
     const courseworkPack = {
       ...skillsPolicyPack,
       publications: [] as string[],
