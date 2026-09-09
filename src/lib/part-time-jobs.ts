@@ -18,6 +18,12 @@ const WINDSOR_ESSEX_PLACES = [
   'leamington',
 ];
 
+// Employment type does not decide which resume should be used. A part-time AI,
+// software, data, ERP, cloud, systems, or analyst role still belongs to the
+// career track and should use the full technical profile rather than the
+// separate Windsor retail/service resume.
+const CAREER_TRACK_TITLE = /\b(?:machine learning|artificial intelligence|ai engineer|ai systems?|ai evaluation|ml engineer|ml engineering|software|developer|engineer|data analyst|data analytics|data engineer|data scientist|data reporting|reporting analyst|analyst|analytics|oracle|erp|cloud|devops|cybersecurity|security analyst|systems? analyst|systems? engineer|systems? administrator|technical analyst|technical consultant|technical support|technical engineer|solutions? engineer|solutions? consultant|business analyst|implementation consultant|functional analyst)\b/i;
+
 function rawProfileId(raw: unknown): CandidateProfileId | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
   const record = raw as Record<string, unknown>;
@@ -35,7 +41,14 @@ export function candidateProfileId(value: string | null | undefined): CandidateP
   return value === PART_TIME_PROFILE_ID ? PART_TIME_PROFILE_ID : DEFAULT_PROFILE_ID;
 }
 
+export function isCareerTrackJob(job: Pick<Job, 'title'>) {
+  return CAREER_TRACK_TITLE.test(job.title ?? '');
+}
+
 export function profileIdForJob(job: Pick<Job, 'applicationProfileId' | 'raw' | 'title' | 'location' | 'employmentType' | 'workplaceType' | 'remote'>): CandidateProfileId {
+  // Correct legacy rows that were classified as part-time purely because their
+  // employment type said Part Time. Career-track title evidence wins.
+  if (isCareerTrackJob(job)) return DEFAULT_PROFILE_ID;
   return job.applicationProfileId
     ?? rawProfileId(job.raw)
     ?? (jobMatchesType(job, 'part-time') ? PART_TIME_PROFILE_ID : DEFAULT_PROFILE_ID);
