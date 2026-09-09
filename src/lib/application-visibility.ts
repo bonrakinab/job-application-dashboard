@@ -28,5 +28,8 @@ export function externalApplicationProfile(profile: CandidateProfile): Candidate
     ...safe,
     experience: resumeExperience(safe),
     projects: (safe.projects ?? []).filter(isExternalApplicationProject),
+    // Publications may remain in the master profile for the user's own records,
+    // but they are never available to employer-facing resume/package generation.
+    publications: [],
   };
 }
