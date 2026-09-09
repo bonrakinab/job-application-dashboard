@@ -129,11 +129,7 @@ export type EvidenceBackedJdKeyword = {
   evidenceIds: string[];
 };
 
-/**
- * Map literal JD phrases to requirements that have already been marked supported
- * by the requirement-to-evidence matrix. This allows employer wording to change
- * without changing the underlying candidate claim.
- */
+/** Map literal JD wording only to requirements already supported by candidate evidence. */
 export function evidenceBackedJdKeywords(job: Job, requirementEvidence: RequirementEvidence[]) {
   const supported = requirementEvidence.filter((item) => item.support === 'supported' && item.evidence.length > 0);
   const mapped: EvidenceBackedJdKeyword[] = [];
@@ -149,8 +145,6 @@ export function evidenceBackedJdKeywords(job: Job, requirementEvidence: Requirem
 
     const best = ranked[0];
     if (!best) continue;
-    // Exact term matches may be short technical terms; semantic aliases need
-    // substantial lexical/stem overlap with a requirement already proven by evidence.
     if (!best.exactTermMatch && best.requirementOverlap < 0.5) continue;
     if (best.score < 0.38) continue;
 
@@ -215,42 +209,30 @@ function improvedSummary(
   const missing = unique([...skillTerms, ...semanticTerms]).slice(0, 6);
   if (!missing.length) return base;
 
-  const sentence = `Key role-aligned strengths include ${naturalList(missing)}.`;
+  const sentence = `Relevant experience also includes ${naturalList(missing)}.`;
   const normalizedBase = base.replace(/[.\s]+$/, '');
   if (`${normalizedBase}. ${sentence}`.length <= 620) return `${normalizedBase}. ${sentence}`;
 
-  // Keep the stronger source summary if there is not enough room for every term,
-  // but still insert the highest-value missing phrases that fit.
   const fitting: string[] = [];
   for (const term of missing) {
-    const candidate = `Key role-aligned strengths include ${naturalList([...fitting, term])}.`;
+    const candidate = `Relevant experience also includes ${naturalList([...fitting, term])}.`;
     if (`${normalizedBase}. ${candidate}`.length > 620) break;
     fitting.push(term);
   }
-  return fitting.length ? `${normalizedBase}. Key role-aligned strengths include ${naturalList(fitting)}.` : base;
+  return fitting.length ? `${normalizedBase}. Relevant experience also includes ${naturalList(fitting)}.` : base;
 }
 
-function reconciledRequirementEvidence(
-  matrix: RequirementEvidence[],
-  keywords: EvidenceBackedJdKeyword[],
-) {
+function reconciledRequirementEvidence(matrix: RequirementEvidence[], keywords: EvidenceBackedJdKeyword[]) {
   return matrix.map((item) => {
     if (item.support !== 'supported') return item;
-    const mapped = keywords.filter((keyword) => normalizeText(keyword.requirement) === normalizeText(item.requirement)).map((keyword) => keyword.phrase);
+    const mapped = keywords
+      .filter((keyword) => normalizeText(keyword.requirement) === normalizeText(item.requirement))
+      .map((keyword) => keyword.phrase);
     return { ...item, exactTerms: unique([...(item.exactTerms ?? []), ...mapped]).slice(0, 10) };
   });
 }
 
-/**
- * Final employer-facing resume policy.
- *
- * - Publications are never allowed into an application pack.
- * - Exact JD skills are promoted when the exact skill exists in the verified profile.
- * - Literal JD phrases may be introduced even when the original resume used different
- *   wording, but only when a supported requirement is linked to candidate evidence.
- * - Semantic JD wording goes to the summary rather than masquerading as an exact
- *   source skill. Unsupported requirements remain gaps.
- */
+/** Final truthful JD-reconciliation pass before verification/export. */
 export function strengthenResumeForJob(
   job: Job,
   profile: CandidateProfile,
@@ -285,17 +267,17 @@ export function strengthenResumeForJob(
 }
 
 /**
- * The uploaded reference resume is a compact one-page layout with no separate
- * headline, no location in the contact row, no project technology sub-line,
- * no education coursework sub-line, and no publications section.
- * Keep those details available in the master profile, but do not render them.
+ * Career documents follow Arnob's uploaded one-page reference exactly at the
+ * field-policy level. The isolated part-time profile preserves its own uploaded
+ * resume's location/project/coursework fields, but shares the same safety rules.
  */
 export function referenceTemplateProfile(profile: CandidateProfile): CandidateProfile {
+  const career = profile.profilePurpose !== 'part-time';
   return {
     ...profile,
-    location: '',
-    projects: (profile.projects ?? []).map((project) => ({ ...project, skills: [] })),
-    degrees: (profile.degrees ?? []).map((degree) => ({ ...degree, coursework: [] })),
+    location: career ? '' : profile.location,
+    projects: career ? (profile.projects ?? []).map((project) => ({ ...project, skills: [] })) : profile.projects,
+    degrees: career ? (profile.degrees ?? []).map((degree) => ({ ...degree, coursework: [] })) : profile.degrees,
     publications: [],
   };
 }
@@ -305,5 +287,13 @@ export function referenceTemplatePack(pack: ApplicationPack): ApplicationPack {
     ...pack,
     resumeHeadline: '',
     publications: [],
+  };
+}
+
+/** One canonical artifact state for scoring, dashboard review, validation and download. */
+export function finalResumeArtifactState(profile: CandidateProfile, pack: ApplicationPack) {
+  return {
+    profile: referenceTemplateProfile(profile),
+    pack: referenceTemplatePack(pack),
   };
 }
