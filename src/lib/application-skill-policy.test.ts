@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type { ApplicationPack, CandidateProfile } from './types';
+import type { ApplicationPack, CandidateProfile, Job } from './types';
 import { withPersistentApplicationSkills } from './application-skill-policy';
 import { externalApplicationProfile } from './application-visibility';
 
@@ -12,7 +12,7 @@ const profile: CandidateProfile = {
     'TypeScript', 'Next.js', 'Python', 'Machine Learning', 'Deep Learning',
     'Computer Vision', 'NLP', 'BERT', 'CLIP', 'HNSW', 'FAISS',
     'scikit-learn', 'TensorFlow', 'Multimodal Retrieval', 'Vector Search',
-    'Approximate Nearest Neighbor (ANN)', 'Image Retrieval',
+    'Approximate Nearest Neighbor (ANN)', 'Image Retrieval', 'Oracle Fusion ERP Cloud', 'SQL',
   ],
   projects: [
     { name: 'MSc Thesis - Color-Aware Composed Image Retrieval', description: 'Thesis', bullets: ['Built retrieval system.'] },
@@ -36,21 +36,42 @@ function pack(): ApplicationPack {
   };
 }
 
-test('persistent MSc/ML skills remain in non-ML application packs', () => {
-  const result = withPersistentApplicationSkills(pack(), profile);
-  for (const skill of [
-    'Python', 'Machine Learning', 'Deep Learning', 'Computer Vision', 'NLP', 'BERT',
-    'CLIP', 'HNSW', 'FAISS', 'scikit-learn', 'TensorFlow', 'Multimodal Retrieval',
-    'Vector Search', 'Approximate Nearest Neighbor (ANN)', 'Image Retrieval',
-  ]) {
-    assert.ok(result.skills.includes(skill), `${skill} should remain visible`);
-  }
-  assert.deepEqual(result.skills.slice(0, 2), ['TypeScript', 'Next.js'], 'JD-relevant skills should stay first');
+function job(title: string, description: string): Job {
+  return { externalId: title, source: 'test', sourceKey: title, url: 'https://example.com', title, company: 'Example', description };
+}
+
+test('non-ML resumes do not receive unrelated AI/ML filler', () => {
+  const result = withPersistentApplicationSkills(
+    pack(),
+    profile,
+    job('Oracle Fusion ERP Technical Analyst', 'Support Oracle Fusion ERP Cloud and SQL-based financial systems.'),
+  );
+  assert.ok(result.skills.includes('Oracle Fusion ERP Cloud'));
+  assert.ok(result.skills.includes('SQL'));
+  assert.ok(result.skills.includes('TypeScript'));
+  assert.equal(result.skills.includes('CLIP'), false);
+  assert.equal(result.skills.includes('HNSW'), false);
+  assert.equal(result.skills.includes('FAISS'), false);
 });
 
-test('persistent skill policy never invents skills absent from the master profile', () => {
+test('ML roles retain verified ML skills when the JD actually asks for them', () => {
+  const result = withPersistentApplicationSkills(
+    { ...pack(), skills: ['Python', 'Machine Learning'] },
+    profile,
+    job('Machine Learning Engineer', 'Build Python machine learning systems using TensorFlow, BERT, vector search and HNSW.'),
+  );
+  for (const skill of ['Python', 'Machine Learning', 'TensorFlow', 'BERT', 'Vector Search', 'HNSW']) {
+    assert.ok(result.skills.includes(skill), `${skill} should be selected from the verified profile`);
+  }
+});
+
+test('skill policy never invents skills absent from the master profile', () => {
   const withoutTensorFlow = { ...profile, skills: profile.skills.filter((skill) => skill !== 'TensorFlow') };
-  const result = withPersistentApplicationSkills(pack(), withoutTensorFlow);
+  const result = withPersistentApplicationSkills(
+    { ...pack(), skills: ['TypeScript', 'TensorFlow'] },
+    withoutTensorFlow,
+    job('ML Engineer', 'TensorFlow is required.'),
+  );
   assert.equal(result.skills.includes('TensorFlow'), false);
 });
 

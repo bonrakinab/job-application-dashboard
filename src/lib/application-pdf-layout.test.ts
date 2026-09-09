@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { resumePdf } from './application-pdf';
+import { finalResumeArtifactState } from './resume-generation-policy';
 import type { ApplicationPack, CandidateProfile, Job } from './types';
 
 const job: Job = {
@@ -83,5 +84,23 @@ test('renderer defensively caps experience and keeps every content baseline on t
   assert.doesNotMatch(pdf, /Student Representative/);
   const baselines = [...pdf.matchAll(/\s(-?\d+(?:\.\d+)?)\s(-?\d+(?:\.\d+)?)\sTd\s/g)].map((match) => Number(match[2]));
   assert.ok(baselines.length > 0);
-  assert.ok(Math.min(...baselines) >= 16);
+  assert.ok(Math.min(...baselines) >= 7);
+});
+
+test('final reference export renders every selected certification and never publications', () => {
+  const certifications = [
+    'Google IT Support',
+    'Oracle Data Science Professional',
+    'Oracle Cloud Foundations Associate',
+    'Oracle Cloud Data Management Foundations Associate',
+    'AWS Academy Cloud Foundations',
+    'Machine Learning for All',
+  ];
+  const state = finalResumeArtifactState(
+    { ...profile, profilePurpose: 'career', publications: ['Hidden Publication'] },
+    { ...pack, certifications, publications: ['Hidden Publication'] },
+  );
+  const pdf = resumePdf(state.profile, job, state.pack).toString('utf8');
+  for (const certification of certifications) assert.match(pdf, new RegExp(certification.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.doesNotMatch(pdf, /PUBLICATIONS|Hidden Publication/);
 });

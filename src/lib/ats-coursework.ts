@@ -1,4 +1,5 @@
 import { scoreTailoredResume, type AtsReadinessScore } from './ats-score';
+import { finalResumeArtifactState } from './resume-generation-policy';
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
 
 export function scoreTailoredResumeWithCoursework(
@@ -7,7 +8,9 @@ export function scoreTailoredResumeWithCoursework(
   pack: ApplicationPack,
   match?: MatchScore,
 ): AtsReadinessScore {
-  // The base scorer reads the same visible education/coursework text that the
-  // PDF and DOCX render, so no hidden scoring-only content is introduced.
-  return scoreTailoredResume(job, profile, pack, match);
+  // Every ATS audit must score the exact employer-facing artifact. This removes
+  // hidden headline/coursework/project-tech fields before scoring, just as the
+  // PDF and DOCX routes do.
+  const finalState = finalResumeArtifactState(profile, pack);
+  return scoreTailoredResume(job, finalState.profile, finalState.pack, match);
 }

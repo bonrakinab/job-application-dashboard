@@ -1,7 +1,7 @@
 import { analyzeJobWithAI, aiStatus, createApplicationPack } from '@/lib/ai';
 import { verifyGitHubActionsOidc } from '@/lib/github-actions-oidc';
 import { isMainCareerJob } from '@/lib/part-time-jobs';
-import { getCandidateProfile, listJobs, logActivity, saveApplicationPack, saveMatch } from '@/lib/store';
+import { getCandidateProfile, listJobs, logActivity, saveMatch } from '@/lib/store';
 import { supabaseRequest } from '@/lib/supabase-rest';
 import type { JobWithMatch } from '@/lib/types';
 
@@ -70,8 +70,9 @@ export async function POST(request: Request) {
 
     if (!selected || !aiMatch) throw new Error('AI analysis ran, but every smoke-test candidate was classified as blocked/skip.');
 
+    // Generate in memory only. A production smoke test must never overwrite the
+    // user's real saved application pack with a pre-optimization/raw AI result.
     const { pack, model: packModel } = await createApplicationPack(selected, profile, aiMatch);
-    await saveApplicationPack(selected.id!, pack, packModel);
 
     const payload = {
       provider: ai.provider,

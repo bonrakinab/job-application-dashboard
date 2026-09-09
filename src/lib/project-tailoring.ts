@@ -80,8 +80,6 @@ export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' 
 
   const explicitErpTitle = /\b(oracle fusion|oracle erp|erp|sap|enterprise applications?|financial systems?)\b/.test(title);
   if (explicitErpTitle) {
-    // ERP technical roles need implementation/integration/system evidence. Do not
-    // limit project evidence to the ERP tag alone.
     return ['erp-enterprise', 'business-analysis', 'it-systems'];
   }
 
@@ -163,18 +161,19 @@ export function selectProjectsForJob(profile: CandidateProfile, job: Job, maxPro
   const thesis = projects.find(isDefaultThesisProject);
   const families = new Set(inferProjectRoleFamilies(job));
 
-  if (isHighSelectivityTargetCompany(job.company)) {
-    return selectForHighSelectivityCompany(projects, job, families, limit);
-  }
-
-  // For ERP/financial/enterprise-application roles, relevance wins outright.
-  // The thesis remains in the master profile but is not forced into an unrelated
-  // Oracle resume at the expense of ERP, integration, or systems evidence.
+  // Role relevance must beat employer-brand heuristics. This is especially
+  // important for Oracle/SAP/financial-system jobs at companies that also happen
+  // to be in the high-selectivity list: an ERP resume must not be replaced with
+  // unrelated ML projects simply because of the company name.
   if (families.has('erp-enterprise')) {
     return rankProjects(projects.filter((project) => !isDefaultThesisProject(project)), job, families)
       .filter((item) => item.familyHits > 0)
       .slice(0, limit)
       .map((item) => item.project);
+  }
+
+  if (isHighSelectivityTargetCompany(job.company)) {
+    return selectForHighSelectivityCompany(projects, job, families, limit);
   }
 
   if (families.has('ai-ml')) {
