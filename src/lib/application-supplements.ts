@@ -30,10 +30,11 @@ function certificationBoost(value: string, jobContext: string) {
   const job = normalizeText(jobContext);
   let score = 0;
   if (/data science|machine learning|artificial intelligence/.test(item) && /\b(ai|ml|machine learning|data science|data analyst|data engineer)\b/.test(job)) score += 0.8;
-  if (/aws|oracle cloud infrastructure|cloud foundations/.test(item) && /\b(cloud|devops|platform|infrastructure|aws|oci|software)\b/.test(job)) score += 0.65;
-  if (/oracle cloud data management/.test(item) && /\b(data|database|oracle|erp|migration|governance)\b/.test(job)) score += 0.8;
-  if (/google it support|operating systems|it security/.test(item) && /\b(it|support|systems|infrastructure|security|help desk|application analyst)\b/.test(job)) score += 0.75;
-  if (/algorithmic toolbox|programming|html|css/.test(item) && /\b(software|developer|engineer|frontend|web|algorithm)\b/.test(job)) score += 0.55;
+  if (/aws|oracle cloud infrastructure|cloud foundations/.test(item) && /\b(cloud|devops|platform engineering|infrastructure|aws|oci|oracle cloud)\b/.test(job)) score += 0.65;
+  if (/oracle cloud data management/.test(item) && /\b(data|database|oracle|erp|migration|governance|integration)\b/.test(job)) score += 0.8;
+  if (/google it support|operating systems/.test(item) && /\b(it support|help desk|service desk|desktop support|technical support|systems administration|system administration|infrastructure support)\b/.test(job)) score += 0.75;
+  if (/it security/.test(item) && /\b(cybersecurity|information security|security operations|security analyst|it security)\b/.test(job)) score += 0.75;
+  if (/algorithmic toolbox|programming|html|css/.test(item) && /\b(software developer|software engineer|frontend|front end|web developer|algorithm)\b/.test(job)) score += 0.55;
   return score;
 }
 
