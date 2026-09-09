@@ -11,7 +11,7 @@ import { PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 
 export const runtime = 'nodejs';
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const job = await getJob(id);
   if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
@@ -28,10 +28,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const resumePack = referenceTemplatePack(packState.pack);
   const pdf = resumePdf(resumeProfile, job, resumePack);
   assertResumeArtifact(await validateResumePdfArtifact(pdf, resumeProfile, resumePack), 'PDF');
+  const preview = new URL(request.url).searchParams.get('preview') === '1';
   return new Response(new Uint8Array(pdf), {
     headers: {
       'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename="${slug(job.company)}-${slug(job.title)}-resume.pdf"`,
+      'Content-Disposition': `${preview ? 'inline' : 'attachment'}; filename="${slug(job.company)}-${slug(job.title)}-resume.pdf"`,
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
     },
