@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { verifyApplicationPackClaims } from './claim-verification';
-import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
+import type { ApplicationPack, CandidateProfile, Job, MatchScore, RequirementEvidence } from './types';
 
 const profile: CandidateProfile = {
   name: 'Candidate', targetTitles: ['Developer'], preferredLocations: ['Ontario'], skills: ['Python', 'SQL'],
@@ -52,6 +52,42 @@ test('claim verification replaces unsupported metrics and missing skills', () =>
   assert.equal(verified.resumeSummary, fallback.resumeSummary);
   assert.deepEqual(verified.claimVerification?.replacedFields, ['resumeSummary']);
   assert.ok(verified.claimVerification?.warnings.some((warning) => /Unsupported/i.test(warning)));
+  assert.equal(verified.claimVerification?.status, 'pass');
+});
+
+test('evidence-backed JD terminology is not discarded just because an earlier match marked it missing', () => {
+  const candidate: CandidateProfile = {
+    ...profile,
+    experience: [{
+      organization: 'Example Corp',
+      title: 'Analyst',
+      bullets: ['Coordinated with business teams to gather requirements and document system changes.'],
+    }],
+  };
+  const aliasMatch: MatchScore = {
+    ...match,
+    gaps: ['Stakeholder Management'],
+    missingSkills: ['Stakeholder Management'],
+  };
+  const matrix: RequirementEvidence[] = [{
+    requirement: 'Stakeholder management and requirements gathering',
+    importance: 'must-have',
+    category: 'soft-skill',
+    exactTerms: ['Stakeholder Management'],
+    support: 'supported',
+    confidence: 86,
+    evidence: [{ id: 'EXP:0:0', label: 'Analyst · Example Corp', excerpt: candidate.experience![0].bullets[0], score: 86 }],
+  }];
+  const original = pack('Relevant experience also includes stakeholder management.');
+  original.experience = [{
+    organization: 'Example Corp',
+    title: 'Analyst',
+    bullets: [candidate.experience![0].bullets[0]],
+    bulletEvidence: [['EXP:0:0']],
+  }];
+  original.requirementEvidence = matrix;
+  const verified = verifyApplicationPackClaims(original, fallback, candidate, job, aliasMatch, matrix);
+  assert.equal(verified.resumeSummary, original.resumeSummary);
   assert.equal(verified.claimVerification?.status, 'pass');
 });
 
