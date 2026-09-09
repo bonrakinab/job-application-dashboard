@@ -21,14 +21,25 @@ function run(text: string, options: { bold?: boolean; italic?: boolean; size?: n
   return `<w:r>${properties ? `<w:rPr>${properties}</w:rPr>` : ''}<w:t xml:space="preserve">${xml(text)}</w:t></w:r>`;
 }
 
-function paragraph(
-  content: string | string[],
-  options: { style?: string; align?: 'center' | 'left'; keepNext?: boolean; before?: number; after?: number } = {},
-) {
+function tab() {
+  return '<w:r><w:tab/></w:r>';
+}
+
+type ParagraphOptions = {
+  style?: string;
+  align?: 'center' | 'left';
+  keepNext?: boolean;
+  before?: number;
+  after?: number;
+  rightTab?: boolean;
+};
+
+function paragraph(content: string | string[], options: ParagraphOptions = {}) {
   const properties = [
     options.style ? `<w:pStyle w:val="${options.style}"/>` : '',
     options.align ? `<w:jc w:val="${options.align}"/>` : '',
     options.keepNext ? '<w:keepNext/>' : '',
+    options.rightTab ? '<w:tabs><w:tab w:val="right" w:pos="11200"/></w:tabs>' : '',
     options.before != null || options.after != null
       ? `<w:spacing w:before="${options.before ?? 0}" w:after="${options.after ?? 0}"/>`
       : '',
@@ -37,12 +48,17 @@ function paragraph(
   return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${body}</w:p>`;
 }
 
+function paired(left: string | string[], right: string, options: ParagraphOptions = {}) {
+  const leftRuns = Array.isArray(left) ? left : [run(left)];
+  return paragraph([...leftRuns, ...(right ? [tab(), run(right)] : [])], { ...options, rightTab: Boolean(right) });
+}
+
 function section(label: string) {
-  return paragraph(label.toUpperCase(), { style: 'SectionHeading', keepNext: true, before: 100, after: 30 });
+  return paragraph(label.toUpperCase(), { style: 'SectionHeading', keepNext: true, before: 36, after: 18 });
 }
 
 function bullet(text: string) {
-  return paragraph(`- ${text}`, { style: 'Bullet', after: 12 });
+  return paragraph(`◦ ${text}`, { style: 'Bullet', after: 4 });
 }
 
 function sourceExperience(profile: CandidateProfile, organization: string, title: string) {
@@ -54,36 +70,49 @@ function skillsParagraphs(profile: CandidateProfile, pack: ApplicationPack) {
   const selected = new Set(pack.skills.map(normalizeText));
   const rendered = new Set<string>();
   const paragraphs: string[] = [];
+
   for (const group of profile.skillGroups ?? []) {
     const skills = group.skills.filter((skill) => selected.has(normalizeText(skill)));
     if (!skills.length) continue;
     skills.forEach((skill) => rendered.add(normalizeText(skill)));
-    paragraphs.push(paragraph([run(`${group.label}: `, { bold: true }), run(skills.join(', '))], { after: 8 }));
+    paragraphs.push(paragraph([
+      run('• '),
+      run(`${group.label}: `, { bold: true }),
+      run(skills.join(', ')),
+    ], { after: 4 }));
   }
+
   const extras = pack.skills.filter((skill) => !rendered.has(normalizeText(skill)));
-  if (extras.length) paragraphs.push(paragraph([run(paragraphs.length ? 'Additional: ' : 'Skills: ', { bold: true }), run(extras.join(', '))], { after: 8 }));
+  if (extras.length) {
+    paragraphs.push(paragraph([
+      run('• '),
+      run(paragraphs.length ? 'Additional: ' : 'Skills: ', { bold: true }),
+      run(extras.join(', ')),
+    ], { after: 4 }));
+  }
   return paragraphs;
 }
 
 function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
   const contact = resumeContactLines(profile);
-  const body: string[] = [
-    paragraph(profile.name, { style: 'Name', align: 'center', after: 30 }),
-    paragraph(pack.resumeHeadline, { style: 'Headline', align: 'center', after: 28 }),
-  ];
-  if (contact.primary.length) body.push(paragraph(contact.primary.join(' | '), { style: 'Contact', align: 'center', after: 8 }));
-  if (contact.links.length) body.push(paragraph(contact.links.join(' | '), { style: 'Contact', align: 'center', after: 30 }));
+  const contactText = [...contact.primary, ...contact.links].join(' | ');
+  const body: string[] = [paragraph(profile.name, { style: 'Name', align: 'center', after: 18 })];
 
-  body.push(section('Professional Summary'), paragraph(pack.resumeSummary, { after: 24 }));
+  if (pack.resumeHeadline?.trim()) body.push(paragraph(pack.resumeHeadline, { style: 'Headline', align: 'center', after: 12 }));
+  if (contactText) body.push(paragraph(contactText, { style: 'Contact', align: 'center', after: 18 }));
+
+  body.push(section('Professional Summary'));
+  body.push(paragraph(pack.resumeSummary, { after: 14 }));
 
   body.push(section('Experience'));
   for (const item of pack.experience) {
     const source = sourceExperience(profile, item.organization, item.title);
-    body.push(paragraph(item.organization, { style: 'Organization', keepNext: true, after: 0 }));
-    body.push(paragraph([
-      run(item.title, { italic: true }),
-      run([formatAtsDateRange(source?.start, source?.end), source?.location].filter(Boolean).join(' | ') ? ` | ${[formatAtsDateRange(source?.start, source?.end), source?.location].filter(Boolean).join(' | ')}` : ''),
-    ], { style: 'RoleLine', keepNext: true, after: 14 }));
+    body.push(paired([run('• '), run(item.organization, { bold: true })], source?.location ?? '', {
+      style: 'Organization', keepNext: true, after: 0,
+    }));
+    body.push(paired([run(item.title, { italic: true })], formatAtsDateRange(source?.start, source?.end), {
+      style: 'RoleLine', keepNext: true, after: 4,
+    }));
     item.bullets.forEach((itemBullet) => body.push(bullet(itemBullet)));
   }
 
@@ -92,32 +121,39 @@ function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
   if (pack.projects.length) {
     body.push(section('Projects'));
     for (const project of pack.projects) {
+      body.push(paragraph([run('• '), run(project.name, { bold: true })], { keepNext: true, after: 2 }));
       const technologies = selectedProjectSkills(profile, pack, project.name);
-      body.push(paragraph([
-        run(project.name, { bold: true }),
-        ...(technologies.length ? [run(` | ${technologies.join(', ')}`, { italic: true })] : []),
-      ], { keepNext: true, after: 12 }));
+      if (technologies.length) {
+        body.push(paragraph([run('Technologies: ', { italic: true }), run(technologies.join(', '), { italic: true })], { after: 2 }));
+      }
       project.bullets.forEach((projectBullet) => body.push(bullet(projectBullet)));
     }
   }
 
   body.push(section('Education'));
   for (const degree of profile.degrees ?? []) {
-    body.push(paragraph(degree.institution, { style: 'Organization', keepNext: true, after: 0 }));
+    body.push(paired([run('• '), run(degree.institution, { bold: true })], degree.location ?? '', {
+      style: 'Organization', keepNext: true, after: 0,
+    }));
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    const details = [formatAtsDateRange(degree.start, degree.end), degree.location].filter(Boolean).join(' | ');
-    body.push(paragraph([run(degreeText, { italic: true }), run(details ? ` | ${details}` : '')], { style: 'RoleLine', keepNext: true, after: 8 }));
-    if (degree.coursework?.length) body.push(paragraph([run('Relevant Coursework: ', { bold: true }), run(degree.coursework.slice(0, 2).join(', '))], { after: 12 }));
+    body.push(paired([run(degreeText, { italic: true })], formatAtsDateRange(degree.start, degree.end), {
+      style: 'RoleLine', keepNext: true, after: 3,
+    }));
+    if (degree.coursework?.length) {
+      body.push(paragraph([run('Relevant Coursework: ', { italic: true }), run(degree.coursework.slice(0, 2).join(', '), { italic: true })], { after: 4 }));
+    }
   }
 
   if (pack.certifications?.length) {
     body.push(section('Certifications'));
-    pack.certifications.forEach((certification) => body.push(bullet(certification)));
+    pack.certifications.forEach((certification) => body.push(paragraph(`• ${certification}`, { after: 2 })));
   }
+
   if (pack.publications?.length) {
     body.push(section('Publications'));
-    pack.publications.forEach((publication) => body.push(bullet(publication)));
+    pack.publications.forEach((publication) => body.push(paragraph(`• ${publication}`, { after: 2 })));
   }
+
   return body.join('');
 }
 
@@ -145,15 +181,18 @@ const DOCUMENT_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-CA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+  <w:docDefaults>
+    <w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="17"/><w:szCs w:val="17"/><w:lang w:val="en-CA"/></w:rPr></w:rPrDefault>
+    <w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="190" w:lineRule="auto"/></w:pPr></w:pPrDefault>
+  </w:docDefaults>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
-  <w:style w:type="paragraph" w:styleId="Name"><w:name w:val="Name"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:b/><w:sz w:val="38"/><w:szCs w:val="38"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Headline"><w:name w:val="Headline"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:b/><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Contact"><w:name w:val="Contact"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="SectionHeading"><w:name w:val="Section Heading"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="100" w:after="30"/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="4B5563"/></w:pBdr></w:pPr><w:rPr><w:b/><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Organization"><w:name w:val="Organization"/><w:basedOn w:val="Normal"/><w:rPr><w:b/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="RoleLine"><w:name w:val="Role Line"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Bullet"><w:name w:val="Bullet"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="300" w:hanging="180"/><w:spacing w:after="12"/></w:pPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Name"><w:name w:val="Name"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:b/><w:sz w:val="46"/><w:szCs w:val="46"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Headline"><w:name w:val="Headline"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:b/><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Contact"><w:name w:val="Contact"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="15"/><w:szCs w:val="15"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="SectionHeading"><w:name w:val="Section Heading"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="36" w:after="18"/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="000000"/></w:pBdr></w:pPr><w:rPr><w:sz w:val="21"/><w:szCs w:val="21"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Organization"><w:name w:val="Organization"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="RoleLine"><w:name w:val="Role Line"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="17"/><w:szCs w:val="17"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Bullet"><w:name w:val="Bullet"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="360" w:hanging="150"/><w:spacing w:after="4"/></w:pPr><w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:style>
 </w:styles>`;
 
 export async function resumeDocx(profile: CandidateProfile, _job: Job, pack: ApplicationPack): Promise<Buffer> {
@@ -163,11 +202,13 @@ export async function resumeDocx(profile: CandidateProfile, _job: Job, pack: App
   zip.folder('word')!.file('styles.xml', STYLES);
   zip.folder('word')!.folder('_rels')!.file('document.xml.rels', DOCUMENT_RELS);
   zip.folder('word')!.file('document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${documentBody(profile, pack)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`);
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${documentBody(profile, pack)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="300" w:right="320" w:bottom="260" w:left="320" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`);
+
   const timestamp = new Date().toISOString();
   zip.folder('docProps')!.file('core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(profile.name)} Resume</dc:title><dc:creator>${xml(profile.name)}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${timestamp}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${timestamp}</dcterms:modified></cp:coreProperties>`);
   zip.folder('docProps')!.file('app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Job Application Dashboard</Application></Properties>`);
+
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 6 } });
 }

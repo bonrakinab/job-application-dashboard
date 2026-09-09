@@ -44,7 +44,7 @@ function job(title: string, description: string): Job {
   };
 }
 
-test('thesis is always the default project and its skills become resume evidence', () => {
+test('thesis is the default project for general software roles and its skills become resume evidence', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
     'Full-Stack Software Engineer',
     'Build React and Next.js applications, REST APIs, TypeScript services, and PostgreSQL-backed product features.',
@@ -80,15 +80,17 @@ test('ML titles stay ML-only after the default thesis even when production JDs m
   assert.ok(!names.includes('Flowdesk Family CRM'));
 });
 
-test('explicit ERP roles keep thesis by default and otherwise use ERP projects only', () => {
+test('explicit ERP roles prioritize ERP, business-analysis and systems projects instead of forcing the thesis', () => {
   const tailored = projectTailoredApplicationProfile(profile, job(
-    'Oracle Fusion ERP Analyst',
-    'Support Oracle Fusion Financials, Procurement, tax configuration, requirements, workflows, and business-process improvements.',
+    'Oracle Fusion ERP Technical Analyst',
+    'Support Oracle Fusion Financials, Procurement, integrations, tax configuration, requirements, workflows, and business-process improvements.',
   ));
-  assert.deepEqual(tailored.projects?.map((item) => item.name), [
-    'MSc Thesis - Color-Aware Composed Image Retrieval',
-    'ESS Tax Engine Revamp',
-  ]);
+  const names = tailored.projects?.map((item) => item.name) ?? [];
+  assert.equal(names[0], 'ESS Tax Engine Revamp');
+  assert.ok(names.includes('Flowdesk Family CRM'));
+  assert.ok(names.includes('EDMS Server Migration'));
+  assert.ok(!names.includes('MSc Thesis - Color-Aware Composed Image Retrieval'));
+  assert.ok(names.length <= 3);
 });
 
 test('software roles keep thesis and select only software projects for remaining slots', () => {

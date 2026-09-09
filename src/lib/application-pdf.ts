@@ -3,7 +3,7 @@ import { normalizeText } from './utils';
 import { RESUME_LAYOUT_ATTEMPTS, RESUME_PAGE } from './resume-template';
 import { coverLetterBodyParagraphs, coverLetterDate } from './cover-letter';
 import { EMBEDDED_RESUME_FONTS } from './resume-fonts';
-import { formatAtsDateRange, resumeContactLines } from './resume-content';
+import { formatAtsDateRange, resumeContactLines, selectedProjectSkills } from './resume-content';
 
 const A4_WIDTH = RESUME_PAGE.width;
 const A4_HEIGHT = RESUME_PAGE.height;
@@ -12,13 +12,6 @@ const RIGHT = A4_WIDTH - MARGIN;
 const BOTTOM = RESUME_PAGE.bottom;
 
 type FontName = 'TR' | 'TB' | 'TI' | 'TBI' | 'HR' | 'HB';
-
-type LayoutOptions = {
-  scale: number;
-  maxExperienceBullets: number;
-  maxProjects: number;
-  maxProjectBullets: number;
-};
 
 function ascii(text: string) {
   return text
@@ -56,7 +49,9 @@ function wrapWidth(text: string, maxWidth: number, size: number, font: FontName 
     if (line && width(candidate, size, font) > maxWidth) {
       lines.push(line);
       line = word;
-    } else line = candidate;
+    } else {
+      line = candidate;
+    }
   }
   if (line) lines.push(line);
   return lines;
@@ -66,47 +61,68 @@ class ResumeCanvas {
   commands: string[] = [];
   y = 808;
   overflow = false;
+
   constructor(readonly scale: number) {}
+
   size(value: number) { return value * this.scale; }
   gap(value: number) { return value * this.scale; }
+
   text(text: string, x: number, y: number, size: number, font: FontName = 'TR') {
     if (!text) return;
-    if (x < MARGIN - 2 || x + width(text, size, font) > RIGHT + 0.5 || y < BOTTOM) this.overflow = true;
+    if (x < MARGIN - 2 || x + width(text, size, font) > RIGHT + 0.75 || y < BOTTOM) this.overflow = true;
     const position = font === 'TI' || font === 'TBI'
       ? `1 0 0.18 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm`
       : `${x.toFixed(2)} ${y.toFixed(2)} Td`;
     this.commands.push(`BT /${font} ${size.toFixed(2)} Tf ${position} (${escapePdf(text)}) Tj ET`);
   }
+
   right(text: string, y: number, size: number, font: FontName = 'TR') {
     this.text(text, Math.max(MARGIN, RIGHT - width(text, size, font)), y, size, font);
   }
+
   center(text: string, y: number, size: number, font: FontName = 'TR') {
     this.text(text, Math.max(MARGIN, (A4_WIDTH - width(text, size, font)) / 2), y, size, font);
   }
-  rule(y: number) { this.commands.push(`0.35 w ${MARGIN} ${y.toFixed(2)} m ${RIGHT} ${y.toFixed(2)} l S`); }
+
+  rule(y: number) {
+    this.commands.push(`0.35 w ${MARGIN} ${y.toFixed(2)} m ${RIGHT} ${y.toFixed(2)} l S`);
+  }
+
   mainBullet(x: number, y: number) {
-    const r = 1.5;
+    const r = 1.45;
     const k = r * 0.55228475;
     this.commands.push(`${(x + r).toFixed(2)} ${y.toFixed(2)} m ${(x + r).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + r).toFixed(2)} ${x.toFixed(2)} ${(y + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(y + r).toFixed(2)} ${(x - r).toFixed(2)} ${(y + k).toFixed(2)} ${(x - r).toFixed(2)} ${y.toFixed(2)} c ${(x - r).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - r).toFixed(2)} ${x.toFixed(2)} ${(y - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(y - r).toFixed(2)} ${(x + r).toFixed(2)} ${(y - k).toFixed(2)} ${(x + r).toFixed(2)} ${y.toFixed(2)} c f`);
   }
-  subBullet(x: number, y: number) { this.text('-', x - 0.3, y - 1.2, this.size(7.4), 'TR'); }
-  consume(amount: number) { this.y -= this.gap(amount); if (this.y < BOTTOM) this.overflow = true; }
+
+  consume(amount: number) {
+    this.y -= this.gap(amount);
+    if (this.y < BOTTOM) this.overflow = true;
+  }
+
   section(label: string) {
-    this.consume(1.5);
-    this.text(label.toUpperCase(), MARGIN, this.y, this.size(10.5), 'TR');
+    this.consume(1.25);
+    this.text(label.toUpperCase(), MARGIN, this.y, this.size(10.55), 'TR');
     this.rule(this.y - this.gap(2));
-    this.consume(12.2);
+    this.consume(12.1);
   }
-  paragraph(text: string, baseSize = 9.15, lineHeight = 10.35) {
+
+  paragraph(text: string, baseSize = 9.05, lineHeight = 10.2) {
     const size = this.size(baseSize);
-    for (const line of wrapWidth(text, RIGHT - MARGIN, size)) { this.text(line, MARGIN, this.y, size); this.consume(lineHeight); }
+    for (const line of wrapWidth(text, RIGHT - MARGIN, size)) {
+      this.text(line, MARGIN, this.y, size);
+      this.consume(lineHeight);
+    }
   }
-  subBulletText(text: string, left = MARGIN + 30, baseSize = 8.65, lineHeight = 9.65) {
+
+  subBulletText(text: string, left = MARGIN + 30, baseSize = 8.55, lineHeight = 9.55) {
     const size = this.size(baseSize);
     const lines = wrapWidth(text, RIGHT - left, size);
     if (!lines.length) return;
-    this.subBullet(left - 12, this.y + this.gap(0.8));
-    for (const line of lines) { this.text(line, left, this.y, size); this.consume(lineHeight); }
+    this.text('-', left - 11, this.y - this.gap(0.6), this.size(7.2));
+    for (const line of lines) {
+      this.text(line, left, this.y, size);
+      this.consume(lineHeight);
+    }
   }
 }
 
@@ -124,153 +140,208 @@ function fitsSideBySide(
   return width(leftText, leftSize, leftFont) + width(rightText, rightSize, rightFont) + gap <= RIGHT - leftX;
 }
 
-function roleSource(profile: CandidateProfile, organization: string, title: string) {
-  return (profile.experience ?? []).find((item) => normalizeText(item.organization) === normalizeText(organization) && normalizeText(item.title) === normalizeText(title));
-}
-
-function pairedRow(canvas: ResumeCanvas, leftText: string, rightText: string, baseSize: number, rightSize: number, font: FontName = 'TR', rightFont: FontName = 'TR') {
+function pairedRow(
+  canvas: ResumeCanvas,
+  leftText: string,
+  rightText: string,
+  baseSize: number,
+  rightSize: number,
+  font: FontName = 'TR',
+  rightFont: FontName = 'TR',
+) {
   const left = MARGIN + 11;
   const size = canvas.size(baseSize);
-  if (fitsSideBySide(leftText, rightText, size, canvas.size(rightSize), font, rightFont, left)) {
-    const lines = wrapWidth(leftText, RIGHT - left - (rightText ? width(rightText, canvas.size(rightSize), rightFont) + 14 : 0), size, font);
-    for (const [index, line] of lines.entries()) {
+  const renderedRightSize = canvas.size(rightSize);
+  if (fitsSideBySide(leftText, rightText, size, renderedRightSize, font, rightFont, left)) {
+    const maxLeft = RIGHT - left - (rightText ? width(rightText, renderedRightSize, rightFont) + 14 : 0);
+    const lines = wrapWidth(leftText, maxLeft, size, font);
+    lines.forEach((line, index) => {
       canvas.text(line, left, canvas.y, size, font);
-      if (index === 0 && rightText) canvas.right(rightText, canvas.y, canvas.size(rightSize), rightFont);
-      canvas.consume(baseSize + 1.3);
-    }
-  } else {
-    for (const line of wrapWidth(leftText, RIGHT - left, size, font)) {
-      canvas.text(line, left, canvas.y, size, font);
-      canvas.consume(baseSize + 1.3);
-    }
-    for (const line of wrapWidth(rightText, RIGHT - left, canvas.size(rightSize), rightFont)) {
-      canvas.right(line, canvas.y, canvas.size(rightSize), rightFont);
-      canvas.consume(rightSize + 1.3);
+      if (index === 0 && rightText) canvas.right(rightText, canvas.y, renderedRightSize, rightFont);
+      canvas.consume(baseSize + 1.25);
+    });
+    return;
+  }
+
+  for (const line of wrapWidth(leftText, RIGHT - left, size, font)) {
+    canvas.text(line, left, canvas.y, size, font);
+    canvas.consume(baseSize + 1.25);
+  }
+  if (rightText) {
+    for (const line of wrapWidth(rightText, RIGHT - left, renderedRightSize, rightFont)) {
+      canvas.right(line, canvas.y, renderedRightSize, rightFont);
+      canvas.consume(rightSize + 1.25);
     }
   }
 }
 
-function addRole(canvas: ResumeCanvas, profile: CandidateProfile, item: ApplicationPack['experience'][number], maxBullets: number) {
-  const source = roleSource(profile, item.organization, item.title);
-  canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-  pairedRow(canvas, item.organization, source?.location ?? '', 9.7, 8.5, 'TB');
-  pairedRow(canvas, item.title, formatAtsDateRange(source?.start, source?.end), 8.85, 8.5, 'TI', 'TI');
-  for (const bullet of item.bullets.slice(0, maxBullets)) canvas.subBulletText(bullet);
-  canvas.consume(1);
+function sourceRole(profile: CandidateProfile, organization: string, title: string) {
+  return (profile.experience ?? []).find((item) => normalizeText(item.organization) === normalizeText(organization)
+    && normalizeText(item.title) === normalizeText(title));
+}
+
+function renderExperience(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack) {
+  for (const item of pack.experience) {
+    const source = sourceRole(profile, item.organization, item.title);
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
+    pairedRow(canvas, item.organization, source?.location ?? '', 9.55, 8.45, 'TB');
+    pairedRow(canvas, item.title, formatAtsDateRange(source?.start, source?.end), 8.75, 8.35, 'TI', 'TI');
+    item.bullets.forEach((bullet) => canvas.subBulletText(bullet));
+    canvas.consume(0.8);
+  }
 }
 
 function renderSkills(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack) {
   const selected = new Set(pack.skills.map(normalizeText));
   const rendered = new Set<string>();
+
   for (const group of profile.skillGroups ?? []) {
     const skills = group.skills.filter((skill) => selected.has(normalizeText(skill)));
     if (!skills.length) continue;
     skills.forEach((skill) => rendered.add(normalizeText(skill)));
-    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.7));
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.65));
     const label = `${group.label}:`;
-    const labelSize = canvas.size(8.75);
+    const labelSize = canvas.size(8.65);
+    const bodySize = canvas.size(8.25);
     canvas.text(label, MARGIN + 11, canvas.y, labelSize, 'TB');
-    const left = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
-    const bodySize = canvas.size(8.4);
-    const lines = wrapWidth(skills.join(', '), RIGHT - left, bodySize);
-    lines.forEach((line, index) => { canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize); canvas.consume(9.35); });
+    const firstLeft = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
+    const firstWidth = RIGHT - firstLeft;
+    const words = skills.join(', ');
+    const firstLines = wrapWidth(words, firstWidth, bodySize);
+    if (firstLines.length <= 1) {
+      canvas.text(firstLines[0] ?? '', firstLeft, canvas.y, bodySize);
+      canvas.consume(9.15);
+    } else {
+      canvas.text(firstLines[0], firstLeft, canvas.y, bodySize);
+      canvas.consume(9.15);
+      const remaining = skills.join(', ');
+      const firstRendered = firstLines[0];
+      const tail = remaining.startsWith(firstRendered) ? remaining.slice(firstRendered.length).replace(/^,?\s*/, '') : firstLines.slice(1).join(' ');
+      for (const line of wrapWidth(tail, RIGHT - (MARGIN + 24), bodySize)) {
+        canvas.text(line, MARGIN + 24, canvas.y, bodySize);
+        canvas.consume(9.15);
+      }
+    }
   }
+
   const extras = pack.skills.filter((skill) => !rendered.has(normalizeText(skill)));
   if (extras.length) {
-    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.7));
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.65));
     const label = 'Additional:';
-    const labelSize = canvas.size(8.75);
+    const labelSize = canvas.size(8.65);
+    const bodySize = canvas.size(8.25);
     canvas.text(label, MARGIN + 11, canvas.y, labelSize, 'TB');
-    const left = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
-    const bodySize = canvas.size(8.4);
-    const lines = wrapWidth(extras.join(', '), RIGHT - left, bodySize);
-    lines.forEach((line, index) => { canvas.text(line, index === 0 ? left : MARGIN + 24, canvas.y, bodySize); canvas.consume(9.35); });
+    const firstLeft = MARGIN + 11 + width(label, labelSize, 'TB') + 4;
+    const text = extras.join(', ');
+    const lines = wrapWidth(text, RIGHT - firstLeft, bodySize);
+    if (lines.length) {
+      canvas.text(lines[0], firstLeft, canvas.y, bodySize);
+      canvas.consume(9.15);
+      const tail = text.startsWith(lines[0]) ? text.slice(lines[0].length).replace(/^,?\s*/, '') : lines.slice(1).join(' ');
+      for (const line of wrapWidth(tail, RIGHT - (MARGIN + 24), bodySize)) {
+        canvas.text(line, MARGIN + 24, canvas.y, bodySize);
+        canvas.consume(9.15);
+      }
+    }
   }
 }
 
-function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
+function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack) {
   const sources = new Map((profile.projects ?? []).map((project) => [normalizeText(project.name), project]));
-  for (const item of pack.projects.slice(0, options.maxProjects)) {
+  for (const item of pack.projects) {
     const source = sources.get(normalizeText(item.name));
-    if (!source) continue;
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-    pairedRow(canvas, source.name, '', 9.25, 7.8, 'TB', 'TI');
-    const tech = (source.skills ?? []).filter((skill) => pack.skills.some((selected) => normalizeText(selected) === normalizeText(skill))).slice(0, 6);
+    pairedRow(canvas, source?.name ?? item.name, '', 9.15, 7.8, 'TB', 'TI');
+    const tech = selectedProjectSkills(profile, pack, item.name);
     if (tech.length) {
-      for (const line of wrapWidth(`Technologies: ${tech.join(', ')}`, RIGHT - (MARGIN + 11), canvas.size(7.8), 'TI')) {
-        canvas.text(line, MARGIN + 11, canvas.y, canvas.size(7.8), 'TI');
-        canvas.consume(8.7);
+      for (const line of wrapWidth(`Technologies: ${tech.join(', ')}`, RIGHT - (MARGIN + 11), canvas.size(7.75), 'TI')) {
+        canvas.text(line, MARGIN + 11, canvas.y, canvas.size(7.75), 'TI');
+        canvas.consume(8.55);
       }
     }
-    for (const bullet of item.bullets.slice(0, options.maxProjectBullets)) canvas.subBulletText(bullet);
-    canvas.consume(0.8);
+    item.bullets.forEach((bullet) => canvas.subBulletText(bullet));
+    canvas.consume(0.6);
   }
 }
 
 function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
   for (const degree of profile.degrees ?? []) {
     const left = MARGIN + 11;
-    const courseSize = canvas.size(8.05);
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-    pairedRow(canvas, degree.institution, degree.location ?? '', 9.45, 8.2, 'TB');
+    pairedRow(canvas, degree.institution, degree.location ?? '', 9.35, 8.15, 'TB');
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    pairedRow(canvas, degreeText, formatAtsDateRange(degree.start, degree.end), 8.45, 8.2, 'TI', 'TI');
-
+    pairedRow(canvas, degreeText, formatAtsDateRange(degree.start, degree.end), 8.35, 8.1, 'TI', 'TI');
     const courses = (degree.coursework ?? []).slice(0, 2);
     if (courses.length) {
-      const courseworkText = `Relevant Coursework: ${courses.join(', ')}`;
-      for (const line of wrapWidth(courseworkText, RIGHT - left, courseSize, 'TI')) {
-        canvas.text(line, left, canvas.y, courseSize, 'TI');
-        canvas.consume(8.8);
+      for (const line of wrapWidth(`Relevant Coursework: ${courses.join(', ')}`, RIGHT - left, canvas.size(7.95), 'TI')) {
+        canvas.text(line, left, canvas.y, canvas.size(7.95), 'TI');
+        canvas.consume(8.65);
       }
     }
-    canvas.consume(0.8);
+    canvas.consume(0.55);
   }
 }
 
-function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
-  const canvas = new ResumeCanvas(options.scale);
-  for (const line of wrapWidth(profile.name, RIGHT - MARGIN, canvas.size(23.5), 'TB')) {
-    canvas.center(line, canvas.y, canvas.size(23.5), 'TB');
-    canvas.consume(24);
+function renderListSection(canvas: ResumeCanvas, label: string, values: string[], baseSize = 7.95) {
+  if (!values.length) return;
+  canvas.section(label);
+  for (const value of values) {
+    canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.55));
+    const size = canvas.size(baseSize);
+    for (const line of wrapWidth(value, RIGHT - MARGIN - 11, size)) {
+      canvas.text(line, MARGIN + 11, canvas.y, size);
+      canvas.consume(baseSize + 0.7);
+    }
   }
-  for (const line of wrapWidth(pack.resumeHeadline, RIGHT - MARGIN, canvas.size(9.1), 'TB')) {
-    canvas.center(line, canvas.y, canvas.size(9.1), 'TB');
-    canvas.consume(10.4);
-  }
+}
+
+function renderContact(canvas: ResumeCanvas, profile: CandidateProfile) {
   const contact = resumeContactLines(profile);
-  for (const line of wrapWidth(contact.primary.join('   |   '), RIGHT - MARGIN, canvas.size(8.05))) {
-    canvas.center(line, canvas.y, canvas.size(8.05));
-    canvas.consume(9.2);
+  const text = [...contact.primary, ...contact.links].join('   |   ');
+  if (!text) return;
+  let size = canvas.size(7.9);
+  const min = canvas.size(5.9);
+  while (size > min && width(text, size) > RIGHT - MARGIN) size -= 0.15;
+  if (width(text, size) <= RIGHT - MARGIN) {
+    canvas.center(text, canvas.y, size);
+    canvas.consume(9.4);
+    return;
   }
-  for (const line of wrapWidth(contact.links.join('   |   '), RIGHT - MARGIN, canvas.size(7.65))) {
-    canvas.center(line, canvas.y, canvas.size(7.65));
-    canvas.consume(8.8);
+  for (const line of wrapWidth(text, RIGHT - MARGIN, size)) {
+    canvas.center(line, canvas.y, size);
+    canvas.consume(8.3);
   }
-  canvas.consume(1.5);
+}
+
+function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, scale: number) {
+  const canvas = new ResumeCanvas(scale);
+  canvas.center(profile.name, canvas.y, canvas.size(23.5), 'TB');
+  canvas.consume(24.2);
+
+  if (pack.resumeHeadline?.trim()) {
+    for (const line of wrapWidth(pack.resumeHeadline, RIGHT - MARGIN, canvas.size(9.0), 'TB')) {
+      canvas.center(line, canvas.y, canvas.size(9.0), 'TB');
+      canvas.consume(10.1);
+    }
+  }
+
+  renderContact(canvas, profile);
+  canvas.consume(0.8);
   canvas.section('Professional Summary');
   canvas.paragraph(pack.resumeSummary);
   canvas.section('Experience');
-  for (const item of pack.experience.slice(0, 3)) addRole(canvas, profile, item, options.maxExperienceBullets);
+  renderExperience(canvas, profile, pack);
   canvas.section('Skills');
   renderSkills(canvas, profile, pack);
-  if (pack.projects.length) { canvas.section('Projects'); renderProjects(canvas, profile, pack, options); }
+  if (pack.projects.length) {
+    canvas.section('Projects');
+    renderProjects(canvas, profile, pack);
+  }
   canvas.section('Education');
   renderEducation(canvas, profile);
-  if ((pack.certifications ?? []).length) {
-    canvas.section('Certifications');
-    for (const certification of (pack.certifications ?? []).slice(0, 3)) {
-      canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.6));
-      for (const line of wrapWidth(certification, RIGHT - MARGIN - 11, canvas.size(8.05))) {
-        canvas.text(line, MARGIN + 11, canvas.y, canvas.size(8.05));
-        canvas.consume(8.8);
-      }
-    }
-  }
-  if ((pack.publications ?? []).length) {
-    canvas.section('Publications');
-    for (const publication of (pack.publications ?? []).slice(0, 1)) canvas.subBulletText(publication, MARGIN + 18, 7.85, 8.7);
-  }
+  renderListSection(canvas, 'Certifications', pack.certifications ?? []);
+  renderListSection(canvas, 'Publications', pack.publications ?? [], 7.65);
+
   return { stream: canvas.commands.join('\n'), overflow: canvas.overflow, bottomY: canvas.y };
 }
 
@@ -280,6 +351,7 @@ function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Re
     objects.push(typeof body === 'string' ? Buffer.from(body, 'ascii') : body);
     return objects.length;
   };
+
   const variantIds = new Map<'regular' | 'bold', number>();
   for (const variant of [...new Set(Object.values(fonts))]) {
     const definition = EMBEDDED_RESUME_FONTS[variant];
@@ -292,6 +364,7 @@ function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Re
     const fontId = add(`<< /Type /Font /Subtype /TrueType /BaseFont /${definition.baseFont} /FirstChar 32 /LastChar 126 /Widths [${definition.widths.join(' ')}] /Encoding /WinAnsiEncoding /FontDescriptor ${descriptorId} 0 R >>`);
     variantIds.set(variant, fontId);
   }
+
   const fontIds = Object.fromEntries(Object.entries(fonts).map(([key, variant]) => [key, variantIds.get(variant)!]));
   const pagesId = add('');
   const pageIds: number[] = [];
@@ -302,6 +375,7 @@ function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Re
   }
   objects[pagesId - 1] = Buffer.from(`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`, 'ascii');
   const catalogId = add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`);
+
   const chunks: Buffer[] = [Buffer.from('%PDF-1.4\n%\xFF\xFF\xFF\xFF\n', 'binary')];
   const offsets = [0];
   let length = chunks[0].length;
@@ -319,13 +393,15 @@ function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Re
   return Buffer.concat(chunks);
 }
 
-const FONT_MAP: Record<FontName, 'regular' | 'bold'> = { TR: 'regular', TB: 'bold', TI: 'regular', TBI: 'bold', HR: 'regular', HB: 'bold' };
+const FONT_MAP: Record<FontName, 'regular' | 'bold'> = {
+  TR: 'regular', TB: 'bold', TI: 'regular', TBI: 'bold', HR: 'regular', HB: 'bold',
+};
 
 export function resumePdf(profile: CandidateProfile, _job: Job, pack: ApplicationPack): Buffer {
-  const attempts: LayoutOptions[] = RESUME_LAYOUT_ATTEMPTS.map((attempt) => ({ ...attempt }));
-  let best = buildResumeStream(profile, pack, attempts[attempts.length - 1]);
-  for (const attempt of attempts) {
-    const candidate = buildResumeStream(profile, pack, attempt);
+  const scales = [...RESUME_LAYOUT_ATTEMPTS.map((attempt) => attempt.scale), 0.8, 0.76, 0.72];
+  let best = buildResumeStream(profile, pack, scales.at(-1) ?? 0.72);
+  for (const scale of scales) {
+    const candidate = buildResumeStream(profile, pack, scale);
     best = candidate;
     if (!candidate.overflow && candidate.bottomY >= BOTTOM) break;
   }
@@ -340,45 +416,62 @@ class LetterCanvas {
   y = 742;
   readonly left = 58;
   readonly right = 554;
+
   text(text: string, x: number, y: number, size: number, font: FontName = 'HR') {
     if (text) this.commands.push(`BT /${font} ${size.toFixed(2)} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${escapePdf(text)}) Tj ET`);
   }
-  center(text: string, y: number, size: number, font: FontName = 'HR') { this.text(text, (612 - width(text, size, font)) / 2, y, size, font); }
-  line(y: number) { this.commands.push(`0.45 w ${this.left} ${y.toFixed(2)} m ${this.right} ${y.toFixed(2)} l S`); }
+
+  center(text: string, y: number, size: number, font: FontName = 'HR') {
+    this.text(text, (612 - width(text, size, font)) / 2, y, size, font);
+  }
+
+  line(y: number) {
+    this.commands.push(`0.45 w ${this.left} ${y.toFixed(2)} m ${this.right} ${y.toFixed(2)} l S`);
+  }
+
   paragraph(text: string, size: number, lineHeight: number) {
-    for (const line of wrapWidth(text, this.right - this.left, size, 'HR')) { this.text(line, this.left, this.y, size, 'HR'); this.y -= lineHeight; }
+    for (const line of wrapWidth(text, this.right - this.left, size, 'HR')) {
+      this.text(line, this.left, this.y, size, 'HR');
+      this.y -= lineHeight;
+    }
   }
 }
 
 function buildCoverLetterStream(profile: CandidateProfile, job: Job, pack: ApplicationPack) {
-  const c = new LetterCanvas();
-  c.center(profile.name, c.y, 18.5, 'HB');
-  c.y -= 18;
-  c.center([profile.phone, profile.email, profile.location].filter(Boolean).join('  |  '), c.y, 8.7, 'HR');
-  c.y -= 12;
-  c.line(c.y);
-  c.y -= 25;
-  c.text(coverLetterDate(), c.left, c.y, 10, 'HR');
-  c.y -= 28;
-  c.text('Hiring Manager', c.left, c.y, 10, 'HB');
-  c.y -= 14;
-  c.text(job.company, c.left, c.y, 10, 'HR');
-  if (job.location) { c.y -= 14; c.text(job.location, c.left, c.y, 10, 'HR'); }
-  c.y -= 28;
-  c.text(`Re: ${job.title}`, c.left, c.y, 10.5, 'HB');
-  c.y -= 30;
-  c.text('Dear Hiring Manager,', c.left, c.y, 10.5, 'HR');
-  c.y -= 25;
+  const canvas = new LetterCanvas();
+  canvas.center(profile.name, canvas.y, 18.5, 'HB');
+  canvas.y -= 18;
+  canvas.center([profile.phone, profile.email, profile.location].filter(Boolean).join('  |  '), canvas.y, 8.7, 'HR');
+  canvas.y -= 12;
+  canvas.line(canvas.y);
+  canvas.y -= 25;
+  canvas.text(coverLetterDate(), canvas.left, canvas.y, 10, 'HR');
+  canvas.y -= 28;
+  canvas.text('Hiring Manager', canvas.left, canvas.y, 10, 'HB');
+  canvas.y -= 14;
+  canvas.text(job.company, canvas.left, canvas.y, 10, 'HR');
+  if (job.location) {
+    canvas.y -= 14;
+    canvas.text(job.location, canvas.left, canvas.y, 10, 'HR');
+  }
+  canvas.y -= 28;
+  canvas.text(`Re: ${job.title}`, canvas.left, canvas.y, 10.5, 'HB');
+  canvas.y -= 30;
+  canvas.text('Dear Hiring Manager,', canvas.left, canvas.y, 10.5, 'HR');
+  canvas.y -= 25;
   const paragraphs = coverLetterBodyParagraphs(pack);
   const totalChars = paragraphs.join(' ').length;
   const bodySize = totalChars > 2200 ? 9.6 : totalChars > 1750 ? 9.9 : 10.2;
   const lineHeight = bodySize + 3.2;
-  for (const paragraph of paragraphs) { c.paragraph(paragraph, bodySize, lineHeight); c.y -= 11; }
-  c.y -= 5;
-  c.text('Sincerely,', c.left, c.y, 10.5, 'HR');
-  c.y -= 28;
-  c.text(profile.name, c.left, c.y, 10.5, 'HB');
-  return c.commands.join('\n');
+  for (const paragraph of paragraphs) {
+    canvas.paragraph(paragraph, bodySize, lineHeight);
+    canvas.y -= 11;
+  }
+  canvas.y -= 5;
+  canvas.text('Sincerely,', canvas.left, canvas.y, 10.5, 'HR');
+  canvas.y -= 28;
+  canvas.text(profile.name, canvas.left, canvas.y, 10.5, 'HB');
+  return canvas.commands.join('\n');
 }
 
 export function coverLetterPdf(profile: CandidateProfile, job: Job, pack: ApplicationPack): Buffer {
