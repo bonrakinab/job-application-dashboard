@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import type { ApplicationPack, CandidateProfile, Job } from './types';
-import { formatAtsDateRange, resumeContactLines, selectedProjectSkills } from './resume-content';
+import { formatResumeDateRange, resumeTemplateContactItems, selectedProjectSkills } from './resume-content';
 import { normalizeText } from './utils';
 
 function xml(value: string) {
@@ -94,8 +94,7 @@ function skillsParagraphs(profile: CandidateProfile, pack: ApplicationPack) {
 }
 
 function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
-  const contact = resumeContactLines(profile);
-  const contactText = [...contact.primary, ...contact.links].join(' | ');
+  const contactText = resumeTemplateContactItems(profile).join(' | ');
   const body: string[] = [paragraph(profile.name, { style: 'Name', align: 'center', after: 18 })];
 
   if (pack.resumeHeadline?.trim()) body.push(paragraph(pack.resumeHeadline, { style: 'Headline', align: 'center', after: 12 }));
@@ -110,7 +109,7 @@ function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
     body.push(paired([run('• '), run(item.organization, { bold: true })], source?.location ?? '', {
       style: 'Organization', keepNext: true, after: 0,
     }));
-    body.push(paired([run(item.title, { italic: true })], formatAtsDateRange(source?.start, source?.end), {
+    body.push(paired([run(item.title, { italic: true })], formatResumeDateRange(source?.start, source?.end), {
       style: 'RoleLine', keepNext: true, after: 4,
     }));
     item.bullets.forEach((itemBullet) => body.push(bullet(itemBullet)));
@@ -136,7 +135,7 @@ function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
       style: 'Organization', keepNext: true, after: 0,
     }));
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    body.push(paired([run(degreeText, { italic: true })], formatAtsDateRange(degree.start, degree.end), {
+    body.push(paired([run(degreeText, { italic: true })], formatResumeDateRange(degree.start, degree.end), {
       style: 'RoleLine', keepNext: true, after: 3,
     }));
     if (degree.coursework?.length) {
