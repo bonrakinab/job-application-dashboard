@@ -49,3 +49,19 @@ test('explicit externalApplicationEligible=false excludes any private project', 
   assert.equal(privateProject ? isExternalApplicationProject(privateProject) : true, false);
   assert.equal(flowdesk ? isExternalApplicationProject(flowdesk) : false, true);
 });
+
+test('genuine additional employment stays available for job-specific ranking while volunteer roles stay excluded', () => {
+  const source: CandidateProfile = {
+    ...profile(),
+    experience: [
+      { organization: 'Banglalink', title: 'Enterprise Solutions and Services Specialist Engineer, IT', bullets: ['Supported Oracle Fusion enterprise systems and financial workflows.'] },
+      { organization: 'Banglalink', title: 'Information Technology Intern', bullets: ['Supported ERP documentation and enterprise system configuration.'] },
+      { organization: 'GAOTek Inc.', title: 'Software Development Intern - Team Leader', bullets: ['Built Angular components and reviewed software defects with the team.'] },
+      { organization: 'University of Windsor', title: 'Graduate Assistant', bullets: ['Supported students with technical coursework and laboratory activities.'] },
+      { organization: 'Aobhan', title: 'Volunteer', bullets: ['Volunteered in community activities and event coordination.'] },
+    ],
+  };
+  const filtered = externalApplicationProfile(source);
+  assert.ok(filtered.experience?.some((item) => item.title === 'Graduate Assistant'));
+  assert.ok(!filtered.experience?.some((item) => item.title === 'Volunteer'));
+});
