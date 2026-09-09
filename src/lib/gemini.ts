@@ -153,7 +153,11 @@ const matchSchema = {
 
 export async function analyzeJobWithGemini(job: Job, profile: CandidateProfile): Promise<MatchScore> {
   const baseline = deterministicScore(job, profile);
-  if (baseline.blockers.length || !process.env.GEMINI_API_KEY) return baseline;
+  // Even when deterministic checks find a blocker, run detailed analysis when
+  // Gemini is configured so must-have/preferred requirements are still extracted
+  // for truthful gap-aware resume tailoring. Baseline blockers are merged back
+  // below and continue to cap the recommendation/score.
+  if (!process.env.GEMINI_API_KEY) return baseline;
   const model = process.env.GEMINI_MODEL_JOB_ANALYSIS || 'gemini-3.6-flash';
 
   try {
