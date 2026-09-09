@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { buildProfessionalFallbackCoverLetter } from './cover-letter-tailoring';
-import { isMainCareerJob, isWindsorPartTimeJob, profileIdForJob } from './part-time-jobs';
+import { isCareerTrackJob, isMainCareerJob, isWindsorPartTimeJob, profileIdForJob } from './part-time-jobs';
 import { normalizePartTimeCandidateProfile } from './profile-curation';
 import { partTimeProfileFromResumeExtraction, type ResumeProfileExtraction } from './resume-profile-import';
 import {
@@ -51,6 +51,22 @@ test('Windsor part-time jobs are routed to the isolated profile', () => {
   assert.equal(profileIdForJob({ ...job, employmentType: 'Full Time', title: 'Sales Associate' }), 'default');
   assert.equal(isMainCareerJob(job), false);
   assert.equal(isMainCareerJob({ ...job, employmentType: 'Full Time', title: 'Sales Associate' }), true);
+});
+
+test('technical part-time jobs use the career profile even when legacy metadata says part-time', () => {
+  const technical: Job = {
+    ...job,
+    title: 'AI Evaluation Engineer (Python, QA or Security)',
+    company: 'Mindrift',
+    location: 'Canada',
+    applicationProfileId: 'part-time',
+  };
+  assert.equal(isCareerTrackJob(technical), true);
+  assert.equal(profileIdForJob(technical), 'default');
+  assert.equal(isMainCareerJob(technical), true);
+  assert.equal(profileIdForJob({ ...technical, title: 'Data & Reporting Analyst (Part Time)' }), 'default');
+  assert.equal(profileIdForJob({ ...technical, title: 'Business Analyst (Pre-Sales & Delivery)' }), 'default');
+  assert.equal(profileIdForJob({ ...technical, title: 'Software Engineering Evaluation Specialist' }), 'default');
 });
 
 test('part-time profile keeps general workplace skills and its own experience', () => {
