@@ -3,7 +3,7 @@ import { normalizeText } from './utils';
 import { RESUME_LAYOUT_ATTEMPTS, RESUME_PAGE } from './resume-template';
 import { coverLetterBodyParagraphs, coverLetterDate } from './cover-letter';
 import { EMBEDDED_RESUME_FONTS } from './resume-fonts';
-import { formatAtsDateRange, resumeContactLines, selectedProjectSkills } from './resume-content';
+import { formatResumeDateRange, resumeTemplateContactItems, selectedProjectSkills } from './resume-content';
 
 const A4_WIDTH = RESUME_PAGE.width;
 const A4_HEIGHT = RESUME_PAGE.height;
@@ -84,6 +84,11 @@ class ResumeCanvas {
     this.text(text, Math.max(MARGIN, (A4_WIDTH - width(text, size, font)) / 2), y, size, font);
   }
 
+  footer(text: string, y: number, size: number, font: FontName = 'TR') {
+    const x = Math.max(0, (A4_WIDTH - width(text, size, font)) / 2);
+    this.commands.push(`BT /${font} ${size.toFixed(2)} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${escapePdf(text)}) Tj ET`);
+  }
+
   rule(y: number) {
     this.commands.push(`0.35 w ${MARGIN} ${y.toFixed(2)} m ${RIGHT} ${y.toFixed(2)} l S`);
   }
@@ -92,6 +97,12 @@ class ResumeCanvas {
     const r = 1.45;
     const k = r * 0.55228475;
     this.commands.push(`${(x + r).toFixed(2)} ${y.toFixed(2)} m ${(x + r).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + r).toFixed(2)} ${x.toFixed(2)} ${(y + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(y + r).toFixed(2)} ${(x - r).toFixed(2)} ${(y + k).toFixed(2)} ${(x - r).toFixed(2)} ${y.toFixed(2)} c ${(x - r).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - r).toFixed(2)} ${x.toFixed(2)} ${(y - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(y - r).toFixed(2)} ${(x + r).toFixed(2)} ${(y - k).toFixed(2)} ${(x + r).toFixed(2)} ${y.toFixed(2)} c f`);
+  }
+
+  subBullet(x: number, y: number) {
+    const r = 1.4;
+    const k = r * 0.55228475;
+    this.commands.push(`0.45 w ${(x + r).toFixed(2)} ${y.toFixed(2)} m ${(x + r).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + r).toFixed(2)} ${x.toFixed(2)} ${(y + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(y + r).toFixed(2)} ${(x - r).toFixed(2)} ${(y + k).toFixed(2)} ${(x - r).toFixed(2)} ${y.toFixed(2)} c ${(x - r).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - r).toFixed(2)} ${x.toFixed(2)} ${(y - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(y - r).toFixed(2)} ${(x + r).toFixed(2)} ${(y - k).toFixed(2)} ${(x + r).toFixed(2)} ${y.toFixed(2)} c S`);
   }
 
   consume(amount: number) {
@@ -118,7 +129,7 @@ class ResumeCanvas {
     const size = this.size(baseSize);
     const lines = wrapWidth(text, RIGHT - left, size);
     if (!lines.length) return;
-    this.text('-', left - 11, this.y - this.gap(0.6), this.size(7.2));
+    this.subBullet(left - 11, this.y + this.gap(1.8));
     for (const line of lines) {
       this.text(line, left, this.y, size);
       this.consume(lineHeight);
@@ -185,7 +196,7 @@ function renderExperience(canvas: ResumeCanvas, profile: CandidateProfile, pack:
     const source = sourceRole(profile, item.organization, item.title);
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
     pairedRow(canvas, item.organization, source?.location ?? '', 9.55, 8.45, 'TB');
-    pairedRow(canvas, item.title, formatAtsDateRange(source?.start, source?.end), 8.75, 8.35, 'TI', 'TI');
+    pairedRow(canvas, item.title, formatResumeDateRange(source?.start, source?.end), 8.75, 8.35, 'TI', 'TI');
     item.bullets.forEach((bullet) => canvas.subBulletText(bullet));
     canvas.consume(0.8);
   }
@@ -270,7 +281,7 @@ function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
     pairedRow(canvas, degree.institution, degree.location ?? '', 9.35, 8.15, 'TB');
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    pairedRow(canvas, degreeText, formatAtsDateRange(degree.start, degree.end), 8.35, 8.1, 'TI', 'TI');
+    pairedRow(canvas, degreeText, formatResumeDateRange(degree.start, degree.end), 8.35, 8.1, 'TI', 'TI');
     const courses = (degree.coursework ?? []).slice(0, 2);
     if (courses.length) {
       for (const line of wrapWidth(`Relevant Coursework: ${courses.join(', ')}`, RIGHT - left, canvas.size(7.95), 'TI')) {
@@ -296,8 +307,7 @@ function renderListSection(canvas: ResumeCanvas, label: string, values: string[]
 }
 
 function renderContact(canvas: ResumeCanvas, profile: CandidateProfile) {
-  const contact = resumeContactLines(profile);
-  const text = [...contact.primary, ...contact.links].join('   |   ');
+  const text = resumeTemplateContactItems(profile).join('   |   ');
   if (!text) return;
   let size = canvas.size(7.9);
   const min = canvas.size(5.9);
@@ -341,6 +351,7 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, sca
   renderEducation(canvas, profile);
   renderListSection(canvas, 'Certifications', pack.certifications ?? []);
   renderListSection(canvas, 'Publications', pack.publications ?? [], 7.65);
+  canvas.footer('1', 7.5, canvas.size(6.8));
 
   return { stream: canvas.commands.join('\n'), overflow: canvas.overflow, bottomY: canvas.y };
 }
