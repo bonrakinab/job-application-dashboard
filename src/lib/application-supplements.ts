@@ -45,23 +45,11 @@ function ranked(values: string[], jobContext: string, boost: (value: string, job
     .map((item) => item.value);
 }
 
-function publicationBoost(value: string, jobContext: string) {
-  const job = normalizeText(jobContext);
-  const item = normalizeText(value);
-  if (!/\b(ai|artificial intelligence|machine learning|data|research|nlp|security|cloud|algorithm|analysis)\b/.test(job)) return -1;
-  let score = 0.1;
-  if (/cloud failure/.test(item) && /cloud|infrastructure|reliability/.test(job)) score += 0.8;
-  if (/vaccine|social media|opinion analysis/.test(item) && /nlp|analysis|data|research/.test(job)) score += 0.5;
-  if (/gene ontology|algorithm|hashing/.test(item) && /algorithm|data|research|software/.test(job)) score += 0.5;
-  if (/smart helmet|monitoring/.test(item) && /iot|monitoring|systems|hardware/.test(job)) score += 0.55;
-  return score;
-}
-
 export function selectApplicationSupplements(job: Job, profile: CandidateProfile, match?: MatchScore) {
   const jobContext = context(job, match);
   return {
-    certifications: ranked(profile.certifications ?? [], jobContext, certificationBoost, 3),
-    publications: ranked(profile.publications ?? [], jobContext, publicationBoost, 1),
+    certifications: ranked(profile.certifications ?? [], jobContext, certificationBoost, 6),
+    publications: [] as string[],
     awards: [] as string[],
   };
 }
