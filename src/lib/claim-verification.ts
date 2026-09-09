@@ -1,5 +1,5 @@
 import { containsTerm, groundedRewriteIssue } from './resume-evidence-guards';
-import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
+import type { ApplicationPack, CandidateProfile, Job, MatchScore, RequirementEvidence } from './types';
 import { normalizeText } from './utils';
 
 type ClaimResult = {
@@ -36,7 +36,31 @@ function sentences(value: string) {
     .filter((sentence) => !/^(dear hiring manager|sincerely,?|best regards,?|kind regards,?)$/i.test(sentence));
 }
 
-function evidenceChunks(profile: CandidateProfile, job: Job): EvidenceChunk[] {
+function supportedJdTerms(matrix: RequirementEvidence[] | undefined) {
+  return new Set((matrix ?? [])
+    .filter((item) => item.support === 'supported' && item.evidence.length > 0)
+    .flatMap((item) => item.exactTerms ?? [])
+    .map(normalizeText)
+    .filter(Boolean));
+}
+
+/**
+ * Supported JD terminology is itself grounded by the matrix evidence. Exposing
+ * those terms as synthetic audit chunks lets the verifier accept a truthful
+ * terminology translation without pretending that the phrase was present in
+ * the original resume verbatim.
+ */
+function supportedJdEvidence(matrix: RequirementEvidence[] | undefined): EvidenceChunk[] {
+  return (matrix ?? [])
+    .filter((item) => item.support === 'supported' && item.evidence.length > 0)
+    .flatMap((item) => (item.exactTerms ?? []).map((term) => ({
+      label: `Evidence-backed JD wording: ${term}`,
+      text: [term, item.requirement, ...item.evidence.map((entry) => entry.excerpt)].join(' '),
+      sourceText: item.evidence.map((entry) => entry.excerpt).join(' '),
+    })));
+}
+
+function evidenceChunks(profile: CandidateProfile, matrix?: RequirementEvidence[]): EvidenceChunk[] {
   return [
     { label: 'Verified profile', text: [profile.headline, profile.summary, profile.yearsExperience == null ? '' : `${profile.yearsExperience} years of experience`].filter(Boolean).join(' ') },
     ...profile.skills.map((skill) => ({ label: `Verified skill: ${skill}`, text: skill, sourceText: skill })),
@@ -62,10 +86,10 @@ function evidenceChunks(profile: CandidateProfile, job: Job): EvidenceChunk[] {
     ...(profile.languages ?? []).map((language) => ({ label: 'Language', text: language })),
     ...(profile.courses ?? []).map((course) => ({ label: 'Course', text: course })),
     ...(profile.awards ?? []).map((award) => ({ label: 'Honor or award', text: award })),
-    ...(profile.publications ?? []).map((publication) => ({ label: 'Publication', text: publication })),
     ...(profile.profileSources?.linkedin?.headline ? [{ label: 'LinkedIn headline', text: profile.profileSources.linkedin.headline }] : []),
     ...(profile.profileSources?.linkedin?.summary ? [{ label: 'LinkedIn summary', text: profile.profileSources.linkedin.summary }] : []),
     ...(profile.workAuthorization ?? []).map((authorization) => ({ label: 'Work authorization', text: authorization })),
+    ...supportedJdEvidence(matrix),
   ].filter((chunk) => chunk.text.trim());
 }
 
@@ -81,21 +105,19 @@ function bestEvidence(claim: string, chunks: EvidenceChunk[]) {
   return ranked[0];
 }
 
-function unsupportedSkillClaim(claim: string, profile: CandidateProfile, match?: MatchScore) {
+function unsupportedSkillClaim(claim: string, profile: CandidateProfile, match: MatchScore | undefined, allowedJdTerms: Set<string>) {
   if (!POSSESSION_LANGUAGE.test(claim)) return null;
   const normalizedClaim = normalizeText(claim);
   const supported = new Set(profile.skills.map(normalizeText));
   const missing = [...new Set([...(match?.missingSkills ?? []), ...(match?.gaps ?? [])])]
     .map((skill) => ({ raw: skill, normalized: normalizeText(skill) }))
     .filter((skill) => skill.normalized.length >= 2 && skill.normalized.length <= 80)
-    .filter((skill) => !supported.has(skill.normalized));
+    .filter((skill) => !supported.has(skill.normalized) && !allowedJdTerms.has(skill.normalized));
   return missing.find((skill) => containsTerm(normalizedClaim, skill.normalized))?.raw ?? null;
 }
 
 function unsupportedNumbers(claim: string, profile: CandidateProfile, job: Job, chunks: EvidenceChunk[]) {
   let factual = claim;
-  // Job labels are context only; removing them here must not add them to the
-  // candidate evidence index or validate unrelated numeric accomplishments.
   if (/apply|applying|interested|relevant to|position|role/i.test(claim)) {
     factual = factual.replaceAll(job.title, '').replaceAll(job.company, '');
   }
@@ -117,10 +139,17 @@ function completedDegreeContradiction(claim: string, profile: CandidateProfile) 
   return /\b(i (?:hold|earned|completed)|my completed|graduate with|master(?:'s)? degree holder)\b/i.test(claim);
 }
 
-function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match: MatchScore | undefined, chunks: EvidenceChunk[]): ClaimResult {
+function evaluateClaim(
+  claim: string,
+  profile: CandidateProfile,
+  job: Job,
+  match: MatchScore | undefined,
+  chunks: EvidenceChunk[],
+  allowedJdTerms: Set<string>,
+): ClaimResult {
   const applicationOpening = `I am writing to apply for the ${job.title} position at ${job.company}.`;
   if (claim === applicationOpening || claim === `I am applying for the ${job.title} role at ${job.company}.`) return { claim, status: 'verified', confidence: 100, reason: 'Application intent only.', evidence: 'No candidate accomplishment asserted.' };
-  const missingSkill = unsupportedSkillClaim(claim, profile, match);
+  const missingSkill = unsupportedSkillClaim(claim, profile, match, allowedJdTerms);
   if (missingSkill) return {
     claim,
     status: 'review',
@@ -157,8 +186,11 @@ function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match
 
   const best = bestEvidence(claim, chunks);
   const profileSkills = profile.skills.filter((skill) => containsTerm(claim, skill));
-  const factual = FACTUAL_ACTIONS.test(claim) || profileSkills.length > 0 || /\b(degree|msc|master|bachelor|certif|years?)\b/i.test(claim);
-  if (factual && !(profileSkills.length && !FACTUAL_ACTIONS.test(claim.replace(/supported by both professional and project work/i, ''))) && (!best || (best.score < 0.19 && best.hits.length < 2))) return {
+  const supportedSemanticClaim = [...allowedJdTerms].some((term) => containsTerm(claim, term));
+  const factual = FACTUAL_ACTIONS.test(claim) || profileSkills.length > 0 || supportedSemanticClaim || /\b(degree|msc|master|bachelor|certif|years?)\b/i.test(claim);
+  if (factual
+    && !(profileSkills.length && !FACTUAL_ACTIONS.test(claim.replace(/supported by both professional and project work/i, '')))
+    && (!best || (best.score < 0.19 && best.hits.length < 2))) return {
     claim,
     status: 'review',
     confidence: 82,
@@ -170,17 +202,26 @@ function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match
     claim,
     status: 'verified',
     confidence: Math.max(82, Math.min(99, Math.round(82 + (best?.score ?? 0.2) * 17))),
-    reason: factual ? 'Source wording matched; review this interpretation before applying.' : 'General professional language without a new factual assertion.',
+    reason: supportedSemanticClaim
+      ? 'Exact JD terminology is linked to supported candidate evidence.'
+      : factual ? 'Source wording matched; review this interpretation before applying.' : 'General professional language without a new factual assertion.',
     evidence: best?.chunk.label ?? 'Verified profile',
   };
 }
 
-function verifyText(value: string, profile: CandidateProfile, job: Job, match: MatchScore | undefined, chunks: EvidenceChunk[]) {
-  const results = sentences(value).map((claim) => evaluateClaim(claim, profile, job, match, chunks));
+function verifyText(
+  value: string,
+  profile: CandidateProfile,
+  job: Job,
+  match: MatchScore | undefined,
+  chunks: EvidenceChunk[],
+  allowedJdTerms: Set<string>,
+) {
+  const results = sentences(value).map((claim) => evaluateClaim(claim, profile, job, match, chunks, allowedJdTerms));
   return { results, safe: results.every((result) => result.status === 'verified') };
 }
 
-function groundPackBullets(pack: ApplicationPack, profile: CandidateProfile, _job: Job, _match: MatchScore | undefined, chunks: EvidenceChunk[]) {
+function groundPackBullets(pack: ApplicationPack, profile: CandidateProfile, chunks: EvidenceChunk[]) {
   const warnings: string[] = [];
   let replacedBullets = 0;
   const results: ClaimResult[] = [];
@@ -233,12 +274,14 @@ export function verifyApplicationPackClaims(
   job: Job,
   match?: MatchScore,
 ): ApplicationPack {
-  const chunks = evidenceChunks(profile, job);
-  const grounded = groundPackBullets(pack, profile, job, match, chunks);
+  const matrix = pack.requirementEvidence ?? [];
+  const allowedJdTerms = supportedJdTerms(matrix);
+  const chunks = evidenceChunks(profile, matrix);
+  const grounded = groundPackBullets(pack, profile, chunks);
   const initial = {
-    resumeSummary: verifyText(grounded.pack.resumeSummary, profile, job, match, chunks),
-    coverLetter: verifyText(grounded.pack.coverLetter, profile, job, match, chunks),
-    outreachMessage: verifyText(grounded.pack.outreachMessage, profile, job, match, chunks),
+    resumeSummary: verifyText(grounded.pack.resumeSummary, profile, job, match, chunks, allowedJdTerms),
+    coverLetter: verifyText(grounded.pack.coverLetter, profile, job, match, chunks, allowedJdTerms),
+    outreachMessage: verifyText(grounded.pack.outreachMessage, profile, job, match, chunks, allowedJdTerms),
   };
   const replacedFields = (Object.keys(initial) as Array<keyof typeof initial>).filter((field) => !initial[field].safe);
   const corrected: ApplicationPack = {
@@ -252,14 +295,14 @@ export function verifyApplicationPackClaims(
     ...[
       ...corrected.skills.map((claim) => ({ claim, source: profile.skills, label: 'skill' })),
       ...(corrected.certifications ?? []).map((claim) => ({ claim, source: profile.certifications ?? [], label: 'certification' })),
-      ...(corrected.publications ?? []).map((claim) => ({ claim, source: profile.publications ?? [], label: 'publication' })),
+      ...(corrected.publications ?? []).map((claim) => ({ claim, source: [] as string[], label: 'publication' })),
     ].map(({ claim, source, label }): ClaimResult => ({
       claim, status: source.some((value) => normalizeText(value) === normalizeText(claim)) ? 'verified' : 'review',
-      confidence: 100, reason: `Exact ${label} source check.`, evidence: `Profile ${label} records`,
+      confidence: 100, reason: label === 'publication' ? 'Publications are prohibited in employer-facing resumes.' : `Exact ${label} source check.`, evidence: `Profile ${label} records`,
     })),
-    ...verifyText(corrected.resumeSummary, profile, job, match, chunks).results,
-    ...verifyText(corrected.coverLetter, profile, job, match, chunks).results,
-    ...verifyText(corrected.outreachMessage, profile, job, match, chunks).results,
+    ...verifyText(corrected.resumeSummary, profile, job, match, chunks, allowedJdTerms).results,
+    ...verifyText(corrected.coverLetter, profile, job, match, chunks, allowedJdTerms).results,
+    ...verifyText(corrected.outreachMessage, profile, job, match, chunks, allowedJdTerms).results,
   ];
   const warnings = [...grounded.warnings, ...Object.values(initial)
     .flatMap((field) => field.results)
@@ -271,6 +314,7 @@ export function verifyApplicationPackClaims(
 
   return {
     ...corrected,
+    publications: [],
     claimsAudit: finalResults.map((result) => ({
       claim: result.claim,
       evidence: result.evidence,
