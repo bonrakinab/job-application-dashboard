@@ -81,8 +81,8 @@ test('generated DOCX is single-column, table-free, and round-trips through a res
   assert.ok(!Object.keys(zip.files).some((name) => /^word\/(?:header|footer)/i.test(name)));
   const parsed = (await mammoth.extractRawText({ buffer: docx })).value;
   assert.match(parsed, /Software Engineer \| TypeScript \| React/);
-  assert.match(parsed, /09\/2023 - 06\/2024/);
-  assert.match(parsed, /08\/2026 \(Expected\)/);
+  assert.match(parsed, /Sept 2023 - June 2024/);
+  assert.match(parsed, /Aug 2026 \(Expected\)/);
   assert.ok(parsed.indexOf('PROFESSIONAL SUMMARY') < parsed.indexOf('EXPERIENCE'));
   assert.ok(parsed.indexOf('EXPERIENCE') < parsed.indexOf('SKILLS'));
 });
@@ -98,7 +98,7 @@ test('section names in ordinary prose do not create headings; missing content an
   const candidatePack = { ...pack, resumeSummary: 'Technical skills and projects complement my experience in software engineering.' };
   const text = visibleResumeText(profile, candidatePack);
   assert.equal(validateExtractedResumeText(text, profile, candidatePack).safe, true);
-  for (const omitted of [candidatePack.resumeSummary, profile.phone!, '09/2023 - 06/2024', 'EXPERIENCE']) {
+  for (const omitted of [candidatePack.resumeSummary, profile.phone!, 'Sept 2023 - June 2024', 'EXPERIENCE']) {
     assert.equal(validateExtractedResumeText(text.replace(omitted, ''), profile, candidatePack).safe, false, omitted);
   }
   assert.equal(validateExtractedResumeText(text.replace('EXPERIENCE', 'TEMP').replace('SKILLS', 'EXPERIENCE').replace('TEMP', 'SKILLS'), profile, candidatePack).safe, false);
