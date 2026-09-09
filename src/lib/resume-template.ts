@@ -3,7 +3,7 @@
  * Template-version changes deliberately invalidate stored application packs so
  * the dashboard never presents an older layout as the current resume.
  */
-export const RESUME_TEMPLATE_VERSION = 'arnob-reference-one-page.v10';
+export const RESUME_TEMPLATE_VERSION = 'arnob-reference-one-page.v11';
 
 export const RESUME_PAGE = {
   width: 595.28,
