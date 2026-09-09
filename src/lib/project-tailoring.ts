@@ -4,9 +4,7 @@ import { normalizeText } from './utils';
 
 export type { ProjectRoleFamily } from './types';
 
-type TaggedProject = ProjectItem & {
-  roleFamilies?: ProjectRoleFamily[];
-};
+type TaggedProject = ProjectItem & { roleFamilies?: ProjectRoleFamily[] };
 
 const DEFAULT_THESIS_PROJECT = 'MSc Thesis - Color-Aware Composed Image Retrieval';
 
@@ -20,81 +18,42 @@ const HIGH_SELECTIVITY_COMPANY_PATTERNS = [
 ];
 
 const TITLE_SIGNALS: Array<[ProjectRoleFamily, RegExp[]]> = [
-  ['ai-ml', [
-    /\bmachine learning\b/, /\bml engineer/, /\bml(?:\s+\w+){0,2}\s+engineer\b/,
-    /\bai engineer/, /\bai(?:\s+\w+){0,2}\s+engineer\b/, /\bartificial intelligence\b/,
-    /\bdata scientist\b/, /\bcomputer vision\b/, /\bnlp\b/, /\bllm/, /\bgenerative ai\b/, /\bgenai\b/,
-  ]],
-  ['data-analytics', [
-    /\bdata analyst\b/, /\bdata analytics\b/, /\banalytics engineer\b/, /\bdata engineer\b/,
-    /\bbusiness intelligence\b/, /\bbi analyst\b/, /\breporting analyst\b/, /\bpower bi\b/, /\btableau\b/,
-  ]],
-  ['software', [
-    /\bsoftware engineer/, /\bsoftware developer/, /\bapplication developer/, /\bfull[- ]?stack\b/,
-    /\bbackend\b/, /\bfront[- ]?end\b/, /\bfrontend\b/, /\bweb developer\b/, /\bmobile developer\b/,
-  ]],
-  ['erp-enterprise', [
-    /\berp\b/, /\boracle fusion\b/, /\boracle erp\b/, /\bsap\b/, /\benterprise applications?\b/,
-    /\bbusiness systems?\b/, /\bfinancial systems?\b/,
-  ]],
-  ['it-systems', [
-    /\bit analyst\b/, /\bit systems?\b/, /\bsystems analyst\b/, /\bapplication support\b/,
-    /\btechnical support\b/, /\binfrastructure\b/, /\bsystems? administrator\b/, /\bhelp desk\b/,
-  ]],
-  ['cloud-devops', [
-    /\bcloud engineer\b/, /\bcloud analyst\b/, /\bdevops\b/, /\bsite reliability\b/, /\bsre\b/,
-    /\bplatform engineer\b/, /\bsolutions? engineer\b/, /\bcloud intern\b/,
-  ]],
-  ['cybersecurity', [
-    /\bcybersecurity\b/, /\bcyber security\b/, /\bsecurity engineer\b/, /\bsecurity analyst\b/,
-    /\bsoc analyst\b/, /\binformation security\b/, /\biam\b/, /\bphishing\b/,
-  ]],
-  ['systems-algorithms', [
-    /\bsystems programmer\b/, /\bembedded\b/, /\boperating systems?\b/, /\bparallel computing\b/,
-    /\bassembly\b/, /\bmicroprocessor\b/, /\balgorithm/, /\bc\+\+\b/,
-  ]],
-  ['business-analysis', [
-    /\bbusiness analyst\b/, /\btechnical consultant\b/, /\bimplementation consultant\b/,
-    /\bfunctional analyst\b/, /\bsolutions? consultant\b/, /\bprocess analyst\b/,
-  ]],
+  ['ai-ml', [/\bmachine learning\b/, /\bml engineer/, /\bai engineer/, /\bartificial intelligence\b/, /\bdata scientist\b/, /\bcomputer vision\b/, /\bnlp\b/, /\bllm/, /\bgenerative ai\b/, /\bgenai\b/]],
+  ['data-analytics', [/\bdata analyst\b/, /\bdata analytics\b/, /\banalytics engineer\b/, /\bdata engineer\b/, /\bbusiness intelligence\b/, /\bbi analyst\b/, /\breporting analyst\b/]],
+  ['software', [/\bsoftware engineer/, /\bsoftware developer/, /\bapplication developer/, /\bfull[- ]?stack\b/, /\bbackend\b/, /\bfront[- ]?end\b/, /\bfrontend\b/, /\bweb developer\b/, /\bmobile developer\b/]],
+  ['erp-enterprise', [/\berp\b/, /\boracle fusion\b/, /\boracle erp\b/, /\bsap\b/, /\benterprise applications?\b/, /\bbusiness systems?\b/, /\bfinancial systems?\b/]],
+  ['it-systems', [/\bit analyst\b/, /\bit systems?\b/, /\bsystems analyst\b/, /\bapplication support\b/, /\btechnical support\b/, /\binfrastructure\b/, /\bsystems? administrator\b/, /\bhelp desk\b/]],
+  ['cloud-devops', [/\bcloud engineer\b/, /\bcloud analyst\b/, /\bdevops\b/, /\bsite reliability\b/, /\bsre\b/, /\bplatform engineer\b/, /\bsolutions? engineer\b/]],
+  ['cybersecurity', [/\bcybersecurity\b/, /\bcyber security\b/, /\bsecurity engineer\b/, /\bsecurity analyst\b/, /\bsoc analyst\b/, /\binformation security\b/, /\biam\b/, /\bphishing\b/]],
+  ['systems-algorithms', [/\bsystems programmer\b/, /\bembedded\b/, /\boperating systems?\b/, /\bparallel computing\b/, /\bassembly\b/, /\bmicroprocessor\b/, /\balgorithm/]],
+  ['business-analysis', [/\bbusiness analyst\b/, /\btechnical consultant\b/, /\bimplementation consultant\b/, /\bfunctional analyst\b/, /\bsolutions? consultant\b/, /\bprocess analyst\b/]],
 ];
 
 const DESCRIPTION_SIGNALS: Record<ProjectRoleFamily, string[]> = {
-  'ai-ml': ['machine learning', 'deep learning', 'artificial intelligence', 'computer vision', 'nlp', 'bert', 'llm', 'pytorch', 'tensorflow', 'scikit-learn'],
+  'ai-ml': ['machine learning', 'deep learning', 'artificial intelligence', 'computer vision', 'nlp', 'bert', 'llm', 'tensorflow', 'scikit-learn'],
   'data-analytics': ['data analysis', 'analytics', 'sql', 'power bi', 'tableau', 'pandas', 'reporting', 'visualization', 'business intelligence'],
   software: ['software development', 'react', 'next.js', 'typescript', 'javascript', 'java', 'python', 'api', 'full stack', 'backend', 'frontend'],
   'erp-enterprise': ['oracle fusion', 'oracle erp', 'erp', 'sap', 'procurement', 'financials', 'accounts payable', 'accounts receivable', 'enterprise applications'],
   'it-systems': ['application support', 'infrastructure', 'windows server', 'linux', 'iis', 'edms', 'system administration', 'technical support'],
-  'cloud-devops': ['aws', 'azure', 'oci', 'cloud', 'devops', 'kubernetes', 'docker', 'terraform', 'ci/cd', 'vercel', 'serverless'],
+  'cloud-devops': ['aws', 'azure', 'oci', 'cloud', 'devops', 'kubernetes', 'docker', 'terraform', 'ci/cd', 'serverless'],
   cybersecurity: ['cybersecurity', 'security', 'phishing', 'iam', 'soc', 'threat', 'vulnerability'],
   'systems-algorithms': ['c++', 'operating system', 'file system', 'parallel', 'assembly', 'microprocessor', 'algorithm', 'kmp'],
   'business-analysis': ['requirements', 'stakeholder', 'business process', 'process improvement', 'implementation', 'functional requirements', 'workflow'],
 };
 
-function addTitleFamilies(text: string, families: Set<ProjectRoleFamily>) {
-  for (const [family, patterns] of TITLE_SIGNALS) {
-    if (patterns.some((pattern) => pattern.test(text))) families.add(family);
-  }
-}
-
-function descriptionHits(text: string, family: ProjectRoleFamily) {
-  return DESCRIPTION_SIGNALS[family].filter((signal) => text.includes(signal)).length;
+function projectFamilies(project: ProjectItem) {
+  return (project as TaggedProject).roleFamilies ?? [];
 }
 
 function isDefaultThesisProject(project: ProjectItem) {
   const name = normalizeText(project.name);
-  const canonical = normalizeText(DEFAULT_THESIS_PROJECT);
-  return name === canonical
+  return name === normalizeText(DEFAULT_THESIS_PROJECT)
     || name.includes('color-aware composed image retrieval')
     || name.includes('color aware composed image retrieval');
 }
 
-function projectRoleFamilies(project: ProjectItem) {
-  return (project as TaggedProject).roleFamilies ?? [];
-}
-
 function isAiMlProject(project: ProjectItem) {
-  return projectRoleFamilies(project).includes('ai-ml');
+  return projectFamilies(project).includes('ai-ml');
 }
 
 export function isHighSelectivityTargetCompany(company: string) {
@@ -102,35 +61,40 @@ export function isHighSelectivityTargetCompany(company: string) {
   return HIGH_SELECTIVITY_COMPANY_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
+function titleFamilies(title: string) {
+  const families = new Set<ProjectRoleFamily>();
+  for (const [family, patterns] of TITLE_SIGNALS) {
+    if (patterns.some((pattern) => pattern.test(title))) families.add(family);
+  }
+  return families;
+}
+
 export function inferProjectRoleFamilies(job: Pick<Job, 'title' | 'description' | 'department'>): ProjectRoleFamily[] {
   const title = normalizeText(`${job.title} ${job.department ?? ''}`);
   const description = normalizeText(job.description ?? '');
-  const titleFamilies = new Set<ProjectRoleFamily>();
-  addTitleFamilies(title, titleFamilies);
+  const families = titleFamilies(title);
 
-  if (titleFamilies.has('ai-ml')) {
-    const dominant = new Set<ProjectRoleFamily>(['ai-ml']);
-    if (titleFamilies.has('cybersecurity')) dominant.add('cybersecurity');
-    return [...dominant];
+  if (families.has('ai-ml')) {
+    return families.has('cybersecurity') ? ['ai-ml', 'cybersecurity'] : ['ai-ml'];
   }
 
   const explicitErpTitle = /\b(oracle fusion|oracle erp|erp|sap|enterprise applications?|financial systems?)\b/.test(title);
-  const businessSystemsTitle = /\bbusiness systems?\b/.test(title);
-  if (explicitErpTitle && !businessSystemsTitle) return ['erp-enterprise'];
-
-  if (titleFamilies.size) {
-    const families = new Set<ProjectRoleFamily>(titleFamilies);
-    if (businessSystemsTitle) families.add('business-analysis');
-    if ((families.has('business-analysis') || families.has('it-systems'))
-      && /\b(oracle|erp|sap|enterprise application)/.test(description)) {
-      families.add('erp-enterprise');
-    }
-    return [...families];
+  if (explicitErpTitle) {
+    // ERP technical roles need implementation/integration/system evidence. Do not
+    // limit project evidence to the ERP tag alone.
+    return ['erp-enterprise', 'business-analysis', 'it-systems'];
   }
+
+  if (/\bbusiness systems?\b/.test(title)) {
+    families.add('business-analysis');
+    if (/\b(oracle|erp|sap|enterprise application)/.test(description)) families.add('erp-enterprise');
+  }
+  if (families.size) return [...families];
 
   const inferred = new Set<ProjectRoleFamily>();
   for (const family of Object.keys(DESCRIPTION_SIGNALS) as ProjectRoleFamily[]) {
-    if (descriptionHits(description, family) >= 3) inferred.add(family);
+    const hits = DESCRIPTION_SIGNALS[family].filter((signal) => description.includes(signal)).length;
+    if (hits >= 3) inferred.add(family);
   }
   return [...inferred];
 }
@@ -142,14 +106,12 @@ function tokenSet(value: string) {
 function lexicalProjectScore(project: ProjectItem, job: Job) {
   const jobText = normalizeText(`${job.title} ${job.department ?? ''} ${job.description}`);
   const projectText = [project.name, project.description, ...(project.skills ?? []), ...(project.bullets ?? [])].join(' ');
-  const tokens = tokenSet(projectText);
   let score = 0;
-  for (const token of tokens) {
+  for (const token of tokenSet(projectText)) {
     if (containsTerm(jobText, token)) score += token.length >= 7 ? 2 : 1;
   }
   for (const skill of project.skills ?? []) {
-    const normalizedSkill = normalizeText(skill);
-    if (normalizedSkill.length >= 2 && containsTerm(jobText, normalizedSkill)) score += 8;
+    if (normalizeText(skill).length >= 2 && containsTerm(jobText, skill)) score += 8;
   }
   return score;
 }
@@ -160,70 +122,75 @@ function evidenceStrength(project: ProjectItem) {
   return bullets.length * 2 + metrics * 3 + (project.skills?.length ?? 0) * 0.25;
 }
 
-function rankProjects(projects: ProjectItem[], job: Job, families?: Set<ProjectRoleFamily>) {
-  return projects
-    .map((project, index) => {
-      const tagged = projectRoleFamilies(project);
-      const familyHits = families?.size ? tagged.filter((family) => families.has(family)).length : 0;
-      const lexical = lexicalProjectScore(project, job);
-      return { project, index, familyHits, lexical, score: familyHits * 100 + lexical * 2 + evidenceStrength(project) };
-    })
-    .sort((a, b) => b.score - a.score || a.index - b.index);
+function rankProjects(projects: ProjectItem[], job: Job, families = new Set<ProjectRoleFamily>()) {
+  return projects.map((project, index) => {
+    const familyHits = projectFamilies(project).filter((family) => families.has(family)).length;
+    const lexical = lexicalProjectScore(project, job);
+    return {
+      project,
+      index,
+      familyHits,
+      score: familyHits * 100 + lexical * 2 + evidenceStrength(project),
+    };
+  }).sort((a, b) => b.score - a.score || a.index - b.index);
 }
 
 function selectForHighSelectivityCompany(projects: ProjectItem[], job: Job, families: Set<ProjectRoleFamily>, limit: number) {
   const selected: ProjectItem[] = [];
-  const defaultThesis = projects.find(isDefaultThesisProject);
-  if (defaultThesis) selected.push(defaultThesis);
+  const thesis = projects.find(isDefaultThesisProject);
+  if (thesis) selected.push(thesis);
 
-  const availableMl = projects.filter(isAiMlProject);
-  const minimumMl = Math.min(2, limit, availableMl.length);
-  const rankedMl = rankProjects(availableMl.filter((project) => project !== defaultThesis), job);
-  for (const item of rankedMl) {
+  const mlProjects = projects.filter(isAiMlProject);
+  const minimumMl = Math.min(2, limit, mlProjects.length);
+  for (const item of rankProjects(mlProjects.filter((project) => project !== thesis), job)) {
     if (selected.filter(isAiMlProject).length >= minimumMl || selected.length >= limit) break;
-    if (!selected.includes(item.project)) selected.push(item.project);
-  }
-
-  if (selected.length < limit && families.size) {
-    const relevant = rankProjects(projects.filter((project) => !selected.includes(project)), job, families)
-      .filter((item) => item.familyHits > 0);
-    for (const item of relevant) {
-      if (selected.length >= limit) break;
-      selected.push(item.project);
-    }
+    selected.push(item.project);
   }
 
   if (selected.length < limit) {
-    for (const item of rankProjects(projects.filter((project) => !selected.includes(project)), job)) {
+    for (const item of rankProjects(projects.filter((project) => !selected.includes(project)), job, families)) {
       if (selected.length >= limit) break;
-      if (isAiMlProject(item.project)) selected.push(item.project);
+      if (item.familyHits > 0) selected.push(item.project);
     }
   }
-
   return selected.slice(0, limit);
 }
 
 export function selectProjectsForJob(profile: CandidateProfile, job: Job, maxProjects = 3): ProjectItem[] {
   const limit = Math.max(0, maxProjects);
   if (!limit) return [];
-
   const projects = profile.projects ?? [];
-  const defaultThesis = projects.find(isDefaultThesisProject);
+  const thesis = projects.find(isDefaultThesisProject);
   const families = new Set(inferProjectRoleFamilies(job));
 
   if (isHighSelectivityTargetCompany(job.company)) {
     return selectForHighSelectivityCompany(projects, job, families, limit);
   }
 
-  const remainingSlots = Math.max(0, limit - (defaultThesis ? 1 : 0));
+  // For ERP/financial/enterprise-application roles, relevance wins outright.
+  // The thesis remains in the master profile but is not forced into an unrelated
+  // Oracle resume at the expense of ERP, integration, or systems evidence.
+  if (families.has('erp-enterprise')) {
+    return rankProjects(projects.filter((project) => !isDefaultThesisProject(project)), job, families)
+      .filter((item) => item.familyHits > 0)
+      .slice(0, limit)
+      .map((item) => item.project);
+  }
+
+  if (families.has('ai-ml')) {
+    const aiProjects = rankProjects(projects.filter(isAiMlProject), job, families).map((item) => item.project);
+    if (thesis) return [thesis, ...aiProjects.filter((project) => project !== thesis)].slice(0, limit);
+    return aiProjects.slice(0, limit);
+  }
+
+  const remainingSlots = Math.max(0, limit - (thesis ? 1 : 0));
   const relevant = families.size && remainingSlots
-    ? rankProjects(projects.filter((project) => project !== defaultThesis), job, families)
+    ? rankProjects(projects.filter((project) => project !== thesis), job, families)
       .filter((item) => item.familyHits > 0)
       .slice(0, remainingSlots)
       .map((item) => item.project)
     : [];
-
-  return defaultThesis ? [defaultThesis, ...relevant] : relevant;
+  return thesis ? [thesis, ...relevant] : relevant;
 }
 
 function mergeSelectedProjectSkills(profile: CandidateProfile, projects: ProjectItem[]) {
