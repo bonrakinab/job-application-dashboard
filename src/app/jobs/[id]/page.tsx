@@ -12,6 +12,7 @@ import { buildInterviewPrep } from '@/lib/interview-prep';
 import { emptyPartTimeProfile, PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { buildRequirementEvidenceMatrix } from '@/lib/requirement-evidence';
+import { finalResumeArtifactState } from '@/lib/resume-generation-policy';
 import { getJob, jobMatchNeedsRefresh } from '@/lib/store';
 import type { JobValidityStatus, RequirementEvidence } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
@@ -66,7 +67,9 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const sourceProfile = profileState?.profile ?? emptyPartTimeProfile();
   const applicationProfile = projectTailoredApplicationProfile(externalApplicationProfile(sourceProfile), job);
   const resumeProfile = packUsable && pack ? profileWithTailoredCourseworkForResume(applicationProfile, pack) : applicationProfile;
-  const ats = packUsable && pack ? scoreTailoredResumeWithCoursework(job, resumeProfile, pack, match) : null;
+  const finalResume = packUsable && pack ? finalResumeArtifactState(resumeProfile, pack) : null;
+  const reviewPack = finalResume?.pack ?? pack;
+  const ats = finalResume ? scoreTailoredResumeWithCoursework(job, finalResume.profile, finalResume.pack, match) : null;
   const requirements = pack?.requirementEvidence?.length
     ? pack.requirementEvidence
     : buildRequirementEvidenceMatrix(job, applicationProfile, match);
@@ -175,25 +178,26 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           profileReady={profileReady}
           profileSetupUrl={profileId === PART_TIME_PROFILE_ID ? '/part-time-jobs/profile' : '/settings'}
         />
-        {packUsable && pack ? <div className="card document-status-card">
+        {packUsable && pack && reviewPack ? <div className="card document-status-card">
           <div className="kicker">Application documents</div>
           <h3>Résumé and cover letter ready</h3>
           <div className="document-checks">
             <span>✓ Tailored to this job</span>
             <span>✓ Verified profile evidence only</span>
             <span>{pack.claimVerification?.status === 'pass' ? '✓ Claims checked' : '△ Claims need review'}</span>
-            <span>✓ Single-column DOCX and PDF</span>
+            <span>✓ Reference-template DOCX and PDF</span>
             {pack.artifactValidation ? <span>✓ PDF and DOCX text checked</span> : <span>△ Export checks pending</span>}
           </div>
           {pack.generationMeta?.generatedAt ? <p className="small muted">Generated {formatDate(pack.generationMeta.generatedAt)}</p> : null}
           {pack.claimVerification?.replacedBullets || pack.claimVerification?.replacedFields.length ? <p className="small muted">Unsupported wording was replaced with source evidence. Review the final text below.</p> : null}
+          <p className="small muted">The text below is derived from the same final resume state used by Preview final résumé, PDF, DOCX, and the ATS estimate.</p>
           <details className="advanced-panel">
-            <summary>Review résumé and source evidence</summary>
+            <summary>Review final résumé and source evidence</summary>
             <div className="advanced-panel-body">
-              <h4>{pack.resumeHeadline}</h4>
-              <p>{pack.resumeSummary}</p>
-              <p><b>Skills:</b> {pack.skills.join(', ')}</p>
-              {[...pack.experience.map((item) => ({ ...item, label: `${item.title} · ${item.organization}` })), ...pack.projects.map((item) => ({ ...item, label: item.name }))].map((item, itemIndex) => <div key={`${itemIndex}:${item.label}`}>
+              {reviewPack.resumeHeadline?.trim() ? <h4>{reviewPack.resumeHeadline}</h4> : null}
+              <p>{reviewPack.resumeSummary}</p>
+              <p><b>Skills:</b> {reviewPack.skills.join(', ')}</p>
+              {[...reviewPack.experience.map((item) => ({ ...item, label: `${item.title} · ${item.organization}` })), ...reviewPack.projects.map((item) => ({ ...item, label: item.name }))].map((item, itemIndex) => <div key={`${itemIndex}:${item.label}`}>
                 <h4>{item.label}</h4>
                 <ul>{item.bullets.map((bullet, index) => {
                   const evidenceId = item.bulletEvidence?.[index]?.[0];
