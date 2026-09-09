@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { ApplicationPack, CandidateProfile, Job, RequirementEvidence } from './types';
-import { evidenceBackedJdKeywords, strengthenResumeForJob } from './resume-generation-policy';
+import { evidenceBackedJdKeywords, finalResumeArtifactState, strengthenResumeForJob } from './resume-generation-policy';
 
 const job: Job = {
   externalId: 'jd-keyword-test',
@@ -28,7 +28,10 @@ const profile: CandidateProfile = {
     ],
     skills: ['SQL', 'PostgreSQL'],
   }],
-  projects: [],
+  projects: [{ name: 'Project', description: 'Database project', bullets: ['Built reporting workflows.'], skills: ['PostgreSQL'] }],
+  degrees: [{ institution: 'Example University', degree: 'MSc', field: 'Computer Science', coursework: ['Database Systems'] }],
+  publications: ['Publication that must never render'],
+  location: 'Windsor, Ontario',
 };
 
 const requirements: RequirementEvidence[] = [
@@ -85,7 +88,7 @@ function pack(): ApplicationPack {
     }],
     projects: [],
     certifications: [],
-    publications: [],
+    publications: ['Publication that must never render'],
     coverLetter: '',
     outreachMessage: '',
     interviewThemes: [],
@@ -116,4 +119,30 @@ test('adds evidence-backed JD wording to the summary without inventing a new exa
 
   const reconciled = result.requirementEvidence?.find((item) => item.requirement === 'Manage stakeholders and gather requirements');
   assert.ok(reconciled?.exactTerms?.some((term) => term.toLowerCase() === 'stakeholder management'));
+});
+
+test('JD reconciliation is source-agnostic and applies to all career job sources', () => {
+  for (const source of ['himalayas', 'workday', 'greenhouse', 'ashby', 'ycombinator', 'manual']) {
+    const sourceJob = { ...job, source, sourceKey: `${source}:test` };
+    const result = strengthenResumeForJob(sourceJob, profile, pack(), pack(), requirements);
+    assert.match(result.resumeSummary.toLowerCase(), /stakeholder management/, source);
+    assert.doesNotMatch(result.resumeSummary.toLowerCase(), /kubernetes/, source);
+  }
+});
+
+test('career final artifact matches the uploaded reference field policy', () => {
+  const state = finalResumeArtifactState({ ...profile, profilePurpose: 'career' }, pack());
+  assert.equal(state.profile.location, '');
+  assert.deepEqual(state.profile.projects?.[0].skills, []);
+  assert.deepEqual(state.profile.degrees?.[0].coursework, []);
+  assert.deepEqual(state.profile.publications, []);
+  assert.equal(state.pack.resumeHeadline, '');
+  assert.deepEqual(state.pack.publications, []);
+});
+
+test('part-time jobs use the same safety pipeline without losing their separate contact location', () => {
+  const state = finalResumeArtifactState({ ...profile, profilePurpose: 'part-time' }, pack());
+  assert.equal(state.profile.location, 'Windsor, Ontario');
+  assert.deepEqual(state.profile.publications, []);
+  assert.deepEqual(state.pack.publications, []);
 });
