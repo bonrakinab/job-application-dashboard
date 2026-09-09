@@ -86,3 +86,52 @@ test('an invented employer and unsupported credential remain review failures', (
   const verified = verifyApplicationPackClaims(original, fallback, profile, job, match);
   assert.equal(verified.claimVerification?.status, 'review');
 });
+
+test('evidence-backed exact JD wording survives claim verification', () => {
+  const candidate: CandidateProfile = {
+    ...profile,
+    experience: [{
+      organization: 'Example Corp',
+      title: 'ERP Analyst',
+      bullets: ['Coordinated with finance stakeholders and gathered business requirements for ERP changes.'],
+    }],
+  };
+  const original = pack('Relevant experience also includes stakeholder management.');
+  original.experience = [{
+    organization: 'Example Corp',
+    title: 'ERP Analyst',
+    bullets: ['Coordinated with finance stakeholders and gathered business requirements for ERP changes.'],
+  }];
+  original.requirementEvidence = [{
+    requirement: 'Stakeholder management for financial systems',
+    importance: 'must-have',
+    support: 'supported',
+    confidence: 90,
+    exactTerms: ['stakeholder management'],
+    evidence: [{
+      id: 'EXP:0:0',
+      label: 'ERP Analyst · Example Corp',
+      excerpt: 'Coordinated with finance stakeholders and gathered business requirements for ERP changes.',
+      score: 90,
+    }],
+  }];
+  const semanticMatch = { ...match, gaps: [], missingSkills: [] };
+  const verified = verifyApplicationPackClaims(original, fallback, candidate, job, semanticMatch);
+  assert.equal(verified.resumeSummary, original.resumeSummary);
+  assert.equal(verified.claimVerification?.status, 'pass');
+});
+
+test('a gap keyword is never legitimized merely because it appears in the JD matrix', () => {
+  const original = pack('My experience includes Kubernetes administration.');
+  original.requirementEvidence = [{
+    requirement: 'Kubernetes administration',
+    importance: 'preferred',
+    support: 'gap',
+    confidence: 95,
+    exactTerms: ['Kubernetes'],
+    evidence: [],
+  }];
+  const verified = verifyApplicationPackClaims(original, fallback, profile, job, match);
+  assert.equal(verified.resumeSummary, fallback.resumeSummary);
+  assert.equal(verified.claimVerification?.status, 'pass');
+});
