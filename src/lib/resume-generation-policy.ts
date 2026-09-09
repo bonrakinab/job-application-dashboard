@@ -86,7 +86,7 @@ function phraseScore(phrase: string) {
   const normalized = tokens.map((token) => normalizeText(token).replace(/[^a-z0-9+#.-]/g, ''));
   const head = normalized.at(-1) ?? '';
   let score = JD_PHRASE_HEADS.has(head) ? 5 : 0;
-  score += Math.min(4, keywordTokens(phrase).length);
+  score += Math.min(3, keywordTokens(phrase).length);
   if (phrase.includes('-')) score += 0.5;
   return score;
 }
@@ -106,7 +106,8 @@ export function literalJdKeywordCandidates(job: Job) {
         const first = normalized[0] ?? '';
         const last = normalized.at(-1) ?? '';
         if (JD_PHRASE_START_BLOCK.has(first) || JD_PHRASE_END_BLOCK.has(last)) continue;
-        if (!normalized.some((word) => JD_PHRASE_HEADS.has(word))) continue;
+        if (normalized.includes('and') || normalized.includes('or')) continue;
+        if (!JD_PHRASE_HEADS.has(last)) continue;
         const phrase = slice.join(' ').trim();
         const content = keywordTokens(phrase);
         if (content.length < 2 || content.length > 5 || phrase.length > 64) continue;
