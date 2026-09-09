@@ -36,3 +36,6 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Production application-pack smoke test
+        run: node scripts/smoke-application-pack.mjs
