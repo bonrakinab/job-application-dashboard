@@ -3,7 +3,7 @@
  * The PDF renderer consumes this module so template changes are versioned and
  * can invalidate previously generated application packs.
  */
-export const RESUME_TEMPLATE_VERSION = 'ats-single-column.v9-docx-grounded';
+export const RESUME_TEMPLATE_VERSION = 'arnob-reference-one-page.v10';
 
 export const RESUME_PAGE = {
   width: 595.28,

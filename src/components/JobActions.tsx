@@ -196,10 +196,11 @@ export function JobActions({
     </div> : null}
 
     {usablePack ? <div className="document-actions">
-      <a className="btn primary" href={`/api/jobs/${id}/resume.docx`}>Download DOCX · recommended</a>
+      <a className="btn primary" target="_blank" rel="noreferrer" href={`/api/jobs/${id}/resume.pdf?preview=1`}>Preview final résumé</a>
+      <a className="btn" href={`/api/jobs/${id}/resume.docx`}>Download DOCX</a>
       <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download PDF</a>
       <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download cover letter</a>
-      <span className="small muted">Use DOCX unless the employer specifically requests PDF. Both versions are single-column and re-parsed before download.</span>
+      <span className="small muted">Preview final résumé shows the exact PDF export used for this application. PDF and DOCX are generated from the same final tailored pack and reference-template policy.</span>
     </div> : <p className="small muted">A tailored résumé and cover letter are generated for every open role. Unsupported requirements remain clearly marked.</p>}
 
     {applicationReady && applyUrl && applyUrl !== '#'
