@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { ApplicationPack, CandidateProfile, Job, RequirementEvidence } from './types';
-import { evidenceBackedJdKeywords, strengthenResumeForJob } from './resume-generation-policy';
+import { evidenceBackedJdKeywords, finalResumeArtifactState, strengthenResumeForJob } from './resume-generation-policy';
 
 const job: Job = {
   externalId: 'jd-keyword-test',
@@ -28,7 +28,9 @@ const profile: CandidateProfile = {
     ],
     skills: ['SQL', 'PostgreSQL'],
   }],
-  projects: [],
+  projects: [{ name: 'System Project', description: '', bullets: ['Built a reporting workflow.'], skills: ['PostgreSQL'] }],
+  degrees: [{ institution: 'Example University', degree: 'MSc', coursework: ['Statistical Learning'] }],
+  publications: ['Internal publication that must never appear on a resume'],
 };
 
 const requirements: RequirementEvidence[] = [
@@ -83,9 +85,9 @@ function pack(): ApplicationPack {
       bullets: [...profile.experience![0].bullets],
       bulletEvidence: [['EXP:0:0'], ['EXP:0:1']],
     }],
-    projects: [],
+    projects: [{ name: 'System Project', bullets: ['Built a reporting workflow.'], bulletEvidence: [['PROJ:0:0']] }],
     certifications: [],
-    publications: [],
+    publications: ['Internal publication that must never appear on a resume'],
     coverLetter: '',
     outreachMessage: '',
     interviewThemes: [],
@@ -116,4 +118,25 @@ test('adds evidence-backed JD wording to the summary without inventing a new exa
 
   const reconciled = result.requirementEvidence?.find((item) => item.requirement === 'Manage stakeholders and gather requirements');
   assert.ok(reconciled?.exactTerms?.some((term) => term.toLowerCase() === 'stakeholder management'));
+});
+
+test('career final artifact follows the uploaded reference field policy', () => {
+  const final = finalResumeArtifactState({ ...profile, profilePurpose: 'career', location: 'Windsor, Ontario' }, pack());
+  assert.equal(final.pack.resumeHeadline, '');
+  assert.deepEqual(final.pack.publications, []);
+  assert.equal(final.profile.location, '');
+  assert.deepEqual(final.profile.publications, []);
+  assert.deepEqual(final.profile.projects?.[0].skills, []);
+  assert.deepEqual(final.profile.degrees?.[0].coursework, []);
+});
+
+test('part-time final artifact shares safety rules without discarding its uploaded-resume fields', () => {
+  const partTime: CandidateProfile = { ...profile, profilePurpose: 'part-time', location: 'Windsor, Ontario' };
+  const final = finalResumeArtifactState(partTime, pack());
+  assert.equal(final.pack.resumeHeadline, '');
+  assert.deepEqual(final.pack.publications, []);
+  assert.equal(final.profile.location, 'Windsor, Ontario');
+  assert.deepEqual(final.profile.projects?.[0].skills, ['PostgreSQL']);
+  assert.deepEqual(final.profile.degrees?.[0].coursework, ['Statistical Learning']);
+  assert.deepEqual(final.profile.publications, []);
 });
