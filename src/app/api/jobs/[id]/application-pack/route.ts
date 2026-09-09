@@ -29,7 +29,7 @@ import {
   saveMatch,
   startApplicationPackRun,
 } from '@/lib/store';
-import type { CandidateProfileId, MatchScore } from '@/lib/types';
+import type { CandidateProfileId, JobWithMatch, MatchScore } from '@/lib/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -76,21 +76,25 @@ async function safeFinishRun(runId: string | undefined, status: 'completed' | 'b
 }
 
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const job = await getJob(id);
-  if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
-  const profileId = profileIdForJob(job);
-  const profileState = await getCandidateProfileStateOptional(profileId);
-  if (!profileState) return Response.json({
-    error: profileId === PART_TIME_PROFILE_ID
-      ? 'Upload the separate part-time résumé before generating this application pack.'
-      : 'Candidate profile is not configured.',
-    code: 'CANDIDATE_PROFILE_REQUIRED',
-    profileId,
-    manageUrl: profileId === PART_TIME_PROFILE_ID ? '/part-time-jobs/profile' : '/settings',
-  }, { status: 409 });
-  const runId = await safeStartRun(id, profileId);
+  let id: string | undefined;
+  let job: JobWithMatch | null | undefined;
+  let runId: string | undefined;
+  console.info('[application-pack] request received');
   try {
+    ({ id } = await params);
+    job = await getJob(id);
+    if (!job) return Response.json({ error: 'Job not found' }, { status: 404 });
+    const profileId = profileIdForJob(job);
+    const profileState = await getCandidateProfileStateOptional(profileId);
+    if (!profileState) return Response.json({
+      error: profileId === PART_TIME_PROFILE_ID
+        ? 'Upload the separate part-time résumé before generating this application pack.'
+        : 'Candidate profile is not configured.',
+      code: 'CANDIDATE_PROFILE_REQUIRED',
+      profileId,
+      manageUrl: profileId === PART_TIME_PROFILE_ID ? '/part-time-jobs/profile' : '/settings',
+    }, { status: 409 });
+    runId = await safeStartRun(id, profileId);
     const verification = await verifyJobAvailability(job);
     await saveJobValidity(id, verification);
     await safeRecordStep(runId, 'posting_verification', {
@@ -277,11 +281,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    console.error('[application-pack] request failed', { jobId: id, runId, error: message.slice(0, 1600) });
     await safeFinishRun(runId, 'failed', message);
     await safeLogActivity('application_pack.failed', id, {
       jobId: id,
-      company: job.company,
-      title: job.title,
+      company: job?.company,
+      title: job?.title,
       message: message.slice(0, 1600),
       at: new Date().toISOString(),
     });

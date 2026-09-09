@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ApplicationStatus, JobValidityStatus } from '@/lib/types';
+import { readApiResponse } from '@/lib/api-response';
 
 function healthLabel(status?: JobValidityStatus) {
   if (status === 'active') return 'Verified active';
@@ -69,10 +70,10 @@ export function JobActions({
     setMsg('');
     try {
       const response = await fetch(path, { method: 'POST' });
-      const json = await response.json();
-      if (!response.ok) {
-        throw new Error(json.error || 'Action failed');
-      }
+      const json = await readApiResponse<{
+        verification?: { validityStatus?: JobValidityStatus };
+        ats?: { overall?: number; targetReached?: boolean };
+      }>(response, label);
       if (json.verification?.validityStatus) {
         setCurrentValidity(json.verification.validityStatus as JobValidityStatus);
       }
