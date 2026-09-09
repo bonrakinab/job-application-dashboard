@@ -6,6 +6,33 @@ import { applicationPackStaleness } from './resume-tailoring';
 import { curateCandidateProfile, normalizePartTimeCandidateProfile } from './profile-curation';
 import { DEFAULT_PROFILE_ID, PART_TIME_PROFILE_ID, profileIdForJob } from './part-time-jobs';
 
+type LatestApplicationPackRun = {
+  status: 'running' | 'completed' | 'blocked' | 'failed' | string;
+  error?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  updated_at?: string | null;
+};
+
+function timestamp(value?: string | null) {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+async function latestApplicationPackRun(jobId: string, profileId: CandidateProfileId): Promise<LatestApplicationPackRun | null> {
+  if (!supabaseConfigured) return null;
+  try {
+    const rows = await supabaseRequest<LatestApplicationPackRun[]>(
+      `application_pack_runs?job_id=eq.${encodeURIComponent(jobId)}&profile_id=eq.${encodeURIComponent(profileId)}&select=status,error,started_at,completed_at,updated_at&order=updated_at.desc&limit=1`,
+    );
+    return rows[0] ?? null;
+  } catch {
+    // A diagnostic lookup must never prevent the page or download route from loading.
+    return null;
+  }
+}
+
 export async function getCandidateProfileStateOptional(profileId: CandidateProfileId = DEFAULT_PROFILE_ID): Promise<{ profile: CandidateProfile; updatedAt?: string } | null> {
   if (!supabaseConfigured) {
     const profile = await getCandidateProfileOptional(profileId);
@@ -32,7 +59,10 @@ export async function getCandidateProfileState(profileId: CandidateProfileId = D
 export async function getApplicationPackState(jobId: string, profileUpdatedAt?: string, requestedProfileId?: CandidateProfileId) {
   const job = await getJob(jobId);
   const profileId = requestedProfileId ?? (job ? profileIdForJob(job) : DEFAULT_PROFILE_ID);
-  const pack = await getApplicationPack(jobId, profileId);
+  const [pack, latestRun] = await Promise.all([
+    getApplicationPack(jobId, profileId),
+    latestApplicationPackRun(jobId, profileId),
+  ]);
   const effectiveProfileUpdatedAt = profileUpdatedAt ?? (await getCandidateProfileStateOptional(profileId))?.updatedAt;
   const freshness = applicationPackStaleness(pack, effectiveProfileUpdatedAt, profileId);
   const reasons = [...freshness.reasons];
@@ -46,10 +76,20 @@ export async function getApplicationPackState(jobId: string, profileUpdatedAt?: 
     reasons.push('The stored résumé predates the current evidence-grounded ATS diagnostics and internal optimization target.');
   }
 
+  const generatedAt = timestamp(pack?.generationMeta?.generatedAt);
+  const latestRunAt = timestamp(latestRun?.started_at) || timestamp(latestRun?.updated_at);
+  if (pack && latestRun && latestRunAt > generatedAt && (latestRun.status === 'failed' || latestRun.status === 'blocked')) {
+    const detail = latestRun.error?.replace(/\s+/g, ' ').trim().slice(0, 260);
+    reasons.push(latestRun.status === 'failed'
+      ? `The latest regeneration failed${detail ? `: ${detail}` : '.'}`
+      : `The latest regeneration was blocked${detail ? `: ${detail}` : '.'}`);
+  }
+
   return {
     pack,
     stale: reasons.length > 0,
     reasons: [...new Set(reasons)],
     profileUpdatedAt: effectiveProfileUpdatedAt,
+    latestRun,
   };
 }
