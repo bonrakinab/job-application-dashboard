@@ -5,7 +5,7 @@ import mammoth from 'mammoth';
 import { resumeDocx } from './application-docx';
 import { resumePdf } from './application-pdf';
 import { validateExtractedResumeText, validateResumeDocxArtifact, validateResumePdfArtifact } from './resume-artifact-validation';
-import { formatAtsDate, formatAtsDateRange, visibleResumeText } from './resume-content';
+import { formatAtsDate, formatAtsDateRange, formatResumeDateRange, visibleResumeText } from './resume-content';
 import { containsTerm, groundedRewriteIssue } from './resume-evidence-guards';
 import type { ApplicationPack, CandidateProfile, Job } from './types';
 
@@ -60,12 +60,14 @@ const pack: ApplicationPack = {
   coverLetter: '', outreachMessage: '', interviewThemes: [], claimsAudit: [],
 };
 
-test('dates are normalized without inventing missing month information', () => {
+test('dates keep both ATS-normalized and reference-resume display formats without inventing months', () => {
   assert.equal(formatAtsDate('September 2023'), '09/2023');
   assert.equal(formatAtsDate('Aug 2026 (Expected)'), '08/2026 (Expected)');
   assert.equal(formatAtsDate('Present'), 'Present');
   assert.equal(formatAtsDateRange('Dec 2022', 'March 2023'), '12/2022 - 03/2023');
   assert.equal(formatAtsDate('2021'), '2021');
+  assert.equal(formatResumeDateRange('September 2023', 'June 2024'), 'Sept 2023 - June 2024');
+  assert.equal(formatResumeDateRange('September 2024', 'August 2026 (Expected)'), 'Sept 2024 - Aug 2026 (Expected)');
 });
 
 test('generated DOCX is single-column, table-free, and round-trips through a resume parser', async () => {
@@ -81,8 +83,8 @@ test('generated DOCX is single-column, table-free, and round-trips through a res
   assert.ok(!Object.keys(zip.files).some((name) => /^word\/(?:header|footer)/i.test(name)));
   const parsed = (await mammoth.extractRawText({ buffer: docx })).value;
   assert.match(parsed, /Software Engineer \| TypeScript \| React/);
-  assert.match(parsed, /09\/2023 - 06\/2024/);
-  assert.match(parsed, /08\/2026 \(Expected\)/);
+  assert.match(parsed, /Sept 2023 - June 2024/);
+  assert.match(parsed, /Aug 2026 \(Expected\)/);
   assert.ok(parsed.indexOf('PROFESSIONAL SUMMARY') < parsed.indexOf('EXPERIENCE'));
   assert.ok(parsed.indexOf('EXPERIENCE') < parsed.indexOf('SKILLS'));
 });
@@ -98,7 +100,7 @@ test('section names in ordinary prose do not create headings; missing content an
   const candidatePack = { ...pack, resumeSummary: 'Technical skills and projects complement my experience in software engineering.' };
   const text = visibleResumeText(profile, candidatePack);
   assert.equal(validateExtractedResumeText(text, profile, candidatePack).safe, true);
-  for (const omitted of [candidatePack.resumeSummary, profile.phone!, '09/2023 - 06/2024', 'EXPERIENCE']) {
+  for (const omitted of [candidatePack.resumeSummary, profile.phone!, 'Sept 2023 - June 2024', 'EXPERIENCE']) {
     assert.equal(validateExtractedResumeText(text.replace(omitted, ''), profile, candidatePack).safe, false, omitted);
   }
   assert.equal(validateExtractedResumeText(text.replace('EXPERIENCE', 'TEMP').replace('SKILLS', 'EXPERIENCE').replace('TEMP', 'SKILLS'), profile, candidatePack).safe, false);
