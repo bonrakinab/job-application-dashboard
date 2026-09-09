@@ -16,7 +16,7 @@ import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-a
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { buildRequirementEvidenceMatrix } from '@/lib/requirement-evidence';
 import { assertResumeArtifact, validateResumeDocxArtifact, validateResumePdfArtifact } from '@/lib/resume-artifact-validation';
-import { referenceTemplatePack, referenceTemplateProfile, strengthenResumeForJob } from '@/lib/resume-generation-policy';
+import { finalResumeArtifactState, strengthenResumeForJob } from '@/lib/resume-generation-policy';
 import { attachApplicationPackGenerationMeta } from '@/lib/resume-tailoring';
 import {
   finishApplicationPackRun,
@@ -178,11 +178,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const documentProfile = profileWithTailoredCourseworkForResume(applicationProfile, courseworkPack);
     const optimized = optimizeApplicationPackForAts(job, documentProfile, courseworkPack, match);
     const strengthenedPack = strengthenResumeForJob(job, documentProfile, optimized.pack, courseworkPack, requirementEvidence);
+    const strengthenedEvidence = strengthenedPack.requirementEvidence ?? requirementEvidence;
     await safeRecordStep(runId, 'ats_optimization', {
       score: optimized.score.overall,
       status: optimized.score.status,
       attempts: strengthenedPack.atsOptimization?.attempts ?? 0,
-      supportedExactKeywords: strengthenedPack.skills.filter((skill) => requirementEvidence.some((item) => item.support === 'supported' && (item.exactTerms ?? []).some((term) => term.toLowerCase() === skill.toLowerCase()))).length,
+      supportedExactKeywords: strengthenedPack.skills.filter((skill) => strengthenedEvidence.some((item) => item.support === 'supported' && (item.exactTerms ?? []).some((term) => term.toLowerCase() === skill.toLowerCase()))).length,
     });
 
     let research = await getCompanyIntelligence(job.company);
@@ -210,7 +211,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       await safeFinishRun(runId, 'blocked', 'Unresolved source-evidence checks');
       return Response.json({ error: 'Some claims could not be verified against your résumé. Review the source profile before regenerating.', claims: verifiedPack.claimsAudit.filter((claim) => claim.status === 'review') }, { status: 422 });
     }
+
     const renderedProfile = profileWithTailoredCourseworkForResume(applicationProfile, verifiedPack);
+    // scoreTailoredResumeWithCoursework applies the same final artifact policy
+    // used by preview and downloads, so hidden/removed fields cannot inflate ATS.
     const finalScore = scoreTailoredResumeWithCoursework(job, renderedProfile, verifiedPack, match);
     const finalOptimizedPack = verifiedPack.atsOptimization ? {
       ...verifiedPack,
@@ -223,15 +227,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       },
     } : { ...verifiedPack, publications: [] as string[] };
 
-    // Render only the fields present in the user's uploaded reference template.
-    // The master profile remains untouched and can still retain richer internal data.
-    const exportProfile = referenceTemplateProfile(renderedProfile);
-    const exportPack = referenceTemplatePack(finalOptimizedPack);
-    const pdf = resumePdf(exportProfile, job, exportPack);
-    const docx = await resumeDocx(exportProfile, job, exportPack);
+    const finalArtifact = finalResumeArtifactState(renderedProfile, finalOptimizedPack);
+    const pdf = resumePdf(finalArtifact.profile, job, finalArtifact.pack);
+    const docx = await resumeDocx(finalArtifact.profile, job, finalArtifact.pack);
     const [pdfValidation, docxValidation] = await Promise.all([
-      validateResumePdfArtifact(pdf, exportProfile, exportPack),
-      validateResumeDocxArtifact(docx, exportProfile, exportPack),
+      validateResumePdfArtifact(pdf, finalArtifact.profile, finalArtifact.pack),
+      validateResumeDocxArtifact(docx, finalArtifact.profile, finalArtifact.pack),
     ]);
     assertResumeArtifact(pdfValidation, 'PDF');
     assertResumeArtifact(docxValidation, 'DOCX');
@@ -247,6 +248,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       replacedFields: verifiedPack.claimVerification?.replacedFields ?? [],
       replacedBullets: verifiedPack.claimVerification?.replacedBullets ?? 0,
     });
+
+    // Do not overwrite finalOptimizedPack.requirementEvidence here. The
+    // strengthened pack contains the reconciled exact JD terms used for ATS and
+    // must be the same evidence matrix the dashboard later displays.
     const pack = attachApplicationPackGenerationMeta({
       ...finalOptimizedPack,
       artifactValidation: {
@@ -255,7 +260,6 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         docxParseCoverage: docxValidation.parseCoverage,
         sectionOrderValid: pdfValidation.sectionOrderValid && docxValidation.sectionOrderValid,
       },
-      requirementEvidence,
     }, {
       model: generation.model,
       provider: generation.providerUsed,
