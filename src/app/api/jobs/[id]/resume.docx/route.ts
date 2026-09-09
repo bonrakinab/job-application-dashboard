@@ -5,7 +5,7 @@ import { resumeDocx } from '@/lib/application-docx';
 import { profileWithTailoredCourseworkForResume } from '@/lib/education-tailoring';
 import { PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 import { assertResumeArtifact, validateResumeDocxArtifact } from '@/lib/resume-artifact-validation';
-import { referenceTemplatePack, referenceTemplateProfile } from '@/lib/resume-generation-policy';
+import { finalResumeArtifactState } from '@/lib/resume-generation-policy';
 import { getJob } from '@/lib/store';
 import { slug } from '@/lib/utils';
 
@@ -24,10 +24,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     return Response.json({ error: 'This tailored resume is outdated. Regenerate the application pack before downloading.', reasons: packState.reasons }, { status: 409 });
   }
   const baseProfile = profileWithTailoredCourseworkForResume(projectTailoredApplicationProfile(externalApplicationProfile(profileState.profile), job), packState.pack);
-  const resumeProfile = referenceTemplateProfile(baseProfile);
-  const resumePack = referenceTemplatePack(packState.pack);
-  const docx = await resumeDocx(resumeProfile, job, resumePack);
-  assertResumeArtifact(await validateResumeDocxArtifact(docx, resumeProfile, resumePack), 'DOCX');
+  const final = finalResumeArtifactState(baseProfile, packState.pack);
+  const docx = await resumeDocx(final.profile, job, final.pack);
+  assertResumeArtifact(await validateResumeDocxArtifact(docx, final.profile, final.pack), 'DOCX');
   return new Response(new Uint8Array(docx), {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
