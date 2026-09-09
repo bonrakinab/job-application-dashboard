@@ -82,7 +82,7 @@ function weakPack(): ApplicationPack {
   };
 }
 
-test('optimizer promotes verified JD evidence until the resume reaches the pass standard when possible', () => {
+test('optimizer promotes verified JD evidence until the internal target is reached when possible', () => {
   const result = optimizeApplicationPackForAts(job, profile, weakPack(), match);
   assert.equal(result.score.eligibleToApply, true);
   assert.ok(result.score.overall >= 90);

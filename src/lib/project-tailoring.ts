@@ -1,3 +1,4 @@
+import { containsTerm } from './resume-evidence-guards';
 import type { CandidateProfile, Job, ProjectItem, ProjectRoleFamily } from './types';
 import { normalizeText } from './utils';
 
@@ -144,11 +145,11 @@ function lexicalProjectScore(project: ProjectItem, job: Job) {
   const tokens = tokenSet(projectText);
   let score = 0;
   for (const token of tokens) {
-    if (jobText.includes(token)) score += token.length >= 7 ? 2 : 1;
+    if (containsTerm(jobText, token)) score += token.length >= 7 ? 2 : 1;
   }
   for (const skill of project.skills ?? []) {
     const normalizedSkill = normalizeText(skill);
-    if (normalizedSkill.length >= 2 && jobText.includes(normalizedSkill)) score += 8;
+    if (normalizedSkill.length >= 2 && containsTerm(jobText, normalizedSkill)) score += 8;
   }
   return score;
 }

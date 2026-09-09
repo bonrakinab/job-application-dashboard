@@ -1,3 +1,4 @@
+import { containsTerm, groundedRewriteIssue } from './resume-evidence-guards';
 import type {
   ApplicationPack,
   ApplicationPackGenerationMeta,
@@ -12,7 +13,7 @@ import { RESUME_TEMPLATE_VERSION } from './resume-template';
 import { selectApplicationSupplements } from './application-supplements';
 import { isYcJob } from './startup-fit';
 
-export const APPLICATION_PACK_TAILORING_VERSION = '2026-08-28.resume-experience-selection.v6';
+export const APPLICATION_PACK_TAILORING_VERSION = '2026-09-08.grounded-jd-reframing.v7';
 export { RESUME_TEMPLATE_VERSION } from './resume-template';
 
 export interface ApplicationPackPlan {
@@ -24,10 +25,12 @@ export interface ApplicationPackPlan {
     organization: string;
     title: string;
     evidenceIds: string[];
+    bulletRewrites: Array<{ evidenceId: string; text: string }>;
   }>;
   projects: Array<{
     name: string;
     evidenceIds: string[];
+    bulletRewrites: Array<{ evidenceId: string; text: string }>;
   }>;
   coverLetter: string;
   outreachMessage: string;
@@ -55,8 +58,17 @@ export const applicationPackPlanSchema = {
           organization: { type: 'string' },
           title: { type: 'string' },
           evidenceIds: { type: 'array', items: { type: 'string' } },
+          bulletRewrites: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: { evidenceId: { type: 'string' }, text: { type: 'string' } },
+              required: ['evidenceId', 'text'],
+            },
+          },
         },
-        required: ['organization', 'title', 'evidenceIds'],
+        required: ['organization', 'title', 'evidenceIds', 'bulletRewrites'],
       },
     },
     projects: {
@@ -67,8 +79,17 @@ export const applicationPackPlanSchema = {
         properties: {
           name: { type: 'string' },
           evidenceIds: { type: 'array', items: { type: 'string' } },
+          bulletRewrites: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              properties: { evidenceId: { type: 'string' }, text: { type: 'string' } },
+              required: ['evidenceId', 'text'],
+            },
+          },
         },
-        required: ['name', 'evidenceIds'],
+        required: ['name', 'evidenceIds', 'bulletRewrites'],
       },
     },
     coverLetter: { type: 'string' },
@@ -108,7 +129,8 @@ CRITICAL METHOD
 1. First determine the role family and the 6-10 most important requirements from the JD and match analysis. Distinguish must-have from preferred requirements.
 2. Select candidate evidence for those requirements. Relevance to this exact JD matters more than generic keyword density.
 2a. Use the supplied REQUIREMENT-TO-EVIDENCE MATRIX as the grounding guide. Prioritize supported evidence, use partial evidence only as transferable experience, and never present a gap as candidate experience.
-3. The supplied experience/project bullets have evidence IDs. In experience.evidenceIds and projects.evidenceIds, output ONLY those IDs. Never rewrite a bullet and never invent an ID.
+3. The supplied experience/project bullets have evidence IDs. In experience.evidenceIds and projects.evidenceIds, output ONLY those IDs and never invent an ID.
+3a. For a selected evidence ID, bulletRewrites may translate that bullet into the JD's exact terminology only when the meaning is already supported by that bullet or its parent role/project skills. Preserve the action, scope, tense, technologies, and every number. Never add a tool, responsibility, metric, team size, result, seniority, or ownership level. Use one evidence ID per rewrite. If exact wording cannot be introduced safely, omit the rewrite and the original bullet will be used.
 4. Preserve organization names, job titles, and project names exactly. Select the 3 supplied professional experience roles when all are available, ordered in the candidate's original chronology, and use only the strongest relevant bullets. Never substitute committee, club, volunteer, assistantship, or unrelated LinkedIn history. You may omit weakly relevant projects.
 5. skills must contain ONLY exact skill strings from the supplied profile, ordered by relevance. Prefer 10-20 strong skills; do not pad with unrelated skills.
 6. resumeSummary must be 2-3 concise sentences and specific to the role. It may use only facts, technologies, domains, degree status, and metrics supported by the master evidence. If a degree is Expected, the candidate is NOT a graduate and does not yet hold that degree.
@@ -163,6 +185,8 @@ export function applicationPackUserPrompt(
 type EvidenceRecord = {
   id: string;
   text: string;
+  supportText: string;
+  localSkills: string[];
   kind: 'experience' | 'project';
   parentIndex: number;
   parentName: string;
@@ -175,6 +199,8 @@ function evidenceRecords(profile: CandidateProfile) {
     item.bullets.forEach((text, bulletIndex) => records.push({
       id: `EXP:${experienceIndex}:${bulletIndex}`,
       text,
+      supportText: [item.title, item.organization, text, ...(item.skills ?? [])].join(' '),
+      localSkills: item.skills ?? [],
       kind: 'experience',
       parentIndex: experienceIndex,
       parentName: item.organization,
@@ -185,6 +211,8 @@ function evidenceRecords(profile: CandidateProfile) {
     (item.bullets ?? []).forEach((text, bulletIndex) => records.push({
       id: `PROJ:${projectIndex}:${bulletIndex}`,
       text,
+      supportText: [item.name, item.description, text, ...(item.skills ?? [])].join(' '),
+      localSkills: item.skills ?? [],
       kind: 'project',
       parentIndex: projectIndex,
       parentName: item.name,
@@ -206,6 +234,11 @@ function terms(value: string) {
     .filter((token) => token.length >= 2 && !STOP_WORDS.has(token));
 }
 
+function safeGroundedBulletRewrite(proposed: string, record: EvidenceRecord, _profile: CandidateProfile, match?: MatchScore) {
+  if ((match?.missingSkills ?? []).some((skill) => containsTerm(proposed, skill) && !containsTerm(record.supportText, skill))) return false;
+  return !groundedRewriteIssue(proposed, record.text, record.localSkills);
+}
+
 function jobContext(job: Job, match?: MatchScore) {
   return [
     job.title,
@@ -225,10 +258,10 @@ function relevanceScore(text: string, context: string) {
   let score = 0;
   const uniqueTerms = [...new Set(terms(text))];
   for (const token of uniqueTerms) {
-    if (normalizedContext.includes(token)) score += token.length >= 7 ? 2.1 : 1;
+    if (containsTerm(normalizedContext, token)) score += token.length >= 7 ? 2.1 : 1;
   }
   for (const phrase of normalizedText.split(/[,;|()]/).map((part) => part.trim()).filter((part) => part.length >= 5)) {
-    if (normalizedContext.includes(phrase)) score += 4;
+    if (containsTerm(normalizedContext, phrase)) score += 4;
   }
   return score;
 }
@@ -247,7 +280,7 @@ function rankedSkills(job: Job, profile: CandidateProfile, match?: MatchScore) {
     .map((skill, index) => {
       let score = relevanceScore(skill, context);
       if (matched.has(normalizeText(skill))) score += 12;
-      if (normalizeText(job.title).includes(normalizeText(skill))) score += 4;
+      if (containsTerm(job.title, skill)) score += 4;
       return { skill, score, index };
     })
     .sort((a, b) => b.score - a.score || a.index - b.index);
@@ -297,7 +330,7 @@ function mentionsMissingSkill(text: string, match?: MatchScore) {
   const normalized = normalizeText(text);
   return (match?.missingSkills ?? []).some((skill) => {
     const needle = normalizeText(skill);
-    return needle.length >= 3 && normalized.includes(needle);
+    return needle.length >= 3 && containsTerm(normalized, needle);
   });
 }
 
@@ -389,14 +422,16 @@ export function deterministicTailoringPlan(job: Job, profile: CandidateProfile, 
       organization: item.organization,
       title: item.title,
       evidenceIds: (item.score > 0 ? item.evidence.filter((entry) => entry.score > 0) : item.evidence).slice(0, 3).map((entry) => entry.id),
+      bulletRewrites: [],
     }));
 
   const rankedProjectItems = rankedProjects(job, profile, match);
   const positiveProjects = rankedProjectItems.filter((item) => item.score > 0);
-  const chosenProjects = (positiveProjects.length ? positiveProjects : rankedProjectItems.slice(0, 2)).slice(0, 4);
+  const chosenProjects = (positiveProjects.length ? positiveProjects : rankedProjectItems.slice(0, 2)).slice(0, 3);
   const projects = chosenProjects.map((project) => ({
     name: project.name,
     evidenceIds: project.evidence.filter((entry) => entry.score > 0).slice(0, 2).map((entry) => entry.id),
+    bulletRewrites: [],
   }));
 
   const summary = fallbackSummary(job, profile, skills);
@@ -445,7 +480,11 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
     item,
   ]));
   const selectedExperience = new Map<number, ApplicationPack['experience'][number]>();
-  const addExperience = (key: string, requestedIds: string[] | undefined) => {
+  const addExperience = (
+    key: string,
+    requestedIds: string[] | undefined,
+    requestedRewrites: Array<{ evidenceId: string; text: string }> = [],
+  ) => {
     const source = sourceExperience.get(key);
     if (!source || selectedExperience.has(source.experienceIndex) || selectedExperience.size >= 3) return;
     let ids = validEvidenceIds(requestedIds, records, (record) => record.kind === 'experience' && record.parentIndex === source.experienceIndex);
@@ -453,15 +492,26 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
       ids = validEvidenceIds(deterministicExperience.get(key)?.evidenceIds, records, (record) => record.kind === 'experience' && record.parentIndex === source.experienceIndex);
     }
     if (!ids.length) return;
+    const selectedIds = ids.slice(0, 3);
+    const rewrites = new Map(requestedRewrites.map((item) => [item.evidenceId, item.text]));
     selectedExperience.set(source.experienceIndex, {
       organization: source.item.organization,
       title: source.item.title,
-      bullets: ids.slice(0, 3).map((id) => records.get(id)!.text),
+      bullets: selectedIds.map((id) => {
+        const record = records.get(id)!;
+        const proposed = rewrites.get(id);
+        return proposed && safeGroundedBulletRewrite(proposed, record, profile, match) ? proposed.trim() : record.text;
+      }),
+      bulletEvidence: selectedIds.map((id) => [id]),
     });
   };
 
   for (const requested of plan.experience ?? []) {
-    addExperience(`${normalizeText(requested.organization)}|${normalizeText(requested.title)}`, requested.evidenceIds);
+    addExperience(
+      `${normalizeText(requested.organization)}|${normalizeText(requested.title)}`,
+      requested.evidenceIds,
+      requested.bulletRewrites,
+    );
   }
   for (const fallback of deterministic.experience) {
     if (selectedExperience.size >= 3) break;
@@ -474,17 +524,31 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
   const sourceProjects = new Map((profile.projects ?? []).map((project, index) => [normalizeText(project.name), { project, index }]));
   const materializedProjects: ApplicationPack['projects'] = [];
   const seenProjects = new Set<string>();
-  const addProject = (name: string, ids: string[]) => {
+  const addProject = (
+    name: string,
+    ids: string[],
+    requestedRewrites: Array<{ evidenceId: string; text: string }> = [],
+  ) => {
     const source = sourceProjects.get(normalizeText(name));
     if (!source || seenProjects.has(normalizeText(source.project.name))) return;
     const valid = validEvidenceIds(ids, records, (record) => record.kind === 'project' && record.parentIndex === source.index);
     if (!valid.length) return;
+    const selectedIds = valid.slice(0, 2);
+    const rewrites = new Map(requestedRewrites.map((item) => [item.evidenceId, item.text]));
     seenProjects.add(normalizeText(source.project.name));
-    materializedProjects.push({ name: source.project.name, bullets: valid.slice(0, 2).map((id) => records.get(id)!.text) });
+    materializedProjects.push({
+      name: source.project.name,
+      bullets: selectedIds.map((id) => {
+        const record = records.get(id)!;
+        const proposed = rewrites.get(id);
+        return proposed && safeGroundedBulletRewrite(proposed, record, profile, match) ? proposed.trim() : record.text;
+      }),
+      bulletEvidence: selectedIds.map((id) => [id]),
+    });
   };
-  for (const requested of plan.projects ?? []) addProject(requested.name, requested.evidenceIds ?? []);
+  for (const requested of plan.projects ?? []) addProject(requested.name, requested.evidenceIds ?? [], requested.bulletRewrites);
   for (const fallback of deterministic.projects) {
-    if (materializedProjects.length >= 4) break;
+    if (materializedProjects.length >= 3) break;
     addProject(fallback.name, fallback.evidenceIds);
   }
 
@@ -520,7 +584,7 @@ export function materializeApplicationPack(plan: ApplicationPackPlan, profile: C
     resumeSummary,
     skills,
     experience,
-    projects: materializedProjects.slice(0, 4),
+    projects: materializedProjects.slice(0, 3),
     certifications: supplements.certifications,
     publications: supplements.publications,
     awards: supplements.awards,

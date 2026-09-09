@@ -96,6 +96,30 @@ test('unsupported mandatory requirements cannot be keyword-gamed into an ATS pas
   assert.ok(score.missingKeywords.includes('Java'));
 });
 
+test('ATS estimate uses only text rendered in the exported résumé', () => {
+  const hiddenProfile: CandidateProfile = {
+    ...profile,
+    skills: [...profile.skills, 'Kubernetes'],
+    experience: [{
+      ...profile.experience![0],
+      skills: [...(profile.experience![0].skills ?? []), 'Kubernetes'],
+    }],
+  };
+  const hiddenMatch: MatchScore = {
+    ...match,
+    mustHave: ['Kubernetes'],
+    matchedSkills: ['Kubernetes'],
+  };
+  const visiblePack = {
+    ...pack(['TypeScript', 'React']),
+    resumeHeadline: 'Software Engineer',
+    resumeSummary: 'Software engineer candidate with TypeScript and React experience.',
+  };
+  const score = scoreTailoredResume({ ...job, description: `${job.description} Kubernetes is required.` }, hiddenProfile, visiblePack, hiddenMatch);
+  assert.ok(score.missingKeywords.includes('Kubernetes'));
+  assert.ok(score.skillCoverage < 100);
+});
+
 test('cover letter normalizes generated prose into Indeed-style template blocks', () => {
   const p = pack(['TypeScript', 'React', 'PostgreSQL']);
   assert.equal(coverLetterBodyParagraphs(p).length, 3);

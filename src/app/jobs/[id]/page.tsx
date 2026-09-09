@@ -7,6 +7,7 @@ import { applicationPackEligibility } from '@/lib/application-pack-eligibility';
 import { getApplicationPackState, getCandidateProfileStateOptional } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
 import { scoreTailoredResumeWithCoursework } from '@/lib/ats-coursework';
+import { profileWithTailoredCourseworkForResume } from '@/lib/education-tailoring';
 import { buildInterviewPrep } from '@/lib/interview-prep';
 import { emptyPartTimeProfile, PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
@@ -32,6 +33,20 @@ function supportLabel(item: RequirementEvidence) {
   return 'Gap';
 }
 
+function categoryLabel(item: RequirementEvidence) {
+  const labels: Record<NonNullable<RequirementEvidence['category']>, string> = {
+    'hard-skill': 'Hard skill',
+    tool: 'Tool',
+    certification: 'Certification',
+    education: 'Education',
+    experience: 'Experience',
+    responsibility: 'Responsibility',
+    'soft-skill': 'Soft skill',
+    eligibility: 'Eligibility',
+  };
+  return item.category ? labels[item.category] : null;
+}
+
 function unique(values: string[]) {
   return values.filter((value, index, list) => value && list.indexOf(value) === index);
 }
@@ -50,7 +65,8 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const packUsable = Boolean(profileReady && pack && !packState.stale);
   const sourceProfile = profileState?.profile ?? emptyPartTimeProfile();
   const applicationProfile = projectTailoredApplicationProfile(externalApplicationProfile(sourceProfile), job);
-  const ats = packUsable && pack ? scoreTailoredResumeWithCoursework(job, applicationProfile, pack, match) : null;
+  const resumeProfile = packUsable && pack ? profileWithTailoredCourseworkForResume(applicationProfile, pack) : applicationProfile;
+  const ats = packUsable && pack ? scoreTailoredResumeWithCoursework(job, resumeProfile, pack, match) : null;
   const requirements = pack?.requirementEvidence?.length
     ? pack.requirementEvidence
     : buildRequirementEvidenceMatrix(job, applicationProfile, match);
@@ -92,7 +108,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             <div className="job-readiness">
               <span>Posting <b>{postingState(job.validityStatus)}</b></span>
               <span>Documents <b>{packUsable ? 'Ready' : pack ? 'Regenerate' : 'Not generated'}</b></span>
-              {ats ? <span>Resume <b className={ats.eligibleToApply ? 'text-success' : 'text-warning'}>{ats.overall}/100</b></span> : null}
+              {ats ? <span>ATS estimate <b className={ats.targetReached ? 'text-success' : 'text-warning'}>{ats.overall}/100</b></span> : null}
               {match?.startupFit != null ? <span>Startup fit <b>{match.startupFit}/100</b></span> : null}
             </div>
           </div>
@@ -121,7 +137,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             {requirements.map((item) => <div className="requirement-row" key={`${item.importance}-${item.requirement}`}>
               <div className="requirement-copy">
                 <b>{item.requirement}</b>
-                <span>{item.importance === 'must-have' ? 'Required' : 'Preferred'}{item.evidence[0] ? ` · ${item.evidence[0].label}` : ''}</span>
+                <span>{[item.importance === 'must-have' ? 'Required' : 'Preferred', categoryLabel(item), item.evidence[0]?.label].filter(Boolean).join(' · ')}</span>
               </div>
               <span className={`support-pill support-${item.support}`}>{supportLabel(item)}</span>
             </div>)}
@@ -152,7 +168,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           status={job.application?.status || 'discovered'}
           canResearch={Boolean(process.env.OPENAI_API_KEY)}
           validityStatus={job.validityStatus}
-          atsEligible={Boolean(ats?.eligibleToApply)}
+          atsEligible={Boolean(ats?.targetReached)}
           atsScore={ats?.overall}
           packGenerationReason={eligibility.reason}
           packGenerationBlockers={eligibility.blockers}
@@ -166,9 +182,51 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             <span>✓ Tailored to this job</span>
             <span>✓ Verified profile evidence only</span>
             <span>{pack.claimVerification?.status === 'pass' ? '✓ Claims checked' : '△ Claims need review'}</span>
+            <span>✓ Single-column DOCX and PDF</span>
+            {pack.artifactValidation ? <span>✓ PDF and DOCX text checked</span> : <span>△ Export checks pending</span>}
           </div>
           {pack.generationMeta?.generatedAt ? <p className="small muted">Generated {formatDate(pack.generationMeta.generatedAt)}</p> : null}
+          {pack.claimVerification?.replacedBullets || pack.claimVerification?.replacedFields.length ? <p className="small muted">Unsupported wording was replaced with source evidence. Review the final text below.</p> : null}
+          <details className="advanced-panel">
+            <summary>Review résumé and source evidence</summary>
+            <div className="advanced-panel-body">
+              <h4>{pack.resumeHeadline}</h4>
+              <p>{pack.resumeSummary}</p>
+              <p><b>Skills:</b> {pack.skills.join(', ')}</p>
+              {[...pack.experience.map((item) => ({ ...item, label: `${item.title} · ${item.organization}` })), ...pack.projects.map((item) => ({ ...item, label: item.name }))].map((item, itemIndex) => <div key={`${itemIndex}:${item.label}`}>
+                <h4>{item.label}</h4>
+                <ul>{item.bullets.map((bullet, index) => {
+                  const evidenceId = item.bulletEvidence?.[index]?.[0];
+                  const parts = evidenceId?.split(':');
+                  const source = parts?.[0] === 'EXP'
+                    ? applicationProfile.experience?.[Number(parts[1])]?.bullets[Number(parts[2])]
+                    : parts?.[0] === 'PROJ' ? applicationProfile.projects?.[Number(parts[1])]?.bullets?.[Number(parts[2])] : undefined;
+                  return <li key={`${index}:${evidenceId ?? ''}`}>
+                    <p>{bullet}</p>
+                    {source ? <details><summary className="small muted">Source wording{source === bullet ? ' · unchanged' : ''}</summary><p className="small">{source}</p></details> : <p className="small muted">Source reference unavailable.</p>}
+                  </li>;
+                })}</ul>
+              </div>)}
+              <p className="small muted">Check the wording before applying. Correct facts in your profile and regenerate, or edit the Word download. Edits made outside the dashboard are not included in this audit.</p>
+            </div>
+          </details>
         </div> : null}
+        {ats ? <details className="advanced-panel" open>
+          <summary>ATS résumé audit</summary>
+          <div className="advanced-panel-body">
+            <div className="document-checks">
+              <span>Requirement support <b>{ats.requirementCoverage}/100</b></span>
+              <span>Exact JD terms <b>{ats.exactKeywordCoverage}/100</b></span>
+              <span>Evidence relevance <b>{ats.evidenceRelevance}/100</b></span>
+              <span>Keyword placement <b>{ats.keywordPlacement}/100</b></span>
+              <span>Format hygiene <b>{ats.formatHygiene}/100</b></span>
+              <span>Keyword use <b>{ats.keywordUse}</b></span>
+            </div>
+            {ats.missingKeywords.length ? <p className="small muted"><b>Remaining exact terms:</b> {ats.missingKeywords.slice(0, 8).join(', ')}</p> : null}
+            {ats.formatIssues.length ? <p className="small muted"><b>Format review:</b> {ats.formatIssues.join(' ')}</p> : null}
+            <p className="small muted">This is a transparent internal estimate with a {ats.targetScore}/100 optimization target, not a score from the employer’s proprietary ATS and not an interview guarantee.</p>
+          </div>
+        </details> : null}
         {job.yc && packUsable && pack?.outreachMessage ? <div className="card document-status-card">
           <div className="kicker">Founder outreach</div>
           <h3>Short founder note</h3>

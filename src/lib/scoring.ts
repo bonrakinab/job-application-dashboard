@@ -1,3 +1,4 @@
+import { containsTerm } from './resume-evidence-guards';
 import type { CandidateProfile, Job, MatchScore, Recommendation } from './types';
 import { clamp, normalizeText } from './utils';
 
@@ -10,7 +11,7 @@ const SKILL_EVIDENCE_CURVE = [20, 45, 62, 74, 82, 88, 93, 96, 98, 100];
 
 function scoreSkillEvidence(haystack: string, configuredSkills: string[]) {
   if (!configuredSkills.length) return { score: 50, matched: [] as string[] };
-  const matched = configuredSkills.filter((skill) => haystack.includes(normalizeText(skill)));
+  const matched = configuredSkills.filter((skill) => containsTerm(haystack, skill));
   const saturation = SKILL_EVIDENCE_CURVE[Math.min(matched.length, SKILL_EVIDENCE_CURVE.length - 1)];
   const compactProfileCoverage = configuredSkills.length <= 6 ? (matched.length / configuredSkills.length) * 95 : 0;
   return { score: clamp(Math.max(saturation, compactProfileCoverage)), matched };

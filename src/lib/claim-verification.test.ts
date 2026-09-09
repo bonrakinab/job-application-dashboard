@@ -54,3 +54,35 @@ test('claim verification replaces unsupported metrics and missing skills', () =>
   assert.ok(verified.claimVerification?.warnings.some((warning) => /Unsupported/i.test(warning)));
   assert.equal(verified.claimVerification?.status, 'pass');
 });
+
+test('claim verification audits rewritten bullets against their exact evidence IDs', () => {
+  const original = pack('I built Python automation for finance reporting.');
+  original.experience[0] = {
+    ...original.experience[0],
+    bullets: ['Built SQL automation for finance reporting and improved accuracy by 45%.'],
+    bulletEvidence: [['EXP:0:0']],
+  };
+  const verified = verifyApplicationPackClaims(original, fallback, profile, job, match);
+  assert.equal(verified.experience[0].bullets[0], 'Built Python automation for finance reporting.');
+  assert.equal(verified.claimVerification?.replacedBullets, 1);
+  assert.ok(verified.claimVerification?.warnings.some((warning) => /numeric|specific evidence/i.test(warning)));
+  assert.equal(verified.claimVerification?.status, 'pass');
+});
+
+test('evidence IDs from another employer cannot move achievements between roles', () => {
+  const candidate = { ...profile, experience: [...profile.experience!, { organization: 'Other Employer', title: 'Engineer', bullets: ['Managed Kubernetes deployments for enterprise customers.'] }] };
+  const original = pack('I built Python automation for finance reporting.');
+  original.experience[0].bullets = ['Managed Kubernetes deployments for enterprise customers.'];
+  original.experience[0].bulletEvidence = [['EXP:1:0']];
+  const verified = verifyApplicationPackClaims(original, fallback, candidate, job, match);
+  assert.equal(verified.experience[0].bullets[0], profile.experience![0].bullets[0]);
+  assert.deepEqual(verified.experience[0].bulletEvidence, [['EXP:0:0']]);
+});
+
+test('an invented employer and unsupported credential remain review failures', () => {
+  const original = pack('I built Python automation for finance reporting.');
+  original.experience[0].organization = 'Invented Company';
+  original.certifications = ['AWS Certified Solutions Architect'];
+  const verified = verifyApplicationPackClaims(original, fallback, profile, job, match);
+  assert.equal(verified.claimVerification?.status, 'review');
+});

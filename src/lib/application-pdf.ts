@@ -3,6 +3,7 @@ import { normalizeText } from './utils';
 import { RESUME_LAYOUT_ATTEMPTS, RESUME_PAGE } from './resume-template';
 import { coverLetterBodyParagraphs, coverLetterDate } from './cover-letter';
 import { EMBEDDED_RESUME_FONTS } from './resume-fonts';
+import { formatAtsDateRange, resumeContactLines } from './resume-content';
 
 const A4_WIDTH = RESUME_PAGE.width;
 const A4_HEIGHT = RESUME_PAGE.height;
@@ -61,22 +62,6 @@ function wrapWidth(text: string, maxWidth: number, size: number, font: FontName 
   return lines;
 }
 
-function fmtDate(value?: string) {
-  if (!value) return '';
-  return value
-    .replace(/^September\b/i, 'Sept')
-    .replace(/^August\b/i, 'Aug')
-    .replace(/^December\b/i, 'Dec')
-    .replace(/^November\b/i, 'Nov')
-    .replace(/^October\b/i, 'Oct')
-    .replace(/^February\b/i, 'Feb')
-    .replace(/^January\b/i, 'Jan');
-}
-
-function dateRange(start?: string, end?: string) {
-  return [fmtDate(start), fmtDate(end)].filter(Boolean).join(' - ');
-}
-
 class ResumeCanvas {
   commands: string[] = [];
   y = 808;
@@ -86,6 +71,7 @@ class ResumeCanvas {
   gap(value: number) { return value * this.scale; }
   text(text: string, x: number, y: number, size: number, font: FontName = 'TR') {
     if (!text) return;
+    if (x < MARGIN - 2 || x + width(text, size, font) > RIGHT + 0.5 || y < BOTTOM) this.overflow = true;
     const position = font === 'TI' || font === 'TBI'
       ? `1 0 0.18 1 ${x.toFixed(2)} ${y.toFixed(2)} Tm`
       : `${x.toFixed(2)} ${y.toFixed(2)} Td`;
@@ -103,7 +89,7 @@ class ResumeCanvas {
     const k = r * 0.55228475;
     this.commands.push(`${(x + r).toFixed(2)} ${y.toFixed(2)} m ${(x + r).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + r).toFixed(2)} ${x.toFixed(2)} ${(y + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(y + r).toFixed(2)} ${(x - r).toFixed(2)} ${(y + k).toFixed(2)} ${(x - r).toFixed(2)} ${y.toFixed(2)} c ${(x - r).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - r).toFixed(2)} ${x.toFixed(2)} ${(y - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(y - r).toFixed(2)} ${(x + r).toFixed(2)} ${(y - k).toFixed(2)} ${(x + r).toFixed(2)} ${y.toFixed(2)} c f`);
   }
-  subBullet(x: number, y: number) { this.text('o', x - 0.3, y - 1.2, this.size(6), 'TR'); }
+  subBullet(x: number, y: number) { this.text('-', x - 0.3, y - 1.2, this.size(7.4), 'TR'); }
   consume(amount: number) { this.y -= this.gap(amount); if (this.y < BOTTOM) this.overflow = true; }
   section(label: string) {
     this.consume(1.5);
@@ -142,16 +128,33 @@ function roleSource(profile: CandidateProfile, organization: string, title: stri
   return (profile.experience ?? []).find((item) => normalizeText(item.organization) === normalizeText(organization) && normalizeText(item.title) === normalizeText(title));
 }
 
+function pairedRow(canvas: ResumeCanvas, leftText: string, rightText: string, baseSize: number, rightSize: number, font: FontName = 'TR', rightFont: FontName = 'TR') {
+  const left = MARGIN + 11;
+  const size = canvas.size(baseSize);
+  if (fitsSideBySide(leftText, rightText, size, canvas.size(rightSize), font, rightFont, left)) {
+    const lines = wrapWidth(leftText, RIGHT - left - (rightText ? width(rightText, canvas.size(rightSize), rightFont) + 14 : 0), size, font);
+    for (const [index, line] of lines.entries()) {
+      canvas.text(line, left, canvas.y, size, font);
+      if (index === 0 && rightText) canvas.right(rightText, canvas.y, canvas.size(rightSize), rightFont);
+      canvas.consume(baseSize + 1.3);
+    }
+  } else {
+    for (const line of wrapWidth(leftText, RIGHT - left, size, font)) {
+      canvas.text(line, left, canvas.y, size, font);
+      canvas.consume(baseSize + 1.3);
+    }
+    for (const line of wrapWidth(rightText, RIGHT - left, canvas.size(rightSize), rightFont)) {
+      canvas.right(line, canvas.y, canvas.size(rightSize), rightFont);
+      canvas.consume(rightSize + 1.3);
+    }
+  }
+}
+
 function addRole(canvas: ResumeCanvas, profile: CandidateProfile, item: ApplicationPack['experience'][number], maxBullets: number) {
   const source = roleSource(profile, item.organization, item.title);
   canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-  canvas.text(item.organization, MARGIN + 11, canvas.y, canvas.size(9.7), 'TB');
-  if (source?.location) canvas.right(source.location, canvas.y, canvas.size(8.5));
-  canvas.consume(10);
-  canvas.text(item.title, MARGIN + 11, canvas.y, canvas.size(8.85), 'TI');
-  const dates = dateRange(source?.start, source?.end);
-  if (dates) canvas.right(dates, canvas.y, canvas.size(8.5), 'TI');
-  canvas.consume(9.4);
+  pairedRow(canvas, item.organization, source?.location ?? '', 9.7, 8.5, 'TB');
+  pairedRow(canvas, item.title, formatAtsDateRange(source?.start, source?.end), 8.85, 8.5, 'TI', 'TI');
   for (const bullet of item.bullets.slice(0, maxBullets)) canvas.subBulletText(bullet);
   canvas.consume(1);
 }
@@ -191,13 +194,14 @@ function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: A
     const source = sources.get(normalizeText(item.name));
     if (!source) continue;
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-    canvas.text(source.name, MARGIN + 11, canvas.y, canvas.size(9.25), 'TB');
+    pairedRow(canvas, source.name, '', 9.25, 7.8, 'TB', 'TI');
     const tech = (source.skills ?? []).filter((skill) => pack.skills.some((selected) => normalizeText(selected) === normalizeText(skill))).slice(0, 6);
-    const technology = tech.length ? ` / ${tech.join(', ')}` : '';
-    const nameWidth = width(source.name, canvas.size(9.25), 'TB');
-    if (technology && nameWidth + width(technology, canvas.size(7.8), 'TI') < RIGHT - (MARGIN + 11)) canvas.text(technology, MARGIN + 14 + nameWidth, canvas.y, canvas.size(7.8), 'TI');
-    if (source.linkLabel) canvas.right(source.linkLabel, canvas.y, canvas.size(7.8), 'TI');
-    canvas.consume(10);
+    if (tech.length) {
+      for (const line of wrapWidth(`Technologies: ${tech.join(', ')}`, RIGHT - (MARGIN + 11), canvas.size(7.8), 'TI')) {
+        canvas.text(line, MARGIN + 11, canvas.y, canvas.size(7.8), 'TI');
+        canvas.consume(8.7);
+      }
+    }
     for (const bullet of item.bullets.slice(0, options.maxProjectBullets)) canvas.subBulletText(bullet);
     canvas.consume(0.8);
   }
@@ -206,38 +210,11 @@ function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: A
 function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
   for (const degree of profile.degrees ?? []) {
     const left = MARGIN + 11;
-    const institutionSize = canvas.size(9.45);
-    const locationSize = canvas.size(8.2);
-    const degreeSize = canvas.size(8.45);
-    const dateSize = canvas.size(8.2);
     const courseSize = canvas.size(8.05);
-
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
-    canvas.text(degree.institution, left, canvas.y, institutionSize, 'TB');
-    if (degree.location && fitsSideBySide(degree.institution, degree.location, institutionSize, locationSize, 'TB', 'TR', left)) {
-      canvas.right(degree.location, canvas.y, locationSize);
-      canvas.consume(9.8);
-    } else {
-      canvas.consume(9.8);
-      if (degree.location) {
-        canvas.right(degree.location, canvas.y, locationSize);
-        canvas.consume(8.7);
-      }
-    }
-
+    pairedRow(canvas, degree.institution, degree.location ?? '', 9.45, 8.2, 'TB');
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    const dates = dateRange(degree.start, degree.end);
-    canvas.text(degreeText, left, canvas.y, degreeSize, 'TI');
-    if (dates && fitsSideBySide(degreeText, dates, degreeSize, dateSize, 'TI', 'TI', left)) {
-      canvas.right(dates, canvas.y, dateSize, 'TI');
-      canvas.consume(9.6);
-    } else {
-      canvas.consume(9.6);
-      if (dates) {
-        canvas.right(dates, canvas.y, dateSize, 'TI');
-        canvas.consume(8.7);
-      }
-    }
+    pairedRow(canvas, degreeText, formatAtsDateRange(degree.start, degree.end), 8.45, 8.2, 'TI', 'TI');
 
     const courses = (degree.coursework ?? []).slice(0, 2);
     if (courses.length) {
@@ -253,11 +230,24 @@ function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
 
 function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
   const canvas = new ResumeCanvas(options.scale);
-  canvas.center(profile.name, canvas.y, canvas.size(25.5), 'TB');
-  canvas.consume(18.5);
-  const contact = [profile.phone, profile.email, profile.links?.linkedin ? 'LinkedIn' : undefined, profile.links?.github ? 'GitHub' : undefined, profile.links?.portfolio ? 'Portfolio' : undefined].filter(Boolean) as string[];
-  canvas.center(contact.join('   |   '), canvas.y, canvas.size(8.15));
-  canvas.consume(10.5);
+  for (const line of wrapWidth(profile.name, RIGHT - MARGIN, canvas.size(23.5), 'TB')) {
+    canvas.center(line, canvas.y, canvas.size(23.5), 'TB');
+    canvas.consume(24);
+  }
+  for (const line of wrapWidth(pack.resumeHeadline, RIGHT - MARGIN, canvas.size(9.1), 'TB')) {
+    canvas.center(line, canvas.y, canvas.size(9.1), 'TB');
+    canvas.consume(10.4);
+  }
+  const contact = resumeContactLines(profile);
+  for (const line of wrapWidth(contact.primary.join('   |   '), RIGHT - MARGIN, canvas.size(8.05))) {
+    canvas.center(line, canvas.y, canvas.size(8.05));
+    canvas.consume(9.2);
+  }
+  for (const line of wrapWidth(contact.links.join('   |   '), RIGHT - MARGIN, canvas.size(7.65))) {
+    canvas.center(line, canvas.y, canvas.size(7.65));
+    canvas.consume(8.8);
+  }
+  canvas.consume(1.5);
   canvas.section('Professional Summary');
   canvas.paragraph(pack.resumeSummary);
   canvas.section('Experience');
@@ -271,15 +261,16 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
     canvas.section('Certifications');
     for (const certification of (pack.certifications ?? []).slice(0, 3)) {
       canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.6));
-      canvas.text(certification, MARGIN + 11, canvas.y, canvas.size(8.05));
-      canvas.consume(8.8);
+      for (const line of wrapWidth(certification, RIGHT - MARGIN - 11, canvas.size(8.05))) {
+        canvas.text(line, MARGIN + 11, canvas.y, canvas.size(8.05));
+        canvas.consume(8.8);
+      }
     }
   }
   if ((pack.publications ?? []).length) {
-    canvas.section('Selected Publication');
+    canvas.section('Publications');
     for (const publication of (pack.publications ?? []).slice(0, 1)) canvas.subBulletText(publication, MARGIN + 18, 7.85, 8.7);
   }
-  canvas.center('1', 16, canvas.size(6.8));
   return { stream: canvas.commands.join('\n'), overflow: canvas.overflow, bottomY: canvas.y };
 }
 
@@ -337,6 +328,9 @@ export function resumePdf(profile: CandidateProfile, _job: Job, pack: Applicatio
     const candidate = buildResumeStream(profile, pack, attempt);
     best = candidate;
     if (!candidate.overflow && candidate.bottomY >= BOTTOM) break;
+  }
+  if (best.overflow || best.bottomY < BOTTOM) {
+    throw new Error('The selected résumé evidence cannot fit safely on one A4 page. Reduce the selected evidence before export.');
   }
   return pdfFromStreams([best.stream], [A4_WIDTH, A4_HEIGHT], FONT_MAP);
 }

@@ -40,8 +40,10 @@ export async function getApplicationPackState(jobId: string, profileUpdatedAt?: 
   if (pack && job && coverLetterQualityIssues(pack.coverLetter ?? '', job).length) {
     reasons.push('The stored cover letter does not meet the current professional writing standard.');
   }
+  if (pack && pack.claimVerification?.status !== 'pass') reasons.push('The stored pack needs its source evidence checked again.');
+  if (pack && !pack.artifactValidation) reasons.push('Regenerate to validate both résumé download formats.');
   if (pack && !pack.atsOptimization) {
-    reasons.push('The stored resume predates the current 90-point ATS pass standard and automatic truthful optimization.');
+    reasons.push('The stored résumé predates the current evidence-grounded ATS diagnostics and internal optimization target.');
   }
 
   return {
