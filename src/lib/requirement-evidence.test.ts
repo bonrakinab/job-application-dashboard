@@ -81,7 +81,7 @@ test('literal JD requirements are extracted when AI analysis has no requirements
     description: [
       'Requirements',
       '- Stakeholder management for financial systems and ERP changes.',
-      '- Requirements gathering with finance teams.',
+      '- Coordinate requirements gathering with finance teams.',
       '- Kubernetes administration for production workloads.',
       'We are an equal opportunity employer.',
     ].join('\n'),
