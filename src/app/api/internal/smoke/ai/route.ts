@@ -1,7 +1,7 @@
 import { analyzeJobWithAI, aiStatus, createApplicationPack } from '@/lib/ai';
 import { verifyGitHubActionsOidc } from '@/lib/github-actions-oidc';
 import { isMainCareerJob } from '@/lib/part-time-jobs';
-import { getCandidateProfile, listJobs, logActivity, saveApplicationPack, saveMatch } from '@/lib/store';
+import { getCandidateProfile, listJobs, logActivity, saveMatch } from '@/lib/store';
 import { supabaseRequest } from '@/lib/supabase-rest';
 import type { JobWithMatch } from '@/lib/types';
 
@@ -70,8 +70,11 @@ export async function POST(request: Request) {
 
     if (!selected || !aiMatch) throw new Error('AI analysis ran, but every smoke-test candidate was classified as blocked/skip.');
 
+    // Exercise application-pack generation, but never write the raw smoke-test
+    // result into the user's real documents table. Real application packs must
+    // only be saved by the full /application-pack pipeline after ATS tuning,
+    // JD reconciliation, claim checks, template policy, and artifact validation.
     const { pack, model: packModel } = await createApplicationPack(selected, profile, aiMatch);
-    await saveApplicationPack(selected.id!, pack, packModel);
 
     const payload = {
       provider: ai.provider,
@@ -84,6 +87,7 @@ export async function POST(request: Request) {
       overall: aiMatch.overall,
       claimsAudited: pack.claimsAudit.length,
       generatedAt: new Date().toISOString(),
+      documentMutation: false,
     };
     await logActivity(COMPLETED_EVENT, selected.id, payload);
 
