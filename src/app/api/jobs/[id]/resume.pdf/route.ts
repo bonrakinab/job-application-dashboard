@@ -5,7 +5,7 @@ import { profileWithTailoredCourseworkForResume } from '@/lib/education-tailorin
 import { getJob } from '@/lib/store';
 import { resumePdf } from '@/lib/application-pdf';
 import { assertResumeArtifact, validateResumePdfArtifact } from '@/lib/resume-artifact-validation';
-import { referenceTemplatePack, referenceTemplateProfile } from '@/lib/resume-generation-policy';
+import { finalResumeArtifactState } from '@/lib/resume-generation-policy';
 import { slug } from '@/lib/utils';
 import { PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 
@@ -24,10 +24,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return Response.json({ error: 'This tailored resume is outdated. Regenerate the application pack before downloading.', reasons: packState.reasons }, { status: 409 });
   }
   const baseProfile = profileWithTailoredCourseworkForResume(projectTailoredApplicationProfile(externalApplicationProfile(profileState.profile), job), packState.pack);
-  const resumeProfile = referenceTemplateProfile(baseProfile);
-  const resumePack = referenceTemplatePack(packState.pack);
-  const pdf = resumePdf(resumeProfile, job, resumePack);
-  assertResumeArtifact(await validateResumePdfArtifact(pdf, resumeProfile, resumePack), 'PDF');
+  const final = finalResumeArtifactState(baseProfile, packState.pack);
+  const pdf = resumePdf(final.profile, job, final.pack);
+  assertResumeArtifact(await validateResumePdfArtifact(pdf, final.profile, final.pack), 'PDF');
   const preview = new URL(request.url).searchParams.get('preview') === '1';
   return new Response(new Uint8Array(pdf), {
     headers: {
