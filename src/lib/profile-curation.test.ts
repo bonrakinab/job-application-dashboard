@@ -69,13 +69,14 @@ test('employer-facing profile excludes raw LinkedIn prose and limits resume educ
   ]);
   assert.equal(resumeEducation(safe).length, 2);
   assert.ok(resumeEducation(safe).every((degree) => !/o-level/i.test(degree.degree)));
+  assert.deepEqual(safe.publications, []);
 });
 
-test('supplement selection uses only role-relevant credentials and publications', () => {
+test('supplement selection uses only role-relevant credentials and never publications', () => {
   const profile = curateCandidateProfile(importedProfile());
   const cloudJob: Job = { externalId: '1', source: 'test', sourceKey: 'test', url: 'https://example.com', title: 'Cloud AI Engineer', company: 'Example', description: 'Build cloud machine learning systems on AWS and investigate failure prevention.' };
   const selected = selectApplicationSupplements(cloudJob, profile);
   assert.ok(selected.certifications.some((item) => /AWS Academy/.test(item)));
   assert.ok(selected.certifications.some((item) => /Data Science Professional/.test(item)));
-  assert.equal(selected.publications.length, 1);
+  assert.deepEqual(selected.publications, []);
 });
