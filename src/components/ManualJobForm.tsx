@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { readApiResponse } from '@/lib/api-response';
 import styles from './ManualJobForm.module.css';
 
 type Stage = 'idle' | 'saving' | 'generating';
@@ -26,15 +27,13 @@ export function ManualJobForm({ initialProfileId = 'default' }: { initialProfile
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
       });
-      const saved = await saveResponse.json();
-      if (!saveResponse.ok) throw new Error(saved.error || 'The job could not be saved.');
+      const saved = await readApiResponse<{ jobId: string }>(saveResponse, 'Saving the job');
 
       const jobId = String(saved.jobId);
       setSavedJobId(jobId);
       setStage('generating');
       const packResponse = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/application-pack`, { method: 'POST' });
-      const pack = await packResponse.json();
-      if (!packResponse.ok) throw new Error(pack.error || 'The application pack could not be generated.');
+      await readApiResponse(packResponse, 'Application pack generation');
 
       router.push(`/jobs/${encodeURIComponent(jobId)}`);
     } catch (error) {

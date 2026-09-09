@@ -34,8 +34,17 @@ jobs:
       - name: Regression tests
         run: npm test
 
+      - name: API response errors
+        run: node --import tsx --test src/lib/api-response.test.ts
+
       - name: Production build
         run: npm run build
 
       - name: Production application-pack smoke test
         run: node scripts/smoke-application-pack.mjs
+
+      - name: Isolated deployment PDF parser
+        run: node scripts/smoke-pdf-deployment.mjs
+
+      - name: Production application-pack failure test
+        run: node scripts/smoke-application-pack-errors.mjs

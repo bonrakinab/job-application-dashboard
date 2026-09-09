@@ -1,6 +1,5 @@
 import JSZip from 'jszip';
 import mammoth from 'mammoth';
-import { PDFParse } from 'pdf-parse';
 import type { ApplicationPack, CandidateProfile } from './types';
 import { visibleResumeText } from './resume-content';
 import { normalizeText } from './utils';
@@ -68,6 +67,9 @@ export function validateExtractedResumeText(
 }
 
 export async function validateResumePdfArtifact(pdf: Buffer, profile: CandidateProfile, pack: ApplicationPack) {
+  // Load inside the request's error boundary so runtime/worker initialization
+  // failures are recorded and returned as JSON instead of crashing route import.
+  const { PDFParse } = await import('pdf-parse');
   const parser = new PDFParse({ data: pdf });
   try {
     const parsed = await parser.getText();
