@@ -16,6 +16,11 @@ const MONTHS: Record<string, string> = {
   dec: '12', december: '12',
 };
 
+const DISPLAY_MONTHS: Record<string, string> = {
+  '01': 'Jan', '02': 'Feb', '03': 'March', '04': 'April', '05': 'May', '06': 'June',
+  '07': 'July', '08': 'Aug', '09': 'Sept', '10': 'Oct', '11': 'Nov', '12': 'Dec',
+};
+
 export function formatAtsDate(value?: string) {
   const raw = value?.trim();
   if (!raw) return '';
@@ -43,6 +48,26 @@ export function formatAtsDateRange(start?: string, end?: string) {
   return [formatAtsDate(start), formatAtsDate(end)].filter(Boolean).join(' - ');
 }
 
+/** Human-readable month/year dates used by the uploaded LaTeX reference. */
+export function formatResumeDate(value?: string) {
+  const raw = value?.trim();
+  if (!raw) return '';
+  if (/^(present|current|now)$/i.test(raw)) return 'Present';
+  const qualifier = /\b(expected|anticipated)\b/i.test(raw)
+    ? ` (${raw.match(/\b(expected|anticipated)\b/i)?.[1]})`
+    : '';
+  const cleaned = raw.replace(/[()]/g, ' ').replace(/\b(expected|anticipated)\b/gi, ' ').replace(/\s+/g, ' ').trim();
+  const ats = formatAtsDate(cleaned).replace(/\s+\((?:Expected|Anticipated)\)$/i, '');
+  const numeric = ats.match(/^(0[1-9]|1[0-2])\/((?:19|20)\d{2})$/);
+  if (numeric) return `${DISPLAY_MONTHS[numeric[1]]} ${numeric[2]}${qualifier}`;
+  if (/^(?:19|20)\d{2}$/.test(ats)) return `${ats}${qualifier}`;
+  return `${cleaned}${qualifier}`.trim();
+}
+
+export function formatResumeDateRange(start?: string, end?: string) {
+  return [formatResumeDate(start), formatResumeDate(end)].filter(Boolean).join(' - ');
+}
+
 export function selectedProjectSkills(profile: CandidateProfile, pack: ApplicationPack, projectName: string) {
   const project = (profile.projects ?? []).find((item) => normalizeText(item.name) === normalizeText(projectName));
   const selected = new Set(pack.skills.map(normalizeText));
@@ -57,14 +82,27 @@ export function resumeContactLines(profile: CandidateProfile) {
   return { primary, links };
 }
 
-/** The exact text exposed to an ATS by both generated formats. */
+/** Compact labels shown on the single contact row in the reference resume. */
+export function resumeTemplateContactItems(profile: CandidateProfile) {
+  const primary = [profile.phone, profile.email, profile.location].filter(Boolean) as string[];
+  const links = Object.entries(profile.links ?? {})
+    .filter(([, value]) => value?.trim())
+    .map(([rawLabel]) => {
+      const label = normalizeText(rawLabel);
+      if (label.includes('linkedin')) return profile.name || 'LinkedIn';
+      if (label.includes('github')) return 'GitHub';
+      if (label.includes('portfolio') || label.includes('website')) return 'Portfolio';
+      return rawLabel.replace(/(^|\s)\S/g, (character) => character.toUpperCase());
+    });
+  return [...primary, ...links];
+}
+
+/** The exact text exposed to an ATS by both generated resume formats. */
 export function visibleResumeText(profile: CandidateProfile, pack: ApplicationPack) {
-  const contact = resumeContactLines(profile);
   return [
     profile.name,
     pack.resumeHeadline,
-    ...contact.primary,
-    ...contact.links,
+    ...resumeTemplateContactItems(profile),
     'PROFESSIONAL SUMMARY',
     pack.resumeSummary,
     'EXPERIENCE',
@@ -75,7 +113,7 @@ export function visibleResumeText(profile: CandidateProfile, pack: ApplicationPa
         item.organization,
         item.title,
         source?.location ?? '',
-        formatAtsDateRange(source?.start, source?.end),
+        formatResumeDateRange(source?.start, source?.end),
         ...item.bullets,
       ];
     }),
@@ -94,7 +132,7 @@ export function visibleResumeText(profile: CandidateProfile, pack: ApplicationPa
       degree.institution,
       [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : ''),
       degree.location ?? '',
-      formatAtsDateRange(degree.start, degree.end),
+      formatResumeDateRange(degree.start, degree.end),
       ...(degree.coursework ?? []).slice(0, 2),
     ]),
     ...((pack.certifications ?? []).length ? ['CERTIFICATIONS', ...(pack.certifications ?? [])] : []),
@@ -107,11 +145,11 @@ export function renderedDates(profile: CandidateProfile, pack: ApplicationPack) 
   return [
     ...(profile.experience ?? [])
       .filter((item) => selectedRoles.has(`${normalizeText(item.organization)}|${normalizeText(item.title)}`))
-      .flatMap((item) => [formatAtsDate(item.start), formatAtsDate(item.end)]),
-    ...(profile.degrees ?? []).flatMap((item) => [formatAtsDate(item.start), formatAtsDate(item.end)]),
+      .flatMap((item) => [formatResumeDate(item.start), formatResumeDate(item.end)]),
+    ...(profile.degrees ?? []).flatMap((item) => [formatResumeDate(item.start), formatResumeDate(item.end)]),
   ].filter(Boolean);
 }
 
 export function isStandardAtsDate(value: string) {
-  return /^(?:(?:0[1-9]|1[0-2])\/(?:19|20)\d{2}|(?:19|20)\d{2}|Present)(?: \((?:Expected|Anticipated)\))?$/i.test(value);
+  return /^(?:(?:0[1-9]|1[0-2])\/(?:19|20)\d{2}|(?:19|20)\d{2}|(?:Jan|Feb|Mar(?:ch)?|Apr(?:il)?|May|June?|July?|Aug|Sept?|Oct|Nov|Dec)\s+(?:19|20)\d{2}|Present)(?: \((?:Expected|Anticipated)\))?$/i.test(value);
 }
