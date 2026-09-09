@@ -24,23 +24,48 @@ const STOP_WORDS = new Set([
   'including', 'minimum', 'plus', 'must', 'proficiency', 'proficient', 'familiarity', 'understanding',
 ]);
 
+/**
+ * Conservative equivalence groups. Adjacent tools are deliberately NOT aliases:
+ * AWS is not Azure, Docker is not Kubernetes, React is not Next.js, and Oracle
+ * Fusion is not generic Oracle Cloud. These groups are only terminology aliases.
+ */
 const CONCEPT_GROUPS = [
-  ['javascript', 'js', 'typescript', 'ts', 'node', 'nodejs', 'react', 'nextjs', 'frontend', 'fullstack'],
-  ['python', 'pandas', 'numpy', 'fastapi', 'django', 'flask'],
-  ['sql', 'postgres', 'postgresql', 'mysql', 'database', 'databases', 'relational'],
-  ['aws', 'amazon web services', 'azure', 'gcp', 'google cloud', 'cloud'],
-  ['docker', 'kubernetes', 'k8s', 'container', 'containers', 'containerization'],
-  ['machine learning', 'ml', 'artificial intelligence', 'ai', 'data science', 'predictive modeling'],
-  ['llm', 'large language model', 'generative ai', 'natural language processing', 'nlp', 'rag'],
-  ['analytics', 'business intelligence', 'bi', 'power bi', 'tableau', 'reporting', 'dashboard'],
-  ['oracle fusion', 'oracle cloud', 'oracle erp', 'erp', 'enterprise applications'],
-  ['ci cd', 'continuous integration', 'continuous delivery', 'github actions', 'devops'],
+  ['javascript', 'js'],
+  ['typescript', 'ts'],
+  ['node', 'nodejs', 'node.js'],
+  ['react', 'reactjs', 'react.js'],
+  ['nextjs', 'next.js'],
+  ['python'],
+  ['postgres', 'postgresql'],
+  ['mysql'],
+  ['relational database', 'relational databases'],
+  ['aws', 'amazon web services'],
+  ['azure', 'microsoft azure'],
+  ['gcp', 'google cloud platform'],
+  ['docker', 'containerization', 'containers'],
+  ['kubernetes', 'k8s'],
+  ['machine learning', 'ml'],
+  ['artificial intelligence', 'ai'],
+  ['large language model', 'large language models', 'llm', 'llms'],
+  ['natural language processing', 'nlp'],
+  ['business intelligence', 'bi'],
+  ['power bi'],
+  ['tableau'],
+  ['oracle fusion', 'oracle fusion cloud', 'oracle fusion erp', 'oracle fusion erp cloud', 'oracle erp'],
+  ['enterprise resource planning', 'erp'],
+  ['ci cd', 'ci/cd', 'continuous integration', 'continuous delivery'],
+  ['github actions'],
   ['terraform', 'infrastructure as code', 'iac'],
   ['agile', 'scrum', 'kanban'],
-  ['project management', 'managed projects', 'managing projects', 'project delivery', 'program management'],
+  ['project management', 'project delivery', 'program management'],
   ['customer service', 'customer support', 'client service', 'guest service'],
-  ['leadership', 'team leadership', 'led a team', 'people management'],
-  ['stakeholder', 'stakeholders', 'cross functional', 'communication', 'requirements gathering'],
+  ['leadership', 'team leadership', 'led a team'],
+  ['stakeholder', 'stakeholders', 'stakeholder management', 'cross functional', 'cross-functional'],
+  ['requirements gathering', 'requirements analysis', 'gather requirements', 'gathering requirements'],
+  ['process mapping', 'business process mapping'],
+  ['technical documentation', 'documentation'],
+  ['data integration', 'data integrations'],
+  ['rest api', 'rest apis', 'restful api', 'restful apis'],
 ] as const;
 
 function stem(token: string) {
@@ -51,6 +76,11 @@ function stem(token: string) {
     developed: 'develop', developing: 'develop', development: 'develop',
     designed: 'design', designing: 'design',
     implemented: 'implement', implementing: 'implement', implementation: 'implement',
+    integrated: 'integrate', integrating: 'integrate', integration: 'integrate',
+    gathered: 'gather', gathering: 'gather',
+    coordinated: 'coordinate', coordinating: 'coordinate', coordination: 'coordinate',
+    collaborated: 'collaborate', collaborating: 'collaborate', collaboration: 'collaborate',
+    communicated: 'communicate', communicating: 'communicate', communication: 'communicate',
     led: 'lead', leadership: 'lead',
   };
   if (irregular[normalized]) return irregular[normalized];
@@ -124,6 +154,8 @@ function evidenceRecords(profile: CandidateProfile): EvidenceRecord[] {
   (profile.awards ?? []).forEach((award, index) => records.push({
     id: `AWARD:${index}`, label: 'Honor or award', excerpt: award, text: award, kind: 'award',
   }));
+  // Publications remain available to the master profile but the employer-facing
+  // profile normally strips them before this function is called.
   (profile.publications ?? []).forEach((publication, index) => records.push({
     id: `PUB:${index}`, label: 'Publication', excerpt: publication, text: publication, kind: 'publication',
   }));
@@ -169,7 +201,6 @@ function numericRequirementSupport(requirement: string, profile: CandidateProfil
   if (!match) return null;
   const required = Number(match[1]);
   if (!Number.isFinite(required) || profile.yearsExperience == null) return 'gap' as const;
-  // Total career tenure cannot prove years with a particular technology or duty.
   const subject = normalized.replace(match[0], '').replace(/\b(of|in|with|at least|professional|relevant|experience|minimum|required|must have|a|an|the)\b/g, '').trim();
   if (subject) {
     const records = evidenceRecords(profile);
@@ -185,7 +216,7 @@ function degreeSupport(requirement: string, profile: CandidateProfile): Requirem
   if (!/\b(bachelor|master|msc|phd|doctorate|degree|diploma)\b/i.test(requirement)) return null;
   const level = (text: string) => /\b(ph\.?d|doctorate)\b/i.test(text) ? 4
     : /\b(master|msc|m\.sc)\b/i.test(text) ? 3 : /\b(bachelor|bsc|btech|b\.sc)\b/i.test(text) ? 2
-    : /\bdiploma\b/i.test(text) ? 1 : 0;
+      : /\bdiploma\b/i.test(text) ? 1 : 0;
   const required = level(requirement);
   const fields = tokens(requirement).filter((word) => !/^(bachelor|master|msc|phd|doctorate|degree|diploma|complete|hold|equivalent|related|field|s)$/.test(word));
   const states = (profile.degrees ?? []).map((degree): RequirementSupport => {
@@ -217,6 +248,32 @@ function rankEvidence(requirement: string, records: EvidenceRecord[]) {
   }).sort((a, b) => b.score - a.score);
 }
 
+function uniqueRequirements(values: string[]) {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = normalizeText(value);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function exactTerms(requirement: string, profile: CandidateProfile, match?: MatchScore) {
+  const normalized = normalizeText(requirement);
+  const profileTerms = [
+    ...profile.skills,
+    ...(match?.matchedSkills ?? []),
+    ...(match?.missingSkills ?? []),
+    ...'Java|JavaScript|TypeScript|Node.js|React|Next.js|Python|SQL|PostgreSQL|MySQL|AWS|Azure|GCP|Docker|Kubernetes|Power BI|Tableau|Terraform|Oracle Fusion|Oracle Fusion Cloud|Oracle Fusion ERP|BI Publisher|BIP|XML Publisher|OTBI|OIC|FBDI|BICC|SOAP|REST API|REST APIs|XSLT|XPath|C++|C#|.NET'.split('|'),
+    ...(profile.certifications ?? []),
+  ].filter((term) => term.length >= 2 && containsTerm(normalized, term));
+  const acronyms = requirement.match(/\b[A-Z][A-Z0-9+.#/-]{1,12}\b/g) ?? [];
+  const values = uniqueRequirements([...profileTerms, ...acronyms]);
+  return values.filter((term, index) => !values.some((other, otherIndex) => otherIndex < index
+    && normalizeText(other).split(' ').includes(normalizeText(term))))
+    .slice(0, 8);
+}
+
 function supportStatus(requirement: string, profile: CandidateProfile, ranked: ReturnType<typeof rankEvidence>, match?: MatchScore): RequirementSupport {
   const numeric = numericRequirementSupport(requirement, profile);
   if (numeric) return numeric;
@@ -229,21 +286,12 @@ function supportStatus(requirement: string, profile: CandidateProfile, ranked: R
     return certification && certification.exact >= 0.72 ? 'supported' : certification && certification.exact >= 0.26 ? 'partial' : 'gap';
   }
   const requiredTerms = exactTerms(requirement, profile, match);
-  const missingSpecific = requiredTerms.some((term) => !evidenceRecords(profile).some((record) => containsTerm(record.text, term)));
+  const records = evidenceRecords(profile);
+  const missingSpecific = requiredTerms.some((term) => !records.some((record) => containsTerm(record.text, term)));
   if (missingSpecific) return top.exact >= 0.26 || top.related >= 0.5 ? 'partial' : 'gap';
   if (top.exact >= 0.72 || (top.exact >= 0.34 && top.related >= 0.5) || top.score >= 0.68) return 'supported';
   if (top.exact >= 0.26 || top.related >= 0.5 || top.score >= 0.34) return 'partial';
   return 'gap';
-}
-
-function uniqueRequirements(values: string[]) {
-  const seen = new Set<string>();
-  return values.filter((value) => {
-    const key = normalizeText(value);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 }
 
 function requirementCategory(requirement: string, profile: CandidateProfile): NonNullable<RequirementEvidence['category']> {
@@ -263,33 +311,55 @@ function requirementCategory(requirement: string, profile: CandidateProfile): No
   return 'hard-skill';
 }
 
-function exactTerms(requirement: string, profile: CandidateProfile, match?: MatchScore) {
-  const normalized = normalizeText(requirement);
-  const profileTerms = [
-    ...profile.skills,
-    ...(match?.matchedSkills ?? []),
-    ...(match?.missingSkills ?? []),
-    ...'Java|JavaScript|TypeScript|Node.js|React|Next.js|Python|SQL|PostgreSQL|MySQL|AWS|Azure|GCP|Docker|Kubernetes|Power BI|Tableau|Terraform|Oracle Fusion|C++|C#|.NET'.split('|'),
-    ...(profile.certifications ?? []),
-  ].filter((term) => term.length >= 2 && containsTerm(normalized, term));
-  const acronyms = requirement.match(/\b[A-Z][A-Z0-9+.#/-]{1,12}\b/g) ?? [];
-  const values = uniqueRequirements([...profileTerms, ...acronyms]);
-  return values.filter((term, index) => !values.some((other, otherIndex) => otherIndex < index
-    && normalizeText(other).split(' ').includes(normalizeText(term))))
-    .slice(0, 5);
+const JD_NOISE = /\b(equal opportunity|affirmative action|diversity|inclusion|accommodation|privacy policy|background check|salary range|compensation range|base pay|benefits|health insurance|vacation|paid time off|401k|employment opportunity|applicant privacy|we are an equal|about us|our mission|our values)\b/i;
+const JD_SIGNAL = /\b(?:\d+\+?\s*years?|bachelor|master|degree|experience|proficien|familiar|knowledge|expertise|ability to|responsible for|build|develop|design|implement|manage|support|maintain|analy[sz]e|deliver|coordinate|collaborate|communicate|troubleshoot|administer|configure|integrat|migrat|report|document|oracle|erp|jira|confluence|sql|python|javascript|typescript|react|node|aws|azure|gcp|docker|kubernetes|tableau|power bi|rest|soap|api|database|financial|procurement|security|agile|scrum)\b/i;
+const PREFERRED_SIGNAL = /\b(preferred|nice to have|nice-to-have|bonus|a plus|plus if|ideally|desirable)\b/i;
+
+function cleanJdClause(value: string) {
+  return value
+    .replace(/^\s*(?:[-*•▪◦]+|\d+[.)])\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Fallback requirement extraction used whenever model-based analysis is absent
+ * or failed. It intentionally keeps only compact, requirement-like JD clauses;
+ * it is not a generative interpretation of the posting.
+ */
+export function deterministicJobRequirements(job: Job) {
+  const rawClauses = job.description
+    .replace(/\r/g, '\n')
+    .split(/\n+|(?<=[.!?;])\s+/)
+    .map(cleanJdClause)
+    .filter((clause) => clause.length >= 12 && clause.length <= 260)
+    .filter((clause) => !JD_NOISE.test(clause) && JD_SIGNAL.test(clause));
+
+  const seen = new Set<string>();
+  return rawClauses.filter((clause) => {
+    const key = normalizeText(clause).replace(/[^a-z0-9+#. ]/g, '');
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 18).map((requirement) => ({
+    requirement,
+    importance: PREFERRED_SIGNAL.test(requirement) ? 'preferred' as const : 'must-have' as const,
+  }));
 }
 
 export function buildRequirementEvidenceMatrix(
-  _job: Job,
+  job: Job,
   profile: CandidateProfile,
   match?: MatchScore,
 ): RequirementEvidence[] {
   const records = evidenceRecords(profile);
-  const requirements = [
+  const analyzed = [
     ...uniqueRequirements(match?.mustHave ?? []).map((requirement) => ({ requirement, importance: 'must-have' as const })),
-    ...uniqueRequirements(match?.preferred ?? []).filter((requirement) => !(match?.mustHave ?? []).some((must) => normalizeText(must) === normalizeText(requirement)))
+    ...uniqueRequirements(match?.preferred ?? [])
+      .filter((requirement) => !(match?.mustHave ?? []).some((must) => normalizeText(must) === normalizeText(requirement)))
       .map((requirement) => ({ requirement, importance: 'preferred' as const })),
   ];
+  const requirements = analyzed.length ? analyzed : deterministicJobRequirements(job);
 
   return requirements.slice(0, 18).map(({ requirement, importance }) => {
     const ranked = rankEvidence(requirement, records);
