@@ -16,7 +16,7 @@ import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-a
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { buildRequirementEvidenceMatrix } from '@/lib/requirement-evidence';
 import { assertResumeArtifact, validateResumeDocxArtifact, validateResumePdfArtifact } from '@/lib/resume-artifact-validation';
-import { referenceTemplatePack, referenceTemplateProfile, strengthenResumeForJob } from '@/lib/resume-generation-policy';
+import { finalResumeArtifactState, strengthenResumeForJob } from '@/lib/resume-generation-policy';
 import { attachApplicationPackGenerationMeta } from '@/lib/resume-tailoring';
 import {
   finishApplicationPackRun,
@@ -95,6 +95,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       profileId,
       manageUrl: profileId === PART_TIME_PROFILE_ID ? '/part-time-jobs/profile' : '/settings',
     }, { status: 409 });
+
     runId = await safeStartRun(id, profileId);
     const verification = await verifyJobAvailability(job);
     await saveJobValidity(id, verification);
@@ -143,6 +144,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     }
 
     const applicationProfile = projectTailoredApplicationProfile(employerProfile, job);
+    // This matrix now falls back to literal JD clauses when AI analysis is
+    // unavailable, so the same evidence/keyword process applies to every source.
     const requirementEvidence = buildRequirementEvidenceMatrix(job, applicationProfile, match);
     await safeRecordStep(runId, 'evidence_alignment', {
       requirements: requirementEvidence.length,
@@ -150,6 +153,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       partial: requirementEvidence.filter((item) => item.support === 'partial').length,
       gaps: requirementEvidence.filter((item) => item.support === 'gap').length,
     });
+
     const generation = await createApplicationPack(job, applicationProfile, match, requirementEvidence);
     await safeRecordStep(runId, 'document_generation', {
       provider: generation.providerUsed,
@@ -176,13 +180,27 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       requirementEvidence,
     };
     const documentProfile = profileWithTailoredCourseworkForResume(applicationProfile, courseworkPack);
-    const optimized = optimizeApplicationPackForAts(job, documentProfile, courseworkPack, match);
-    const strengthenedPack = strengthenResumeForJob(job, documentProfile, optimized.pack, courseworkPack, requirementEvidence);
+
+    // Optimize the exact content surface that the employer will receive. Hidden
+    // headline/coursework/project-tech fields can no longer inflate the ATS score.
+    const optimizerState = finalResumeArtifactState(documentProfile, courseworkPack);
+    const optimized = optimizeApplicationPackForAts(job, optimizerState.profile, optimizerState.pack, match);
+    const strengthenedPack = strengthenResumeForJob(
+      job,
+      optimizerState.profile,
+      optimized.pack,
+      optimizerState.pack,
+      requirementEvidence,
+    );
+    const reconciledRequirements = strengthenedPack.requirementEvidence?.length
+      ? strengthenedPack.requirementEvidence
+      : requirementEvidence;
     await safeRecordStep(runId, 'ats_optimization', {
       score: optimized.score.overall,
       status: optimized.score.status,
       attempts: strengthenedPack.atsOptimization?.attempts ?? 0,
-      supportedExactKeywords: strengthenedPack.skills.filter((skill) => requirementEvidence.some((item) => item.support === 'supported' && (item.exactTerms ?? []).some((term) => term.toLowerCase() === skill.toLowerCase()))).length,
+      supportedExactKeywords: strengthenedPack.skills.filter((skill) => reconciledRequirements.some((item) => item.support === 'supported'
+        && (item.exactTerms ?? []).some((term) => term.toLowerCase() === skill.toLowerCase()))).length,
     });
 
     let research = await getCompanyIntelligence(job.company);
@@ -208,30 +226,35 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     }, applicationProfile, job, match);
     if (verifiedPack.claimVerification?.status !== 'pass') {
       await safeFinishRun(runId, 'blocked', 'Unresolved source-evidence checks');
-      return Response.json({ error: 'Some claims could not be verified against your résumé. Review the source profile before regenerating.', claims: verifiedPack.claimsAudit.filter((claim) => claim.status === 'review') }, { status: 422 });
+      return Response.json({
+        error: 'Some claims could not be verified against your résumé. Review the source profile before regenerating.',
+        claims: verifiedPack.claimsAudit.filter((claim) => claim.status === 'review'),
+      }, { status: 422 });
     }
+
     const renderedProfile = profileWithTailoredCourseworkForResume(applicationProfile, verifiedPack);
-    const finalScore = scoreTailoredResumeWithCoursework(job, renderedProfile, verifiedPack, match);
-    const finalOptimizedPack = verifiedPack.atsOptimization ? {
-      ...verifiedPack,
+    const verifiedState = finalResumeArtifactState(renderedProfile, verifiedPack);
+    const finalScore = scoreTailoredResumeWithCoursework(job, verifiedState.profile, verifiedState.pack, match);
+    const scoredPack = verifiedState.pack.atsOptimization ? {
+      ...verifiedState.pack,
       publications: [] as string[],
       atsOptimization: {
-        ...verifiedPack.atsOptimization,
+        ...verifiedState.pack.atsOptimization,
         finalScore: finalScore.overall,
         status: finalScore.status,
-        truthfulCeilingReached: !finalScore.eligibleToApply && verifiedPack.atsOptimization.attempts >= 3,
+        truthfulCeilingReached: !finalScore.eligibleToApply && verifiedState.pack.atsOptimization.attempts >= 3,
       },
-    } : { ...verifiedPack, publications: [] as string[] };
+    } : { ...verifiedState.pack, publications: [] as string[] };
+    const finalState = finalResumeArtifactState(renderedProfile, scoredPack);
+    const finalRequirements = finalState.pack.requirementEvidence?.length
+      ? finalState.pack.requirementEvidence
+      : reconciledRequirements;
 
-    // Render only the fields present in the user's uploaded reference template.
-    // The master profile remains untouched and can still retain richer internal data.
-    const exportProfile = referenceTemplateProfile(renderedProfile);
-    const exportPack = referenceTemplatePack(finalOptimizedPack);
-    const pdf = resumePdf(exportProfile, job, exportPack);
-    const docx = await resumeDocx(exportProfile, job, exportPack);
+    const pdf = resumePdf(finalState.profile, job, finalState.pack);
+    const docx = await resumeDocx(finalState.profile, job, finalState.pack);
     const [pdfValidation, docxValidation] = await Promise.all([
-      validateResumePdfArtifact(pdf, exportProfile, exportPack),
-      validateResumeDocxArtifact(docx, exportProfile, exportPack),
+      validateResumePdfArtifact(pdf, finalState.profile, finalState.pack),
+      validateResumeDocxArtifact(docx, finalState.profile, finalState.pack),
     ]);
     assertResumeArtifact(pdfValidation, 'PDF');
     assertResumeArtifact(docxValidation, 'DOCX');
@@ -247,15 +270,19 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       replacedFields: verifiedPack.claimVerification?.replacedFields ?? [],
       replacedBullets: verifiedPack.claimVerification?.replacedBullets ?? 0,
     });
+
+    // Save the same employer-facing pack used for preview/download. There is no
+    // second raw resume representation that can drift from the final artifact.
     const pack = attachApplicationPackGenerationMeta({
-      ...finalOptimizedPack,
+      ...finalState.pack,
+      publications: [] as string[],
       artifactValidation: {
         validatedAt: new Date().toISOString(),
         pdfParseCoverage: pdfValidation.parseCoverage,
         docxParseCoverage: docxValidation.parseCoverage,
         sectionOrderValid: pdfValidation.sectionOrderValid && docxValidation.sectionOrderValid,
       },
-      requirementEvidence,
+      requirementEvidence: finalRequirements,
     }, {
       model: generation.model,
       provider: generation.providerUsed,
@@ -276,7 +303,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       ats: finalScore.overall,
       atsStatus: finalScore.status,
       gapAware: eligibility.conditional,
-      remainingBlockers: optimized.score.hardBlockers,
+      remainingBlockers: finalScore.hardBlockers,
       at: new Date().toISOString(),
     });
     return Response.json({
