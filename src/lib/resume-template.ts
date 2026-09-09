@@ -1,9 +1,9 @@
 /**
- * Canonical layout constants for the uploaded one-page LaTeX resume reference.
- * The PDF renderer consumes this module so template changes are versioned and
- * can invalidate previously generated application packs.
+ * Canonical layout constants for the uploaded one-page resume reference.
+ * Template-version changes deliberately invalidate stored application packs so
+ * the dashboard never presents an older layout as the current resume.
  */
-export const RESUME_TEMPLATE_VERSION = 'ats-single-column.v9-docx-grounded';
+export const RESUME_TEMPLATE_VERSION = 'arnob-reference-one-page.v10';
 
 export const RESUME_PAGE = {
   width: 595.28,
@@ -12,9 +12,8 @@ export const RESUME_PAGE = {
   bottom: 24,
 } as const;
 
-// Kept for backwards compatibility with the legacy renderer. The active
-// application renderer chooses the largest safe scale while preserving every
-// evidence item selected for the one-page pack.
+// The PDF renderer tries the roomiest version first and scales only as much as
+// needed to preserve every evidence item selected for the one-page pack.
 export const RESUME_LAYOUT_ATTEMPTS = [
   { scale: 1.12, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
   { scale: 1.06, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
