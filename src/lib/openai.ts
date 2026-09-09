@@ -111,7 +111,10 @@ const researchSchema = {
 
 export async function analyzeJobWithAI(job: Job, profile: CandidateProfile): Promise<MatchScore> {
   const baseline = deterministicScore(job, profile);
-  if (baseline.blockers.length || !process.env.OPENAI_API_KEY) return baseline;
+  // Detailed requirement extraction is still valuable for gap-aware tailoring
+  // when a deterministic hard blocker exists. Baseline blockers remain merged
+  // into the result and continue to cap the recommendation/overall score.
+  if (!process.env.OPENAI_API_KEY) return baseline;
   const model = process.env.OPENAI_MODEL_JOB_ANALYSIS || 'gpt-5.6-luna';
   try {
     const result = await structuredResponse<Omit<MatchScore, 'model'>>({
