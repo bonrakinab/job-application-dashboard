@@ -62,3 +62,38 @@ test('related tools, total tenure, and a lower degree cannot satisfy specific mu
   assert.ok(matrix.every((item) => item.support !== 'supported'), JSON.stringify(matrix));
   assert.equal(matrix.find((item) => item.requirement === 'AWS certification')?.category, 'certification');
 });
+
+test('literal JD requirements are extracted when AI analysis has no requirements', () => {
+  const candidate: CandidateProfile = {
+    ...profile,
+    skills: ['Oracle Fusion ERP Cloud', 'SQL'],
+    experience: [{
+      organization: 'Example Corp',
+      title: 'ERP Analyst',
+      bullets: ['Coordinated with finance stakeholders and gathered business requirements for Oracle ERP changes.'],
+      skills: ['Oracle Fusion ERP Cloud'],
+    }],
+  };
+  const fallbackJob: Job = {
+    ...job,
+    source: 'himalayas',
+    title: 'Oracle ERP Analyst',
+    description: [
+      'Requirements',
+      '- Stakeholder management for financial systems and ERP changes.',
+      '- Requirements gathering with finance teams.',
+      '- Kubernetes administration for production workloads.',
+      'We are an equal opportunity employer.',
+    ].join('\n'),
+  };
+  const deterministicMatch: MatchScore = {
+    ...match,
+    mustHave: [], preferred: [], matchedSkills: [], missingSkills: [], gaps: [], model: 'deterministic-v3',
+  };
+  const matrix = buildRequirementEvidenceMatrix(fallbackJob, candidate, deterministicMatch);
+  assert.ok(matrix.length >= 3, JSON.stringify(matrix));
+  assert.equal(matrix.find((item) => /stakeholder management/i.test(item.requirement))?.support, 'supported');
+  assert.equal(matrix.find((item) => /requirements gathering/i.test(item.requirement))?.support, 'supported');
+  assert.equal(matrix.find((item) => /kubernetes/i.test(item.requirement))?.support, 'gap');
+  assert.ok(!matrix.some((item) => /equal opportunity/i.test(item.requirement)));
+});
