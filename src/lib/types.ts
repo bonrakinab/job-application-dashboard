@@ -226,6 +226,8 @@ export type RequirementSupport = 'supported' | 'partial' | 'gap';
 export interface RequirementEvidence {
   requirement: string;
   importance: 'must-have' | 'preferred';
+  category?: 'hard-skill' | 'tool' | 'certification' | 'education' | 'experience' | 'responsibility' | 'soft-skill' | 'eligibility';
+  exactTerms?: string[];
   support: RequirementSupport;
   confidence: number;
   evidence: Array<{
@@ -241,6 +243,7 @@ export interface ClaimVerificationSummary {
   checkedClaims: number;
   verifiedClaims: number;
   replacedFields: Array<'resumeSummary' | 'coverLetter' | 'outreachMessage'>;
+  replacedBullets?: number;
   warnings: string[];
 }
 
@@ -253,10 +256,14 @@ export interface ApplicationPack {
     organization: string;
     title: string;
     bullets: string[];
+    /** Source evidence IDs parallel to bullets; retained for claim auditing, never rendered. */
+    bulletEvidence?: string[][];
   }>;
   projects: Array<{
     name: string;
     bullets: string[];
+    /** Source evidence IDs parallel to bullets; retained for claim auditing, never rendered. */
+    bulletEvidence?: string[][];
   }>;
   education?: Array<{
     institution: string;
@@ -279,6 +286,12 @@ export interface ApplicationPack {
   }>;
   requirementEvidence?: RequirementEvidence[];
   claimVerification?: ClaimVerificationSummary;
+  artifactValidation?: {
+    validatedAt: string;
+    pdfParseCoverage: number;
+    docxParseCoverage: number;
+    sectionOrderValid: boolean;
+  };
   atsOptimization?: AtsOptimizationMeta;
   generationMeta?: ApplicationPackGenerationMeta;
 }

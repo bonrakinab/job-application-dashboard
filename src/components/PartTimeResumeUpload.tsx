@@ -54,6 +54,6 @@ export function PartTimeResumeUpload({ hasProfile }: { hasProfile: boolean }) {
         {busy ? 'Reading résumé…' : hasProfile ? 'Replace and import' : 'Import résumé'}
       </button>
     </div>
-    <p className="small muted">{message || 'The file is parsed into verified profile evidence. The original file is not retained.'}</p>
+    <p className="small muted">{message || 'The file is parsed into verified profile evidence. Its original layout is not copied; generated résumés are rebuilt in the same ATS-safe single-column DOCX/PDF format. The original file is not retained.'}</p>
   </section>;
 }

@@ -1,3 +1,4 @@
+import { containsTerm } from './resume-evidence-guards';
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
 import { normalizeText } from './utils';
 import { resumeEducation } from './profile-curation';
@@ -97,7 +98,7 @@ function courseScore(course: string, jobContext: string) {
   for (const phrase of aliasesFor(course)) {
     const normalizedPhrase = normalizeText(phrase);
     if (!normalizedPhrase) continue;
-    if (normalizedContext.includes(normalizedPhrase)) score += normalizedPhrase.includes(' ') ? 14 : 8;
+    if (containsTerm(normalizedContext, normalizedPhrase)) score += normalizedPhrase.includes(' ') ? 14 : 8;
     const phraseStems = [...new Set(words(phrase).map(stem))];
     const hits = phraseStems.filter((token) => contextStems.has(token)).length;
     score += hits * 2.5;

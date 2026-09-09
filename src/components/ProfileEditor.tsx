@@ -203,8 +203,8 @@ export function ProfileEditor({
           <div className="form-grid">
             <label className="field-label">Job title<input className="input" value={item.title} onChange={(event) => updateExperience(index, { title: event.target.value })} /></label>
             <label className="field-label">Company<input className="input" value={item.organization} onChange={(event) => updateExperience(index, { organization: event.target.value })} /></label>
-            <label className="field-label">Start date<input className="input" value={item.start ?? ''} onChange={(event) => updateExperience(index, { start: event.target.value })} placeholder="Sep 2023" /></label>
-            <label className="field-label">End date<input className="input" value={item.end ?? ''} onChange={(event) => updateExperience(index, { end: event.target.value })} placeholder="Jun 2024 or Present" /></label>
+            <label className="field-label">Start date<input className="input" value={item.start ?? ''} onChange={(event) => updateExperience(index, { start: event.target.value })} placeholder="09/2023" /></label>
+            <label className="field-label">End date<input className="input" value={item.end ?? ''} onChange={(event) => updateExperience(index, { end: event.target.value })} placeholder="06/2024 or Present" /></label>
             <label className="field-label wide">Location<input className="input" value={item.location ?? ''} onChange={(event) => updateExperience(index, { location: event.target.value })} /></label>
             <label className="field-label wide">Description and achievements<textarea className="input" rows={5} value={item.bullets.join('\n')} onChange={(event) => updateExperience(index, { bullets: event.target.value.split('\n') })} placeholder="One responsibility or achievement per line" /></label>
             <label className="field-label wide">Skills used<textarea className="input" rows={3} value={(item.skills ?? []).join('\n')} onChange={(event) => updateExperience(index, { skills: event.target.value.split('\n') })} placeholder="One skill per line" /></label>

@@ -3,16 +3,19 @@ import { applicationPackEligibility } from '@/lib/application-pack-eligibility';
 import { withPersistentApplicationSkills } from '@/lib/application-skill-policy';
 import { getCandidateProfileStateOptional } from '@/lib/application-pack-state';
 import { externalApplicationProfile } from '@/lib/application-visibility';
+import { resumeDocx } from '@/lib/application-docx';
+import { resumePdf } from '@/lib/application-pdf';
 import { scoreTailoredResumeWithCoursework } from '@/lib/ats-coursework';
 import { optimizeApplicationPackForAts } from '@/lib/ats-optimizer';
 import { verifyApplicationPackClaims } from '@/lib/claim-verification';
 import { buildProfessionalFallbackCoverLetter, hasUsableJobDescription } from '@/lib/cover-letter-tailoring';
-import { tailorRelevantCoursework } from '@/lib/education-tailoring';
+import { profileWithTailoredCourseworkForResume, tailorRelevantCoursework } from '@/lib/education-tailoring';
 import { isJobClosed, verifyJobAvailability } from '@/lib/job-validity';
 import { DEFAULT_PROFILE_ID, PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-ai';
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { buildRequirementEvidenceMatrix } from '@/lib/requirement-evidence';
+import { assertResumeArtifact, validateResumeDocxArtifact, validateResumePdfArtifact } from '@/lib/resume-artifact-validation';
 import { attachApplicationPackGenerationMeta } from '@/lib/resume-tailoring';
 import {
   finishApplicationPackRun,
@@ -164,8 +167,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const courseworkPack = {
       ...skillsPolicyPack,
       education: tailorRelevantCoursework(job, applicationProfile, match),
+      requirementEvidence,
     };
-    const optimized = optimizeApplicationPackForAts(job, applicationProfile, courseworkPack, match);
+    const documentProfile = profileWithTailoredCourseworkForResume(applicationProfile, courseworkPack);
+    const optimized = optimizeApplicationPackForAts(job, documentProfile, courseworkPack, match);
     await safeRecordStep(runId, 'ats_optimization', {
       score: optimized.score.overall,
       status: optimized.score.status,
@@ -193,7 +198,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       coverLetter: buildProfessionalFallbackCoverLetter(professionalPack, applicationProfile, job, match, research),
       outreachMessage: deterministic.outreachMessage,
     }, applicationProfile, job, match);
-    const finalScore = scoreTailoredResumeWithCoursework(job, applicationProfile, verifiedPack, match);
+    if (verifiedPack.claimVerification?.status !== 'pass') {
+      await safeFinishRun(runId, 'blocked', 'Unresolved source-evidence checks');
+      return Response.json({ error: 'Some claims could not be verified against your résumé. Review the source profile before regenerating.', claims: verifiedPack.claimsAudit.filter((claim) => claim.status === 'review') }, { status: 422 });
+    }
+    const renderedProfile = profileWithTailoredCourseworkForResume(applicationProfile, verifiedPack);
+    const finalScore = scoreTailoredResumeWithCoursework(job, renderedProfile, verifiedPack, match);
     const finalOptimizedPack = verifiedPack.atsOptimization ? {
       ...verifiedPack,
       atsOptimization: {
@@ -203,13 +213,34 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
         truthfulCeilingReached: !finalScore.eligibleToApply && verifiedPack.atsOptimization.attempts >= 3,
       },
     } : verifiedPack;
+    const pdf = resumePdf(renderedProfile, job, finalOptimizedPack);
+    const docx = await resumeDocx(renderedProfile, job, finalOptimizedPack);
+    const [pdfValidation, docxValidation] = await Promise.all([
+      validateResumePdfArtifact(pdf, renderedProfile, finalOptimizedPack),
+      validateResumeDocxArtifact(docx, renderedProfile, finalOptimizedPack),
+    ]);
+    assertResumeArtifact(pdfValidation, 'PDF');
+    assertResumeArtifact(docxValidation, 'DOCX');
+    await safeRecordStep(runId, 'artifact_validation', {
+      pdfParseCoverage: pdfValidation.parseCoverage,
+      docxParseCoverage: docxValidation.parseCoverage,
+      sectionOrderValid: pdfValidation.sectionOrderValid && docxValidation.sectionOrderValid,
+      structuralIssues: [...pdfValidation.structuralIssues, ...docxValidation.structuralIssues],
+    });
     await safeRecordStep(runId, 'claim_verification', {
       status: verifiedPack.claimVerification?.status ?? 'review',
       checkedClaims: verifiedPack.claimVerification?.checkedClaims ?? 0,
       replacedFields: verifiedPack.claimVerification?.replacedFields ?? [],
+      replacedBullets: verifiedPack.claimVerification?.replacedBullets ?? 0,
     });
     const pack = attachApplicationPackGenerationMeta({
       ...finalOptimizedPack,
+      artifactValidation: {
+        validatedAt: new Date().toISOString(),
+        pdfParseCoverage: pdfValidation.parseCoverage,
+        docxParseCoverage: docxValidation.parseCoverage,
+        sectionOrderValid: pdfValidation.sectionOrderValid && docxValidation.sectionOrderValid,
+      },
       requirementEvidence,
     }, {
       model: generation.model,

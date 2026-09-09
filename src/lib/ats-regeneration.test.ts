@@ -31,7 +31,7 @@ const pack: ApplicationPack = {
   coverLetter: 'Dear Hiring Manager,\n\nApplication.\n\nSincerely,\nCandidate', outreachMessage: 'Hello', interviewThemes: [], claimsAudit: [],
 };
 
-test('deterministic match without extracted requirements cannot receive ATS PASS', () => {
+test('deterministic match without extracted requirements cannot reach the ATS target', () => {
   const match: MatchScore = {
     overall: 90, skills: 95, experience: 90, education: 90, domain: 90, location: 100,
     recommendation: 'exceptional', blockers: [], strengths: ['TypeScript', 'SQL'], gaps: [],

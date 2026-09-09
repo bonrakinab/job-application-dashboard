@@ -1,3 +1,4 @@
+import { containsTerm } from './resume-evidence-guards';
 import { ATS_PASS_SCORE, type AtsReadinessScore } from './ats-score';
 import { scoreTailoredResumeWithCoursework } from './ats-coursework';
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
@@ -46,7 +47,7 @@ function relevance(value: string, jobContext: string) {
   const normalizedValue = normalizeText(value);
   const normalizedTarget = normalizeText(jobContext);
   for (const phrase of normalizedValue.split(/[,;|()]/).map((part) => part.trim()).filter((part) => part.length >= 5)) {
-    if (normalizedTarget.includes(phrase)) score += 3;
+    if (containsTerm(normalizedTarget, phrase)) score += 3;
   }
   return score;
 }
@@ -70,7 +71,7 @@ function expectedDegreeLine(profile: CandidateProfile) {
 function supportedJobSkills(job: Job, profile: CandidateProfile, match?: MatchScore) {
   const jd = normalizeText(`${job.title} ${job.description}`);
   const allowed = new Map(profile.skills.map((skill) => [normalizeText(skill), skill]));
-  const exact = profile.skills.filter((skill) => jd.includes(normalizeText(skill)));
+  const exact = profile.skills.filter((skill) => containsTerm(jd, skill));
   const matched = (match?.matchedSkills ?? [])
     .map((skill) => allowed.get(normalizeText(skill)))
     .filter((skill): skill is string => Boolean(skill));
@@ -96,12 +97,16 @@ function targetedHeadline(job: Job, skills: string[]) {
   return [job.title, ...skills.slice(0, 3)].filter(Boolean).join(' | ').slice(0, 140);
 }
 
-function rankBullets(bullets: string[], parentSkills: string[], jobContext: string, limit: number) {
+function rankBullets(
+  bullets: Array<{ text: string; evidenceIds: string[] }>,
+  parentSkills: string[],
+  jobContext: string,
+  limit: number,
+) {
   return bullets
-    .map((text, index) => ({ text, index, score: relevance(`${text} ${parentSkills.join(' ')}`, jobContext) }))
+    .map((item, index) => ({ ...item, index, score: relevance(`${item.text} ${parentSkills.join(' ')}`, jobContext) }))
     .sort((a, b) => b.score - a.score || a.index - b.index)
-    .slice(0, limit)
-    .map((item) => item.text);
+    .slice(0, limit);
 }
 
 function experienceKey(organization: string, title: string) {
@@ -118,19 +123,26 @@ function optimizedExperience(profile: CandidateProfile, pack: ApplicationPack, j
   return pack.experience
     .map((selected, selectedIndex) => {
       const source = sources.get(experienceKey(selected.organization, selected.title));
-      const sourceBullets = source?.item.bullets ?? selected.bullets;
+      const selectedByEvidence = new Map((selected.bulletEvidence ?? []).map((ids, index) => [ids[0], selected.bullets[index]]));
+      const sourceBullets = source
+        ? source.item.bullets.map((text, bulletIndex) => {
+          const evidenceId = `EXP:${source.sourceIndex}:${bulletIndex}`;
+          return { text: selectedByEvidence.get(evidenceId) ?? text, evidenceIds: [evidenceId] };
+        })
+        : selected.bullets.map((text, index) => ({ text, evidenceIds: selected.bulletEvidence?.[index] ?? [] }));
       const sourceSkills = source?.item.skills ?? [];
       const bullets = rankBullets(sourceBullets, sourceSkills, jobContext, limit);
       const score = relevance([
         selected.organization,
         selected.title,
         ...sourceSkills,
-        ...bullets,
+        ...bullets.map((item) => item.text),
       ].join(' '), jobContext);
       return {
         organization: selected.organization,
         title: selected.title,
-        bullets,
+        bullets: bullets.map((item) => item.text),
+        bulletEvidence: bullets.map((item) => item.evidenceIds),
         score,
         selectedIndex,
         sourceIndex: source?.sourceIndex ?? Number.MAX_SAFE_INTEGER,
@@ -140,10 +152,11 @@ function optimizedExperience(profile: CandidateProfile, pack: ApplicationPack, j
     .sort((a, b) => b.score - a.score || a.selectedIndex - b.selectedIndex)
     .slice(0, 3)
     .sort((a, b) => a.sourceIndex - b.sourceIndex || a.selectedIndex - b.selectedIndex)
-    .map(({ organization, title, bullets }) => ({ organization, title, bullets }));
+    .map(({ organization, title, bullets, bulletEvidence }) => ({ organization, title, bullets, bulletEvidence }));
 }
 
-function optimizedProjects(profile: CandidateProfile, jobContext: string, attempt: number) {
+function optimizedProjects(profile: CandidateProfile, pack: ApplicationPack, jobContext: string, attempt: number) {
+  const selectedByName = new Map(pack.projects.map((project) => [normalizeText(project.name), project]));
   const ranked = (profile.projects ?? []).map((project, index) => ({
     project,
     index,
@@ -156,10 +169,20 @@ function optimizedProjects(profile: CandidateProfile, jobContext: string, attemp
   });
 
   const maxProjects = attempt >= 2 ? 3 : 2;
-  return ranked.slice(0, maxProjects).flatMap(({ project }) => {
-    const bullets = rankBullets(project.bullets ?? [], project.skills ?? [], jobContext, 2);
+  return ranked.slice(0, maxProjects).flatMap(({ project, index }) => {
+    const selected = selectedByName.get(normalizeText(project.name));
+    const selectedByEvidence = new Map((selected?.bulletEvidence ?? []).map((ids, bulletIndex) => [ids[0], selected?.bullets[bulletIndex]]));
+    const sourceBullets = (project.bullets ?? []).map((text, bulletIndex) => {
+      const evidenceId = `PROJ:${index}:${bulletIndex}`;
+      return { text: selectedByEvidence.get(evidenceId) ?? text, evidenceIds: [evidenceId] };
+    });
+    const bullets = rankBullets(sourceBullets, project.skills ?? [], jobContext, 2);
     if (!bullets.length) return [];
-    return [{ name: project.name, bullets }];
+    return [{
+      name: project.name,
+      bullets: bullets.map((item) => item.text),
+      bulletEvidence: bullets.map((item) => item.evidenceIds),
+    }];
   });
 }
 
@@ -180,12 +203,12 @@ function retunePack(job: Job, profile: CandidateProfile, pack: ApplicationPack, 
     // ATS retuning may improve bullet order, but it must never replace the
     // evidence shortlist with every role in the master LinkedIn history.
     experience: optimizedExperience(profile, pack, jobContext, attempt),
-    projects: optimizedProjects(profile, jobContext, attempt),
+    projects: optimizedProjects(profile, pack, jobContext, attempt),
   };
 }
 
 function optimizationNotes(score: AtsReadinessScore) {
-  if (score.eligibleToApply) return ['ATS pass standard reached using only verified candidate evidence.'];
+  if (score.targetReached) return ['Internal ATS optimization target reached using only verified candidate evidence.'];
   if (score.hardBlockers.length) return score.hardBlockers.slice(0, 4);
   if (score.unsupportedMustHaves.length) {
     return score.unsupportedMustHaves.slice(0, 4).map((item) => `Unsupported mandatory requirement: ${item}`);
@@ -193,7 +216,7 @@ function optimizationNotes(score: AtsReadinessScore) {
   if (score.missingKeywords.length) {
     return score.missingKeywords.slice(0, 6).map((item) => `Remaining truthful gap: ${item}`);
   }
-  return ['The verified evidence was fully re-ranked and retargeted, but the internal 90-point ATS threshold was not reached.'];
+  return ['The verified evidence was fully re-ranked and retargeted, but the internal 90-point optimization target was not reached.'];
 }
 
 export function optimizeApplicationPackForAts(

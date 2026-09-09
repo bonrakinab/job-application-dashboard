@@ -112,8 +112,8 @@ test('materializer rejects invented skills, invented evidence IDs, and completed
     resumeHeadline: 'Software Engineer | Kubernetes',
     resumeSummary: 'MSc Computer Science graduate with Kubernetes and TypeScript experience.',
     skills: ['TypeScript', 'Kubernetes', 'Next.js'],
-    experience: [{ organization: 'GAOTek Inc.', title: 'Software Development Intern - Team Leader', evidenceIds: ['EXP:99:99'] }],
-    projects: [{ name: 'Flowdesk - Full-Stack Family CRM', evidenceIds: ['PROJ:0:0'] }],
+    experience: [{ organization: 'GAOTek Inc.', title: 'Software Development Intern - Team Leader', evidenceIds: ['EXP:99:99'], bulletRewrites: [] }],
+    projects: [{ name: 'Flowdesk - Full-Stack Family CRM', evidenceIds: ['PROJ:0:0'], bulletRewrites: [] }],
     coverLetter: 'Dear Hiring Manager, I am an MSc graduate with Kubernetes experience and would like to join your software team. Thank you for considering my application. Sincerely, Arnob Banik',
     outreachMessage: 'MSc graduate with Kubernetes experience interested in the role.',
     interviewThemes: ['TypeScript application development'],
@@ -130,6 +130,29 @@ test('materializer rejects invented skills, invented evidence IDs, and completed
   assert.deepEqual(pack.projects[0]?.bullets, ['Designed and shipped a production household CRM with authenticated API routes and multi-user data isolation.']);
   assert.equal(pack.claimsAudit.length, 0);
   assert.ok(pack.experience.find((item) => item.organization === 'GAOTek Inc.')?.bullets.length);
+});
+
+test('materializer accepts only locally grounded JD wording in rewritten bullets', () => {
+  const grounded = deterministicTailoringPlan(softwareJob, profile);
+  const flowdesk = grounded.projects.find((item) => item.name === 'Flowdesk - Full-Stack Family CRM')!;
+  flowdesk.evidenceIds = ['PROJ:0:0'];
+  flowdesk.bulletRewrites = [{
+    evidenceId: 'PROJ:0:0',
+    text: 'Designed and shipped a production household CRM using authenticated REST APIs and multi-user data isolation.',
+  }];
+  const accepted = materializeApplicationPack(grounded, profile, softwareJob);
+  assert.match(accepted.projects.find((item) => item.name === flowdesk.name)?.bullets[0] ?? '', /REST APIs/);
+  assert.deepEqual(accepted.projects.find((item) => item.name === flowdesk.name)?.bulletEvidence?.[0], ['PROJ:0:0']);
+
+  flowdesk.bulletRewrites = [{
+    evidenceId: 'PROJ:0:0',
+    text: 'Designed and deployed Kubernetes services that improved availability by 99%.',
+  }];
+  const rejected = materializeApplicationPack(grounded, profile, softwareJob);
+  assert.equal(
+    rejected.projects.find((item) => item.name === flowdesk.name)?.bullets[0],
+    profile.projects?.[0].bullets?.[0],
+  );
 });
 
 test('pack versions mark old profile/template generations as stale', () => {

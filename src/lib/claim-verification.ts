@@ -1,3 +1,4 @@
+import { containsTerm, groundedRewriteIssue } from './resume-evidence-guards';
 import type { ApplicationPack, CandidateProfile, Job, MatchScore } from './types';
 import { normalizeText } from './utils';
 
@@ -9,7 +10,7 @@ type ClaimResult = {
   evidence: string;
 };
 
-type EvidenceChunk = { label: string; text: string };
+type EvidenceChunk = { id?: string; label: string; text: string; sourceText?: string; localSkills?: string[] };
 
 const STOP_WORDS = new Set([
   'a', 'an', 'and', 'are', 'as', 'at', 'be', 'been', 'by', 'for', 'from', 'has', 'have', 'i', 'in', 'into',
@@ -38,14 +39,20 @@ function sentences(value: string) {
 function evidenceChunks(profile: CandidateProfile, job: Job): EvidenceChunk[] {
   return [
     { label: 'Verified profile', text: [profile.headline, profile.summary, profile.yearsExperience == null ? '' : `${profile.yearsExperience} years of experience`].filter(Boolean).join(' ') },
-    ...profile.skills.map((skill) => ({ label: `Verified skill: ${skill}`, text: skill })),
-    ...(profile.experience ?? []).flatMap((item) => item.bullets.map((bullet) => ({
+    ...profile.skills.map((skill) => ({ label: `Verified skill: ${skill}`, text: skill, sourceText: skill })),
+    ...(profile.experience ?? []).flatMap((item, experienceIndex) => item.bullets.map((bullet, bulletIndex) => ({
+      id: `EXP:${experienceIndex}:${bulletIndex}`,
       label: `${item.title} · ${item.organization}`,
       text: [item.title, item.organization, bullet, ...(item.skills ?? [])].join(' '),
+      sourceText: bullet,
+      localSkills: item.skills ?? [],
     }))),
-    ...(profile.projects ?? []).flatMap((project) => [project.description, ...(project.bullets ?? [])].filter(Boolean).map((text) => ({
+    ...(profile.projects ?? []).flatMap((project, projectIndex) => (project.bullets?.length ? project.bullets : [project.description]).filter(Boolean).map((text, bulletIndex) => ({
+      id: `PROJ:${projectIndex}:${bulletIndex}`,
       label: project.name,
       text: [project.name, text, ...(project.skills ?? [])].join(' '),
+      sourceText: text,
+      localSkills: project.skills ?? [],
     }))),
     ...(profile.degrees ?? []).map((degree) => ({
       label: degree.institution,
@@ -59,7 +66,6 @@ function evidenceChunks(profile: CandidateProfile, job: Job): EvidenceChunk[] {
     ...(profile.profileSources?.linkedin?.headline ? [{ label: 'LinkedIn headline', text: profile.profileSources.linkedin.headline }] : []),
     ...(profile.profileSources?.linkedin?.summary ? [{ label: 'LinkedIn summary', text: profile.profileSources.linkedin.summary }] : []),
     ...(profile.workAuthorization ?? []).map((authorization) => ({ label: 'Work authorization', text: authorization })),
-    { label: 'Job posting', text: [job.title, job.company, job.location, job.employmentType, job.department].filter(Boolean).join(' ') },
   ].filter((chunk) => chunk.text.trim());
 }
 
@@ -83,14 +89,26 @@ function unsupportedSkillClaim(claim: string, profile: CandidateProfile, match?:
     .map((skill) => ({ raw: skill, normalized: normalizeText(skill) }))
     .filter((skill) => skill.normalized.length >= 2 && skill.normalized.length <= 80)
     .filter((skill) => !supported.has(skill.normalized));
-  return missing.find((skill) => normalizedClaim.includes(skill.normalized))?.raw ?? null;
+  return missing.find((skill) => containsTerm(normalizedClaim, skill.normalized))?.raw ?? null;
 }
 
-function unsupportedNumbers(claim: string, profile: CandidateProfile, job: Job) {
-  const numbers = claim.match(/\b\d+(?:[.,]\d+)?%?\b/g) ?? [];
+function unsupportedNumbers(claim: string, profile: CandidateProfile, job: Job, chunks: EvidenceChunk[]) {
+  let factual = claim;
+  // Job labels are context only; removing them here must not add them to the
+  // candidate evidence index or validate unrelated numeric accomplishments.
+  if (/apply|applying|interested|relevant to|position|role/i.test(claim)) {
+    factual = factual.replaceAll(job.title, '').replaceAll(job.company, '');
+  }
+  if (/\b(candidate|expected|graduating|completing|degree|education)\b/i.test(factual)) {
+    for (const degree of profile.degrees ?? []) {
+      for (const year of degree.end?.match(/\b(?:19|20)\d{2}\b/g) ?? []) factual = factual.replace(new RegExp(`\\b${year}\\b`, 'g'), '');
+    }
+  }
+  const numbers = factual.match(/\b\d+(?:[.,]\d+)?%?/g) ?? [];
   if (!numbers.length) return [];
-  const source = normalizeText(JSON.stringify({ profile, title: job.title, company: job.company, location: job.location }));
-  return numbers.filter((number) => !source.includes(normalizeText(number)));
+  const normalized = normalizeText(claim.replace(/^I /i, ''));
+  return chunks.some((chunk) => (chunk.sourceText ?? chunk.text).split(/(?<=[.!?])\s+/)
+    .some((source) => /\d/.test(source) && (normalizeText(source).includes(normalized) || normalized.includes(normalizeText(source))))) ? [] : numbers;
 }
 
 function completedDegreeContradiction(claim: string, profile: CandidateProfile) {
@@ -100,6 +118,8 @@ function completedDegreeContradiction(claim: string, profile: CandidateProfile) 
 }
 
 function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match: MatchScore | undefined, chunks: EvidenceChunk[]): ClaimResult {
+  const applicationOpening = `I am writing to apply for the ${job.title} position at ${job.company}.`;
+  if (claim === applicationOpening || claim === `I am applying for the ${job.title} role at ${job.company}.`) return { claim, status: 'verified', confidence: 100, reason: 'Application intent only.', evidence: 'No candidate accomplishment asserted.' };
   const missingSkill = unsupportedSkillClaim(claim, profile, match);
   if (missingSkill) return {
     claim,
@@ -109,7 +129,7 @@ function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match
     evidence: 'No verified profile evidence found.',
   };
 
-  const numbers = unsupportedNumbers(claim, profile, job);
+  const numbers = unsupportedNumbers(claim, profile, job, chunks);
   if (numbers.length) return {
     claim,
     status: 'review',
@@ -126,7 +146,7 @@ function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match
     evidence: 'Verified education record is marked expected/current.',
   };
 
-  const personal = POSSESSION_LANGUAGE.test(claim);
+  const personal = POSSESSION_LANGUAGE.test(claim) || FACTUAL_ACTIONS.test(claim) || /\b(expert|certified|specialist|professional|degree|graduate|years?)\b/i.test(claim);
   if (!personal) return {
     claim,
     status: 'verified',
@@ -136,9 +156,9 @@ function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match
   };
 
   const best = bestEvidence(claim, chunks);
-  const profileSkills = profile.skills.filter((skill) => normalizeText(claim).includes(normalizeText(skill)));
+  const profileSkills = profile.skills.filter((skill) => containsTerm(claim, skill));
   const factual = FACTUAL_ACTIONS.test(claim) || profileSkills.length > 0 || /\b(degree|msc|master|bachelor|certif|years?)\b/i.test(claim);
-  if (factual && (!best || (best.score < 0.19 && best.hits.length < 2))) return {
+  if (factual && !(profileSkills.length && !FACTUAL_ACTIONS.test(claim.replace(/supported by both professional and project work/i, ''))) && (!best || (best.score < 0.19 && best.hits.length < 2))) return {
     claim,
     status: 'review',
     confidence: 82,
@@ -150,7 +170,7 @@ function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match
     claim,
     status: 'verified',
     confidence: Math.max(82, Math.min(99, Math.round(82 + (best?.score ?? 0.2) * 17))),
-    reason: factual ? 'Claim is supported by verified profile evidence.' : 'General professional language without a new factual assertion.',
+    reason: factual ? 'Source wording matched; review this interpretation before applying.' : 'General professional language without a new factual assertion.',
     evidence: best?.chunk.label ?? 'Verified profile',
   };
 }
@@ -158,6 +178,52 @@ function evaluateClaim(claim: string, profile: CandidateProfile, job: Job, match
 function verifyText(value: string, profile: CandidateProfile, job: Job, match: MatchScore | undefined, chunks: EvidenceChunk[]) {
   const results = sentences(value).map((claim) => evaluateClaim(claim, profile, job, match, chunks));
   return { results, safe: results.every((result) => result.status === 'verified') };
+}
+
+function groundPackBullets(pack: ApplicationPack, profile: CandidateProfile, _job: Job, _match: MatchScore | undefined, chunks: EvidenceChunk[]) {
+  const warnings: string[] = [];
+  let replacedBullets = 0;
+  const results: ClaimResult[] = [];
+  const ground = <T extends { bullets: string[]; bulletEvidence?: string[][] }>(item: T, prefix: string): T => {
+    const local = prefix ? chunks.filter((chunk) => chunk.id?.startsWith(prefix)) : [];
+    const evidence: string[][] = [];
+    const bullets = item.bullets.map((bullet, index) => {
+      const ids = item.bulletEvidence?.[index];
+      const exact = local.find((chunk) => normalizeText(chunk.sourceText) === normalizeText(bullet));
+      const linked = ids?.length === 1 ? local.find((chunk) => chunk.id === ids[0]) : undefined;
+      const source = linked ?? exact;
+      const issue = !source ? 'Evidence does not belong to this job or project.'
+        : groundedRewriteIssue(bullet, source.sourceText ?? source.text, source.localSkills);
+      const fallback = source ?? local[0];
+      const finalText = issue && fallback ? fallback.sourceText ?? fallback.text : bullet;
+      if (issue) {
+        warnings.push(issue);
+        if (fallback) replacedBullets += 1;
+      }
+      evidence.push(fallback?.id ? [fallback.id] : []);
+      results.push({
+        claim: finalText, status: fallback ? 'verified' : 'review', confidence: fallback ? 100 : 0,
+        reason: issue && fallback ? 'Original source evidence restored.' : issue ?? 'Wording checked against the linked source record.',
+        evidence: fallback?.label ?? 'No source record for this job or project.',
+      });
+      return finalText;
+    });
+    return { ...item, bullets, bulletEvidence: evidence };
+  };
+  return {
+    pack: {
+      ...pack,
+      experience: pack.experience.map((item) => {
+        const index = (profile.experience ?? []).findIndex((source) => normalizeText(source.organization) === normalizeText(item.organization) && normalizeText(source.title) === normalizeText(item.title));
+        return ground(item, index >= 0 ? `EXP:${index}:` : '');
+      }),
+      projects: pack.projects.map((item) => {
+        const index = (profile.projects ?? []).findIndex((source) => normalizeText(source.name) === normalizeText(item.name));
+        return ground(item, index >= 0 ? `PROJ:${index}:` : '');
+      }),
+    },
+    results, warnings, replacedBullets,
+  };
 }
 
 export function verifyApplicationPackClaims(
@@ -168,34 +234,44 @@ export function verifyApplicationPackClaims(
   match?: MatchScore,
 ): ApplicationPack {
   const chunks = evidenceChunks(profile, job);
+  const grounded = groundPackBullets(pack, profile, job, match, chunks);
   const initial = {
-    resumeSummary: verifyText(pack.resumeSummary, profile, job, match, chunks),
-    coverLetter: verifyText(pack.coverLetter, profile, job, match, chunks),
-    outreachMessage: verifyText(pack.outreachMessage, profile, job, match, chunks),
+    resumeSummary: verifyText(grounded.pack.resumeSummary, profile, job, match, chunks),
+    coverLetter: verifyText(grounded.pack.coverLetter, profile, job, match, chunks),
+    outreachMessage: verifyText(grounded.pack.outreachMessage, profile, job, match, chunks),
   };
   const replacedFields = (Object.keys(initial) as Array<keyof typeof initial>).filter((field) => !initial[field].safe);
   const corrected: ApplicationPack = {
-    ...pack,
-    resumeSummary: initial.resumeSummary.safe ? pack.resumeSummary : safeFallback.resumeSummary,
-    coverLetter: initial.coverLetter.safe ? pack.coverLetter : safeFallback.coverLetter,
-    outreachMessage: initial.outreachMessage.safe ? pack.outreachMessage : safeFallback.outreachMessage,
+    ...grounded.pack,
+    resumeSummary: initial.resumeSummary.safe ? grounded.pack.resumeSummary : safeFallback.resumeSummary,
+    coverLetter: initial.coverLetter.safe ? grounded.pack.coverLetter : safeFallback.coverLetter,
+    outreachMessage: initial.outreachMessage.safe ? grounded.pack.outreachMessage : safeFallback.outreachMessage,
   };
   const finalResults = [
+    ...grounded.results,
+    ...[
+      ...corrected.skills.map((claim) => ({ claim, source: profile.skills, label: 'skill' })),
+      ...(corrected.certifications ?? []).map((claim) => ({ claim, source: profile.certifications ?? [], label: 'certification' })),
+      ...(corrected.publications ?? []).map((claim) => ({ claim, source: profile.publications ?? [], label: 'publication' })),
+    ].map(({ claim, source, label }): ClaimResult => ({
+      claim, status: source.some((value) => normalizeText(value) === normalizeText(claim)) ? 'verified' : 'review',
+      confidence: 100, reason: `Exact ${label} source check.`, evidence: `Profile ${label} records`,
+    })),
     ...verifyText(corrected.resumeSummary, profile, job, match, chunks).results,
     ...verifyText(corrected.coverLetter, profile, job, match, chunks).results,
     ...verifyText(corrected.outreachMessage, profile, job, match, chunks).results,
   ];
-  const warnings = Object.values(initial)
+  const warnings = [...grounded.warnings, ...Object.values(initial)
     .flatMap((field) => field.results)
     .filter((result) => result.status === 'review')
-    .map((result) => result.reason)
+    .map((result) => result.reason)]
     .filter((reason, index, list) => list.indexOf(reason) === index)
     .slice(0, 6);
   const finalSafe = finalResults.every((result) => result.status === 'verified');
 
   return {
     ...corrected,
-    claimsAudit: finalResults.slice(0, 24).map((result) => ({
+    claimsAudit: finalResults.map((result) => ({
       claim: result.claim,
       evidence: result.evidence,
       status: result.status,
@@ -207,6 +283,7 @@ export function verifyApplicationPackClaims(
       checkedClaims: finalResults.length,
       verifiedClaims: finalResults.filter((result) => result.status === 'verified').length,
       replacedFields,
+      replacedBullets: grounded.replacedBullets,
       warnings,
     },
   };

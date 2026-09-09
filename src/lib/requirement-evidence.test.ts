@@ -41,10 +41,24 @@ test('requirement matrix distinguishes supported evidence from real gaps', () =>
   assert.equal(matrix.find((item) => item.requirement === 'Power BI reporting')?.support, 'supported');
   assert.equal(matrix.find((item) => item.requirement === '5 years of experience')?.support, 'gap');
   assert.equal(matrix.find((item) => item.requirement === 'Kubernetes')?.support, 'gap');
+  assert.equal(matrix.find((item) => item.requirement === '5 years of experience')?.category, 'experience');
+  assert.equal(matrix.find((item) => item.requirement === 'Power BI reporting')?.category, 'tool');
+  assert.deepEqual(matrix.find((item) => item.requirement === 'Power BI reporting')?.exactTerms, ['Power BI']);
   assert.match(matrix.find((item) => item.requirement === 'Python development')?.evidence[0]?.excerpt ?? '', /Python/i);
 });
 
 test('requirement matrix never attaches evidence to a gap', () => {
   const matrix = buildRequirementEvidenceMatrix(job, profile, match);
   assert.deepEqual(matrix.filter((item) => item.support === 'gap').flatMap((item) => item.evidence), []);
+});
+
+test('related tools, total tenure, and a lower degree cannot satisfy specific must-haves', () => {
+  const candidate = { ...profile, skills: ['JavaScript', 'Docker', 'AWS'], yearsExperience: 8,
+    degrees: [{ institution: 'Example University', degree: 'Bachelor of Science', field: 'Computer Science', end: '2020' }],
+    experience: [{ organization: 'Example', title: 'Developer', bullets: ['Developed JavaScript applications using Docker.'], skills: ['JavaScript', 'Docker'] }],
+  };
+  const requirements = ['Java', 'Kubernetes container development', '5 years of Python experience', 'PhD degree in Computer Science', 'AWS certification'];
+  const matrix = buildRequirementEvidenceMatrix(job, candidate, { ...match, mustHave: requirements, preferred: [], missingSkills: ['Java', 'Kubernetes', 'Python'] });
+  assert.ok(matrix.every((item) => item.support !== 'supported'), JSON.stringify(matrix));
+  assert.equal(matrix.find((item) => item.requirement === 'AWS certification')?.category, 'certification');
 });

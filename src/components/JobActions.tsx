@@ -77,9 +77,9 @@ export function JobActions({
         setCurrentValidity(json.verification.validityStatus as JobValidityStatus);
       }
       if (label === 'Application pack' && typeof json.ats?.overall === 'number') {
-        setMsg(json.ats.eligibleToApply
-          ? `Application pack complete · ATS ${json.ats.overall}/100 · PASS`
-          : `Application pack complete · ATS ${json.ats.overall}/100 · CONDITIONAL`);
+        setMsg(json.ats.targetReached
+          ? `Application pack complete · internal ATS estimate ${json.ats.overall}/100 · target reached`
+          : `Application pack complete · internal ATS estimate ${json.ats.overall}/100 · review remaining gaps`);
       } else {
         setMsg(`${label} complete`);
       }
@@ -174,7 +174,7 @@ export function JobActions({
     <h2>{!profileReady ? 'Part-time résumé needed' : usablePack ? 'Documents ready' : hasPack ? 'Documents need updating' : 'Prepare your application'}</h2>
     <div className="action-status">
       <span>Posting <b>{healthLabel(currentValidity)}</b></span>
-      {atsScore != null ? <span>Résumé score <b className={atsEligible ? 'text-success' : 'text-warning'}>{atsScore}/100</b></span> : null}
+      {atsScore != null ? <span>Internal ATS estimate <b className={atsEligible ? 'text-success' : 'text-warning'}>{atsScore}/100</b></span> : null}
     </div>
 
     <button className="btn primary action-primary" disabled={Boolean(busy) || closed || !profileReady} onClick={() => action(`/api/jobs/${id}/application-pack`, 'Application pack')}>
@@ -195,8 +195,10 @@ export function JobActions({
     </div> : null}
 
     {usablePack ? <div className="document-actions">
-      <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download résumé</a>
+      <a className="btn primary" href={`/api/jobs/${id}/resume.docx`}>Download DOCX · recommended</a>
+      <a className="btn" href={`/api/jobs/${id}/resume.pdf`}>Download PDF</a>
       <a className="btn" href={`/api/jobs/${id}/cover-letter.pdf`}>Download cover letter</a>
+      <span className="small muted">Use DOCX unless the employer specifically requests PDF. Both versions are single-column and re-parsed before download.</span>
     </div> : <p className="small muted">A tailored résumé and cover letter are generated for every open role. Unsupported requirements remain clearly marked.</p>}
 
     {applicationReady && applyUrl && applyUrl !== '#'

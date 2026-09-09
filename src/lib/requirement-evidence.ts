@@ -1,3 +1,4 @@
+import { containsTerm } from './resume-evidence-guards';
 import type {
   CandidateProfile,
   Job,
@@ -36,19 +37,40 @@ const CONCEPT_GROUPS = [
   ['ci cd', 'continuous integration', 'continuous delivery', 'github actions', 'devops'],
   ['terraform', 'infrastructure as code', 'iac'],
   ['agile', 'scrum', 'kanban'],
+  ['project management', 'managed projects', 'managing projects', 'project delivery', 'program management'],
+  ['customer service', 'customer support', 'client service', 'guest service'],
+  ['leadership', 'team leadership', 'led a team', 'people management'],
   ['stakeholder', 'stakeholders', 'cross functional', 'communication', 'requirements gathering'],
 ] as const;
+
+function stem(token: string) {
+  const normalized = token.replace(/^[-/.]+|[-/.]+$/g, '');
+  const irregular: Record<string, string> = {
+    managed: 'manage', managing: 'manage', management: 'manage',
+    projects: 'project', applications: 'application', systems: 'system',
+    developed: 'develop', developing: 'develop', development: 'develop',
+    designed: 'design', designing: 'design',
+    implemented: 'implement', implementing: 'implement', implementation: 'implement',
+    led: 'lead', leadership: 'lead',
+  };
+  if (irregular[normalized]) return irregular[normalized];
+  if (normalized.length > 5 && normalized.endsWith('ies')) return `${normalized.slice(0, -3)}y`;
+  if (normalized.length > 5 && normalized.endsWith('ing')) return normalized.slice(0, -3);
+  if (normalized.length > 4 && normalized.endsWith('ed')) return normalized.slice(0, -2);
+  if (normalized.length > 4 && normalized.endsWith('s')) return normalized.slice(0, -1);
+  return normalized;
+}
 
 function tokens(value: string) {
   return [...new Set(normalizeText(value)
     .split(/\s+/)
-    .map((token) => token.replace(/^[-/.]+|[-/.]+$/g, ''))
+    .map(stem)
     .filter((token) => token.length >= 2 && !STOP_WORDS.has(token)))];
 }
 
 function concepts(value: string) {
   const normalized = normalizeText(value);
-  return CONCEPT_GROUPS.flatMap((group, index) => group.some((term) => normalized.includes(normalizeText(term))) ? [index] : []);
+  return CONCEPT_GROUPS.flatMap((group, index) => group.some((term) => containsTerm(normalized, term)) ? [index] : []);
 }
 
 function evidenceRecords(profile: CandidateProfile): EvidenceRecord[] {
@@ -130,7 +152,7 @@ function lexicalScore(requirement: string, evidence: EvidenceRecord) {
   const evidenceTokens = new Set(tokens(evidence.text));
   const hits = requirementTokens.filter((token) => evidenceTokens.has(token)).length;
   const coverage = hits / requirementTokens.length;
-  const exactPhrase = requirementText.length >= 3 && evidenceText.includes(requirementText);
+  const exactPhrase = requirementText.length >= 3 && containsTerm(evidenceText, requirementText);
   return Math.min(1, coverage * 0.78 + (exactPhrase ? 0.22 : 0));
 }
 
@@ -142,30 +164,38 @@ function conceptScore(requirement: string, evidence: EvidenceRecord) {
 }
 
 function numericRequirementSupport(requirement: string, profile: CandidateProfile) {
-  const match = normalizeText(requirement).match(/(\d+(?:\.\d+)?)\s*\+?\s*years?/);
+  const normalized = normalizeText(requirement);
+  const match = normalized.match(/(\d+(?:\.\d+)?)\s*\+?\s*years?/);
   if (!match) return null;
   const required = Number(match[1]);
   if (!Number.isFinite(required) || profile.yearsExperience == null) return 'gap' as const;
+  // Total career tenure cannot prove years with a particular technology or duty.
+  const subject = normalized.replace(match[0], '').replace(/\b(of|in|with|at least|professional|relevant|experience|minimum|required|must have|a|an|the)\b/g, '').trim();
+  if (subject) {
+    const records = evidenceRecords(profile);
+    const subjectTokens = tokens(subject);
+    const hasRelatedEvidence = records.some((record) => subjectTokens.some((term) => containsTerm(record.text, term)));
+    return hasRelatedEvidence && profile.yearsExperience >= required ? 'partial' as const : 'gap' as const;
+  }
   if (profile.yearsExperience >= required) return 'supported' as const;
   return profile.yearsExperience >= Math.max(1, required - 1) ? 'partial' as const : 'gap' as const;
 }
 
-function degreeSupport(requirement: string, record: EvidenceRecord) {
-  if (record.kind !== 'education') return null;
-  const required = normalizeText(requirement);
-  if (!/\b(bachelor|master|msc|phd|degree|diploma)\b/.test(required)) return null;
-  const evidence = normalizeText(record.text);
-  const levelMatches = [
-    ['bachelor', /\b(bachelor|bsc|btech)\b/],
-    ['master', /\b(master|msc)\b/],
-    ['msc', /\b(master|msc)\b/],
-    ['phd', /\b(phd|doctorate)\b/],
-    ['diploma', /\bdiploma\b/],
-  ].some(([term, pattern]) => required.includes(term as string) && (pattern as RegExp).test(evidence));
-  if (!levelMatches && !required.includes('degree')) return 'gap' as const;
-  return /expected|present|current/.test(evidence) && /\b(required|must have|completed|hold)\b/.test(required)
-    ? 'partial' as const
-    : 'supported' as const;
+function degreeSupport(requirement: string, profile: CandidateProfile): RequirementSupport | null {
+  if (!/\b(bachelor|master|msc|phd|doctorate|degree|diploma)\b/i.test(requirement)) return null;
+  const level = (text: string) => /\b(ph\.?d|doctorate)\b/i.test(text) ? 4
+    : /\b(master|msc|m\.sc)\b/i.test(text) ? 3 : /\b(bachelor|bsc|btech|b\.sc)\b/i.test(text) ? 2
+    : /\bdiploma\b/i.test(text) ? 1 : 0;
+  const required = level(requirement);
+  const fields = tokens(requirement).filter((word) => !/^(bachelor|master|msc|phd|doctorate|degree|diploma|complete|hold|equivalent|related|field|s)$/.test(word));
+  const states = (profile.degrees ?? []).map((degree): RequirementSupport => {
+    if (required && level(degree.degree) < required) return 'gap';
+    if (/expected|present|current/i.test(degree.end ?? '')) return 'partial';
+    const education = tokens([degree.degree, degree.field].filter(Boolean).join(' '));
+    if (fields.length && fields.filter((word) => education.includes(word)).length / fields.length < 0.5) return 'partial';
+    return 'supported';
+  });
+  return states.includes('supported') ? 'supported' : states.includes('partial') ? 'partial' : 'gap';
 }
 
 function rankEvidence(requirement: string, records: EvidenceRecord[]) {
@@ -187,12 +217,20 @@ function rankEvidence(requirement: string, records: EvidenceRecord[]) {
   }).sort((a, b) => b.score - a.score);
 }
 
-function supportStatus(requirement: string, profile: CandidateProfile, top: ReturnType<typeof rankEvidence>[number] | undefined): RequirementSupport {
+function supportStatus(requirement: string, profile: CandidateProfile, ranked: ReturnType<typeof rankEvidence>, match?: MatchScore): RequirementSupport {
   const numeric = numericRequirementSupport(requirement, profile);
   if (numeric) return numeric;
-  if (!top) return 'gap';
-  const degree = degreeSupport(requirement, top.record);
+  const degree = degreeSupport(requirement, profile);
   if (degree) return degree;
+  const top = ranked[0];
+  if (!top) return 'gap';
+  if (/\b(certification|certified|certificate|licen[cs]e|credential|designation)\b/i.test(requirement)) {
+    const certification = ranked.find((item) => item.record.kind === 'certification');
+    return certification && certification.exact >= 0.72 ? 'supported' : certification && certification.exact >= 0.26 ? 'partial' : 'gap';
+  }
+  const requiredTerms = exactTerms(requirement, profile, match);
+  const missingSpecific = requiredTerms.some((term) => !evidenceRecords(profile).some((record) => containsTerm(record.text, term)));
+  if (missingSpecific) return top.exact >= 0.26 || top.related >= 0.5 ? 'partial' : 'gap';
   if (top.exact >= 0.72 || (top.exact >= 0.34 && top.related >= 0.5) || top.score >= 0.68) return 'supported';
   if (top.exact >= 0.26 || top.related >= 0.5 || top.score >= 0.34) return 'partial';
   return 'gap';
@@ -206,6 +244,39 @@ function uniqueRequirements(values: string[]) {
     seen.add(key);
     return true;
   });
+}
+
+function requirementCategory(requirement: string, profile: CandidateProfile): NonNullable<RequirementEvidence['category']> {
+  const normalized = normalizeText(requirement);
+  if (/\b(certification|certified|certificate|licen[cs]e|credential|designation)\b/.test(normalized)) return 'certification';
+  if (/\b(bachelor|master|msc|phd|degree|diploma|education)\b/.test(normalized)) return 'education';
+  if (/\b\d+(?:\.\d+)?\s*\+?\s*years?\b/.test(normalized)) return 'experience';
+  if (/\b(work authori[sz]ation|authorized to work|citizen|permanent resident|visa|security clearance|eligible to work)\b/.test(normalized)) return 'eligibility';
+  if (/\b(communication|collaboration|leadership|interpersonal|organized|organization|time management|adaptability|problem solving|customer service)\b/.test(normalized)) return 'soft-skill';
+  const matchedSkill = profile.skills.find((skill) => containsTerm(normalized, skill));
+  if (matchedSkill) {
+    return /\b(software|platform|tool|framework|database|cloud|erp|jira|github|docker|kubernetes|react|python|sql|power bi|tableau|aws|azure|gcp)\b/.test(normalizeText(matchedSkill))
+      ? 'tool'
+      : 'hard-skill';
+  }
+  if (/\b(build|develop|design|implement|manage|support|maintain|analy[sz]e|deliver|coordinate|create|operate|prepare|monitor|troubleshoot)\b/.test(normalized)) return 'responsibility';
+  return 'hard-skill';
+}
+
+function exactTerms(requirement: string, profile: CandidateProfile, match?: MatchScore) {
+  const normalized = normalizeText(requirement);
+  const profileTerms = [
+    ...profile.skills,
+    ...(match?.matchedSkills ?? []),
+    ...(match?.missingSkills ?? []),
+    ...'Java|JavaScript|TypeScript|Node.js|React|Next.js|Python|SQL|PostgreSQL|MySQL|AWS|Azure|GCP|Docker|Kubernetes|Power BI|Tableau|Terraform|Oracle Fusion|C++|C#|.NET'.split('|'),
+    ...(profile.certifications ?? []),
+  ].filter((term) => term.length >= 2 && containsTerm(normalized, term));
+  const acronyms = requirement.match(/\b[A-Z][A-Z0-9+.#/-]{1,12}\b/g) ?? [];
+  const values = uniqueRequirements([...profileTerms, ...acronyms]);
+  return values.filter((term, index) => !values.some((other, otherIndex) => otherIndex < index
+    && normalizeText(other).split(' ').includes(normalizeText(term))))
+    .slice(0, 5);
 }
 
 export function buildRequirementEvidenceMatrix(
@@ -223,7 +294,7 @@ export function buildRequirementEvidenceMatrix(
   return requirements.slice(0, 18).map(({ requirement, importance }) => {
     const ranked = rankEvidence(requirement, records);
     const top = ranked[0];
-    const support = supportStatus(requirement, profile, top);
+    const support = supportStatus(requirement, profile, ranked, match);
     const minimum = support === 'supported' ? 0.28 : 0.2;
     const evidence = support === 'gap' ? [] : ranked
       .filter((item) => item.score >= minimum)
@@ -237,6 +308,8 @@ export function buildRequirementEvidenceMatrix(
     return {
       requirement,
       importance,
+      category: requirementCategory(requirement, profile),
+      exactTerms: exactTerms(requirement, profile, match),
       support,
       confidence: support === 'gap' ? Math.round((1 - (top?.score ?? 0)) * 100) : Math.round((top?.score ?? 0) * 100),
       evidence,
