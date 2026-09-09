@@ -169,7 +169,8 @@ test('pack versions mark old profile/template generations as stale', () => {
 });
 
 test('resume PDF preserves the reference-template section order on one page', () => {
-  const pack = materializeApplicationPack(deterministicTailoringPlan(softwareJob, profile), profile, softwareJob);
+  const base = materializeApplicationPack(deterministicTailoringPlan(softwareJob, profile), profile, softwareJob);
+  const pack = { ...base, certifications: ['Google IT Support'] };
   const pdfText = resumePdf(profile, softwareJob, pack).toString('utf8');
   const sections = ['PROFESSIONAL SUMMARY', 'EXPERIENCE', 'SKILLS', 'PROJECTS', 'EDUCATION', 'CERTIFICATIONS'];
   const positions = sections.map((section) => pdfText.indexOf(section));
