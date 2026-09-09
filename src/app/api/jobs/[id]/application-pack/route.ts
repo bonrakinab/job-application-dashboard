@@ -16,6 +16,7 @@ import { withProfessionalCoverLetterAI } from '@/lib/professional-cover-letter-a
 import { projectTailoredApplicationProfile } from '@/lib/project-tailoring';
 import { buildRequirementEvidenceMatrix } from '@/lib/requirement-evidence';
 import { assertResumeArtifact, validateResumeDocxArtifact, validateResumePdfArtifact } from '@/lib/resume-artifact-validation';
+import { referenceTemplatePack, referenceTemplateProfile, strengthenResumeForJob } from '@/lib/resume-generation-policy';
 import { attachApplicationPackGenerationMeta } from '@/lib/resume-tailoring';
 import {
   finishApplicationPackRun,
@@ -170,15 +171,18 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const skillsPolicyPack = withPersistentApplicationSkills(generation.pack, applicationProfile);
     const courseworkPack = {
       ...skillsPolicyPack,
+      publications: [] as string[],
       education: tailorRelevantCoursework(job, applicationProfile, match),
       requirementEvidence,
     };
     const documentProfile = profileWithTailoredCourseworkForResume(applicationProfile, courseworkPack);
     const optimized = optimizeApplicationPackForAts(job, documentProfile, courseworkPack, match);
+    const strengthenedPack = strengthenResumeForJob(job, documentProfile, optimized.pack, courseworkPack, requirementEvidence);
     await safeRecordStep(runId, 'ats_optimization', {
       score: optimized.score.overall,
       status: optimized.score.status,
-      attempts: optimized.pack.atsOptimization?.attempts ?? 0,
+      attempts: strengthenedPack.atsOptimization?.attempts ?? 0,
+      supportedExactKeywords: strengthenedPack.skills.filter((skill) => requirementEvidence.some((item) => item.support === 'supported' && (item.exactTerms ?? []).some((term) => term.toLowerCase() === skill.toLowerCase()))).length,
     });
 
     let research = await getCompanyIntelligence(job.company);
@@ -192,9 +196,9 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
       }
     }
 
-    const coverLetterInput = optimized.pack.atsOptimization?.attempts
-      ? { ...optimized.pack, coverLetter: '' }
-      : optimized.pack;
+    const coverLetterInput = strengthenedPack.atsOptimization?.attempts
+      ? { ...strengthenedPack, coverLetter: '' }
+      : strengthenedPack;
     const professionalPack = await withProfessionalCoverLetterAI(coverLetterInput, applicationProfile, job, match, research);
     const deterministic = deterministicApplicationPack(job, applicationProfile, match);
     const verifiedPack = verifyApplicationPackClaims(professionalPack, {
@@ -210,18 +214,24 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const finalScore = scoreTailoredResumeWithCoursework(job, renderedProfile, verifiedPack, match);
     const finalOptimizedPack = verifiedPack.atsOptimization ? {
       ...verifiedPack,
+      publications: [] as string[],
       atsOptimization: {
         ...verifiedPack.atsOptimization,
         finalScore: finalScore.overall,
         status: finalScore.status,
         truthfulCeilingReached: !finalScore.eligibleToApply && verifiedPack.atsOptimization.attempts >= 3,
       },
-    } : verifiedPack;
-    const pdf = resumePdf(renderedProfile, job, finalOptimizedPack);
-    const docx = await resumeDocx(renderedProfile, job, finalOptimizedPack);
+    } : { ...verifiedPack, publications: [] as string[] };
+
+    // Render only the fields present in the user's uploaded reference template.
+    // The master profile remains untouched and can still retain richer internal data.
+    const exportProfile = referenceTemplateProfile(renderedProfile);
+    const exportPack = referenceTemplatePack(finalOptimizedPack);
+    const pdf = resumePdf(exportProfile, job, exportPack);
+    const docx = await resumeDocx(exportProfile, job, exportPack);
     const [pdfValidation, docxValidation] = await Promise.all([
-      validateResumePdfArtifact(pdf, renderedProfile, finalOptimizedPack),
-      validateResumeDocxArtifact(docx, renderedProfile, finalOptimizedPack),
+      validateResumePdfArtifact(pdf, exportProfile, exportPack),
+      validateResumeDocxArtifact(docx, exportProfile, exportPack),
     ]);
     assertResumeArtifact(pdfValidation, 'PDF');
     assertResumeArtifact(docxValidation, 'DOCX');
