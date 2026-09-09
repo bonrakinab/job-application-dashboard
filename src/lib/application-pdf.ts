@@ -3,7 +3,7 @@ import { normalizeText } from './utils';
 import { RESUME_LAYOUT_ATTEMPTS, RESUME_PAGE } from './resume-template';
 import { coverLetterBodyParagraphs, coverLetterDate } from './cover-letter';
 import { EMBEDDED_RESUME_FONTS } from './resume-fonts';
-import { formatAtsDateRange, resumeContactLines } from './resume-content';
+import { formatResumeDateRange, resumeTemplateContactItems } from './resume-content';
 
 const A4_WIDTH = RESUME_PAGE.width;
 const A4_HEIGHT = RESUME_PAGE.height;
@@ -62,6 +62,12 @@ function wrapWidth(text: string, maxWidth: number, size: number, font: FontName 
   return lines;
 }
 
+function fittedSize(text: string, maxWidth: number, preferred: number, minimum: number, font: FontName = 'TR') {
+  let size = preferred;
+  while (size > minimum && width(text, size, font) > maxWidth) size -= 0.15;
+  return Math.max(minimum, size);
+}
+
 class ResumeCanvas {
   commands: string[] = [];
   y = 808;
@@ -83,29 +89,37 @@ class ResumeCanvas {
   center(text: string, y: number, size: number, font: FontName = 'TR') {
     this.text(text, Math.max(MARGIN, (A4_WIDTH - width(text, size, font)) / 2), y, size, font);
   }
+  footer(text: string, y: number, size: number, font: FontName = 'TR') {
+    const x = Math.max(0, (A4_WIDTH - width(text, size, font)) / 2);
+    this.commands.push(`BT /${font} ${size.toFixed(2)} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${escapePdf(text)}) Tj ET`);
+  }
   rule(y: number) { this.commands.push(`0.35 w ${MARGIN} ${y.toFixed(2)} m ${RIGHT} ${y.toFixed(2)} l S`); }
   mainBullet(x: number, y: number) {
     const r = 1.5;
     const k = r * 0.55228475;
     this.commands.push(`${(x + r).toFixed(2)} ${y.toFixed(2)} m ${(x + r).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + r).toFixed(2)} ${x.toFixed(2)} ${(y + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(y + r).toFixed(2)} ${(x - r).toFixed(2)} ${(y + k).toFixed(2)} ${(x - r).toFixed(2)} ${y.toFixed(2)} c ${(x - r).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - r).toFixed(2)} ${x.toFixed(2)} ${(y - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(y - r).toFixed(2)} ${(x + r).toFixed(2)} ${(y - k).toFixed(2)} ${(x + r).toFixed(2)} ${y.toFixed(2)} c f`);
   }
-  subBullet(x: number, y: number) { this.text('-', x - 0.3, y - 1.2, this.size(7.4), 'TR'); }
+  subBullet(x: number, y: number) {
+    const r = 1.45;
+    const k = r * 0.55228475;
+    this.commands.push(`0.45 w ${(x + r).toFixed(2)} ${y.toFixed(2)} m ${(x + r).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + r).toFixed(2)} ${x.toFixed(2)} ${(y + r).toFixed(2)} c ${(x - k).toFixed(2)} ${(y + r).toFixed(2)} ${(x - r).toFixed(2)} ${(y + k).toFixed(2)} ${(x - r).toFixed(2)} ${y.toFixed(2)} c ${(x - r).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - r).toFixed(2)} ${x.toFixed(2)} ${(y - r).toFixed(2)} c ${(x + k).toFixed(2)} ${(y - r).toFixed(2)} ${(x + r).toFixed(2)} ${(y - k).toFixed(2)} ${(x + r).toFixed(2)} ${y.toFixed(2)} c S`);
+  }
   consume(amount: number) { this.y -= this.gap(amount); if (this.y < BOTTOM) this.overflow = true; }
   section(label: string) {
-    this.consume(1.5);
+    this.consume(1.2);
     this.text(label.toUpperCase(), MARGIN, this.y, this.size(10.5), 'TR');
     this.rule(this.y - this.gap(2));
-    this.consume(12.2);
+    this.consume(12.0);
   }
-  paragraph(text: string, baseSize = 9.15, lineHeight = 10.35) {
+  paragraph(text: string, baseSize = 9.05, lineHeight = 10.2) {
     const size = this.size(baseSize);
     for (const line of wrapWidth(text, RIGHT - MARGIN, size)) { this.text(line, MARGIN, this.y, size); this.consume(lineHeight); }
   }
-  subBulletText(text: string, left = MARGIN + 30, baseSize = 8.65, lineHeight = 9.65) {
+  subBulletText(text: string, left = MARGIN + 34, baseSize = 8.55, lineHeight = 9.55) {
     const size = this.size(baseSize);
     const lines = wrapWidth(text, RIGHT - left, size);
     if (!lines.length) return;
-    this.subBullet(left - 12, this.y + this.gap(0.8));
+    this.subBullet(left - 12, this.y + this.gap(2.4));
     for (const line of lines) { this.text(line, left, this.y, size); this.consume(lineHeight); }
   }
 }
@@ -154,7 +168,7 @@ function addRole(canvas: ResumeCanvas, profile: CandidateProfile, item: Applicat
   const source = roleSource(profile, item.organization, item.title);
   canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
   pairedRow(canvas, item.organization, source?.location ?? '', 9.7, 8.5, 'TB');
-  pairedRow(canvas, item.title, formatAtsDateRange(source?.start, source?.end), 8.85, 8.5, 'TI', 'TI');
+  pairedRow(canvas, item.title, formatResumeDateRange(source?.start, source?.end), 8.85, 8.5, 'TI', 'TI');
   for (const bullet of item.bullets.slice(0, maxBullets)) canvas.subBulletText(bullet);
   canvas.consume(1);
 }
@@ -214,7 +228,7 @@ function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
     canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.8));
     pairedRow(canvas, degree.institution, degree.location ?? '', 9.45, 8.2, 'TB');
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    pairedRow(canvas, degreeText, formatAtsDateRange(degree.start, degree.end), 8.45, 8.2, 'TI', 'TI');
+    pairedRow(canvas, degreeText, formatResumeDateRange(degree.start, degree.end), 8.45, 8.2, 'TI', 'TI');
 
     const courses = (degree.coursework ?? []).slice(0, 2);
     if (courses.length) {
@@ -232,22 +246,19 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
   const canvas = new ResumeCanvas(options.scale);
   for (const line of wrapWidth(profile.name, RIGHT - MARGIN, canvas.size(23.5), 'TB')) {
     canvas.center(line, canvas.y, canvas.size(23.5), 'TB');
-    canvas.consume(24);
+    canvas.consume(19);
   }
   for (const line of wrapWidth(pack.resumeHeadline, RIGHT - MARGIN, canvas.size(9.1), 'TB')) {
     canvas.center(line, canvas.y, canvas.size(9.1), 'TB');
     canvas.consume(10.4);
   }
-  const contact = resumeContactLines(profile);
-  for (const line of wrapWidth(contact.primary.join('   |   '), RIGHT - MARGIN, canvas.size(8.05))) {
-    canvas.center(line, canvas.y, canvas.size(8.05));
-    canvas.consume(9.2);
+  const contactText = resumeTemplateContactItems(profile).join('   ');
+  if (contactText) {
+    const contactSize = fittedSize(contactText, RIGHT - MARGIN, canvas.size(8.0), canvas.size(6.6));
+    canvas.center(contactText, canvas.y, contactSize);
+    canvas.consume(9.4);
   }
-  for (const line of wrapWidth(contact.links.join('   |   '), RIGHT - MARGIN, canvas.size(7.65))) {
-    canvas.center(line, canvas.y, canvas.size(7.65));
-    canvas.consume(8.8);
-  }
-  canvas.consume(1.5);
+  canvas.consume(0.5);
   canvas.section('Professional Summary');
   canvas.paragraph(pack.resumeSummary);
   canvas.section('Experience');
@@ -259,7 +270,7 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
   renderEducation(canvas, profile);
   if ((pack.certifications ?? []).length) {
     canvas.section('Certifications');
-    for (const certification of (pack.certifications ?? []).slice(0, 3)) {
+    for (const certification of pack.certifications ?? []) {
       canvas.mainBullet(MARGIN + 1, canvas.y + canvas.gap(1.6));
       for (const line of wrapWidth(certification, RIGHT - MARGIN - 11, canvas.size(8.05))) {
         canvas.text(line, MARGIN + 11, canvas.y, canvas.size(8.05));
@@ -271,6 +282,7 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
     canvas.section('Publications');
     for (const publication of (pack.publications ?? []).slice(0, 1)) canvas.subBulletText(publication, MARGIN + 18, 7.85, 8.7);
   }
+  canvas.footer('1', 7.5, canvas.size(6.8));
   return { stream: canvas.commands.join('\n'), overflow: canvas.overflow, bottomY: canvas.y };
 }
 
@@ -330,7 +342,7 @@ export function resumePdf(profile: CandidateProfile, _job: Job, pack: Applicatio
     if (!candidate.overflow && candidate.bottomY >= BOTTOM) break;
   }
   if (best.overflow || best.bottomY < BOTTOM) {
-    throw new Error('The selected résumé evidence cannot fit safely on one A4 page. Reduce the selected evidence before export.');
+    throw new Error('The selected resume evidence cannot fit safely on one A4 page. Reduce the selected evidence before export.');
   }
   return pdfFromStreams([best.stream], [A4_WIDTH, A4_HEIGHT], FONT_MAP);
 }
