@@ -21,10 +21,22 @@ const requireModule = createRequire(import.meta.url);
  * Modern (CMR/CMBX/CMTI). CMU Serif is the Unicode TrueType distribution of
  * that family, so the server embeds it directly in every generated PDF rather
  * than substituting DejaVu Serif or Times.
+ *
+ * Keep every module specifier literal. Turbopack cannot statically trace a
+ * require.resolve() call whose argument is passed through a helper function.
  */
-function fontData(path: string) {
-  return readFileSync(requireModule.resolve(path));
-}
+const regularFontData = readFileSync(
+  requireModule.resolve('computer-modern/fonts/cmu-serif-500-roman.ttf'),
+);
+const boldFontData = readFileSync(
+  requireModule.resolve('computer-modern/fonts/cmu-serif-700-roman.ttf'),
+);
+const italicFontData = readFileSync(
+  requireModule.resolve('computer-modern/fonts/cmu-serif-500-italic.ttf'),
+);
+const boldItalicFontData = readFileSync(
+  requireModule.resolve('computer-modern/fonts/cmu-serif-700-italic.ttf'),
+);
 
 const regularWidths = [333,278,500,833,500,833,777,278,388,388,500,778,277,333,278,500,500,500,500,500,500,500,500,500,500,500,277,278,778,778,778,472,777,750,708,722,763,680,652,784,750,361,513,777,625,916,750,777,680,777,736,555,722,750,750,1027,750,750,611,278,500,278,611,778,500,500,555,444,555,444,305,500,555,277,305,527,277,833,555,500,555,527,391,394,388,555,527,722,527,527,444,500,278,500,611];
 const boldWidths = [383,350,575,958,575,958,894,319,447,447,575,894,319,383,319,575,575,575,575,575,575,575,575,575,575,575,319,319,894,894,894,543,894,869,818,830,881,755,723,904,900,436,594,901,691,1091,900,863,786,863,862,638,800,884,869,1188,869,869,702,319,575,319,703,894,575,559,638,511,638,527,351,575,638,319,351,606,319,958,638,575,638,606,473,453,447,638,606,830,606,606,511,575,319,575,703];
@@ -34,7 +46,7 @@ const boldItalicWidths = [414,386,591,944,591,944,885,355,473,473,591,885,355,41
 export const EMBEDDED_RESUME_FONTS: Record<'regular' | 'bold' | 'italic' | 'boldItalic', EmbeddedResumeFont> = {
   regular: {
     baseFont: 'CMUSerif-Roman',
-    data: fontData('computer-modern/fonts/cmu-serif-500-roman.ttf'),
+    data: regularFontData,
     widths: regularWidths,
     ascent: 935,
     descent: -250,
@@ -46,7 +58,7 @@ export const EMBEDDED_RESUME_FONTS: Record<'regular' | 'bold' | 'italic' | 'bold
   },
   bold: {
     baseFont: 'CMUSerif-Bold',
-    data: fontData('computer-modern/fonts/cmu-serif-700-roman.ttf'),
+    data: boldFontData,
     widths: boldWidths,
     ascent: 937,
     descent: -308,
@@ -58,7 +70,7 @@ export const EMBEDDED_RESUME_FONTS: Record<'regular' | 'bold' | 'italic' | 'bold
   },
   italic: {
     baseFont: 'CMUSerif-Italic',
-    data: fontData('computer-modern/fonts/cmu-serif-500-italic.ttf'),
+    data: italicFontData,
     widths: italicWidths,
     ascent: 930,
     descent: -250,
@@ -70,7 +82,7 @@ export const EMBEDDED_RESUME_FONTS: Record<'regular' | 'bold' | 'italic' | 'bold
   },
   boldItalic: {
     baseFont: 'CMUSerif-BoldItalic',
-    data: fontData('computer-modern/fonts/cmu-serif-700-italic.ttf'),
+    data: boldItalicFontData,
     widths: boldItalicWidths,
     ascent: 921,
     descent: -308,
