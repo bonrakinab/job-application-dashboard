@@ -16,10 +16,39 @@ type ApplicationProject = ProjectItem & {
   externalApplicationEligible?: boolean;
 };
 
+const IMPORT_DUMP_MARKERS = /\b(?:objective|technologies used|technology used|dataset|preprocessing|key achievements|impact|major challenges on initial configuration|benefits of new setup)\s*:/i;
+
+/**
+ * LinkedIn/imported profiles sometimes contain a whole project card copied into
+ * one "bullet". Those strings rank artificially well because they contain many
+ * keywords and then render as an unreadable paragraph. Employer output only uses
+ * concise evidence statements; the master profile is left untouched.
+ */
+export function isEmployerQualityProjectBullet(value: string) {
+  const text = value.replace(/\s+/g, ' ').trim();
+  if (!text || text.length < 18 || text.length > 360) return false;
+  if (IMPORT_DUMP_MARKERS.test(text)) return false;
+  if ((text.match(/◦/g) ?? []).length >= 1) return false;
+  const colonLabels = text.match(/\b[A-Z][A-Za-z /&-]{2,24}:\s/g) ?? [];
+  if (colonLabels.length >= 2) return false;
+  return true;
+}
+
 export function isExternalApplicationProject(project: ProjectItem): boolean {
   const applicationProject = project as ApplicationProject;
   if (applicationProject.externalApplicationEligible === false) return false;
   return !LEGACY_INTERNAL_PROJECT_NAMES.has(normalizeText(project.name));
+}
+
+function cleanProject(project: ProjectItem): ProjectItem {
+  const bullets = (project.bullets ?? [])
+    .map((bullet) => bullet.replace(/\s+/g, ' ').trim())
+    .filter(isEmployerQualityProjectBullet);
+  const rawDescription = project.description?.replace(/\s+/g, ' ').trim() ?? '';
+  const description = isEmployerQualityProjectBullet(rawDescription)
+    ? rawDescription
+    : bullets[0] ?? project.name;
+  return { ...project, bullets, description };
 }
 
 export function externalApplicationProfile(profile: CandidateProfile): CandidateProfile {
@@ -27,7 +56,7 @@ export function externalApplicationProfile(profile: CandidateProfile): Candidate
   return {
     ...safe,
     experience: resumeExperience(safe),
-    projects: (safe.projects ?? []).filter(isExternalApplicationProject),
+    projects: (safe.projects ?? []).filter(isExternalApplicationProject).map(cleanProject),
     // Publications may remain in the master profile for the user's own records,
     // but they are never available to employer-facing resume/package generation.
     publications: [],
