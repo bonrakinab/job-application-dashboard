@@ -10,10 +10,10 @@ type SkillCategory = {
 };
 
 /**
- * Employer-facing skills use the same five stable groups as Arnob's canonical
- * LaTeX resume. The application pack still decides which verified/JD-ranked
- * skills are selected; this layer only places them into a predictable visual
- * taxonomy so a resume never degenerates into sparse or ad-hoc buckets.
+ * Canonical employer-facing taxonomy from Arnob's uploaded LaTeX resume.
+ * The application pack decides which verified/JD-ranked skills are selected;
+ * this layer only places those selected skills into the same stable buckets
+ * and order as the reference template.
  */
 const SKILL_CATEGORIES: SkillCategory[] = [
   {
@@ -24,32 +24,54 @@ const SKILL_CATEGORIES: SkillCategory[] = [
     sourceLabels: [/language/, /programming/],
   },
   {
-    label: 'Full-Stack & APIs',
+    label: 'Enterprise & ERP',
     patterns: [
-      /\b(next\.?js|react|angular|tailwind|html|css|sass|scss|vite|framer motion|pwa|progressive web|responsive web|html5 canvas|web design|node\.?js|express|rest api|api development|graphql|flask|fastapi|django|spring|auth\.?js|zod|capacitor|websocket|webrtc|peerjs)\b/,
+      /\b(oracle fusion|erp|enterprise resource|financials|accounts payable|accounts receivable|general ledger|procurement|tax rules|tax engine|vat|wht|whv|edms|arcmate)\b/,
+      /^(ap|ar|gl)$/,
     ],
-    sourceLabels: [/front.?end/, /full.?stack/, /web/, /api/],
+    sourceLabels: [/enterprise/, /erp/],
   },
   {
-    label: 'Data & Backend',
+    label: 'Project Management',
     patterns: [
-      /\b(postgres|postgresql|mysql|sqlite|mongodb|supabase|prisma|neon|database|data modeling|row-level security|rls|edge function|pg[_ ]?cron|qdrant|pinecone)\b/,
+      /\b(agile|scrum|jira|confluence|project management|change management|delivery management|task coordination)\b/,
     ],
-    sourceLabels: [/backend/, /database/, /data & backend/],
+    sourceLabels: [/project management/, /delivery/],
   },
   {
-    label: 'Applied AI & ML',
+    label: 'Cloud',
     patterns: [
-      /\b(machine learning|deep learning|artificial intelligence|ai\/ml|llm|large language|gemini|openai|bert|distilbert|tinybert|clip|hnsw|faiss|computer vision|nlp|natural language|tensorflow|pytorch|scikit|random forest|svm|adaboost|pca|smote|yolo|rag|retrieval augmented|neural network)\b/,
+      /\b(oracle cloud|oci|aws|azure|gcp|google cloud|compute|storage|iam|api gateway|data flow|cloud infrastructure|vercel|docker|kubernetes|devops|ci\/cd|continuous integration|github actions)\b/,
     ],
-    sourceLabels: [/ai/, /machine learning/, /data & ai/, /applied ai/],
+    sourceLabels: [/^cloud$/, /cloud infrastructure/, /devops/],
   },
   {
-    label: 'Cloud, DevOps & Enterprise',
+    label: 'Development Tools & API Platforms',
     patterns: [
-      /\b(oracle cloud|oci|aws|azure|gcp|google cloud|docker|kubernetes|vercel|github actions|ci\/cd|continuous integration|devops|cloud|data flow|api gateway|oracle fusion|erp|enterprise resource|financials|accounts payable|accounts receivable|general ledger|procurement|bi publisher|visual builder|edms|arcmate|tax rules|tax engine|vat|wht|whv|agile|scrum|jira|confluence|requirements gathering|requirements analysis|business analysis|process mapping|process improvement|stakeholder|project management|change management|documentation|technical documentation|workflow analysis|iso 27001|cybersecurity|security|access management|access control|risk assessment|risk management|incident management|iam|linux|windows|server|systems administration|backup|git|github|postman|jupyter|jupyterlab|streamlit|n8n)\b/,
+      /\b(next\.?js|react|angular|tailwind|html|css|sass|scss|vite|framer motion|pwa|progressive web|responsive web|html5 canvas|web design|node\.?js|express|rest api|api development|graphql|flask|fastapi|django|spring|auth\.?js|zod|capacitor|websocket|webrtc|peerjs|visual builder|bi publisher|postman|git|github|jupyter|jupyterlab|streamlit|n8n)\b/,
     ],
-    sourceLabels: [/cloud/, /devops/, /enterprise/, /erp/, /project management/, /business analysis/, /delivery/, /security/, /cyber/, /systems?/, /tool/, /platform/, /additional/, /development tools/],
+    sourceLabels: [/front.?end/, /full.?stack/, /web/, /api/, /development tools/, /platform/, /tool/],
+  },
+  {
+    label: 'Data & AI',
+    patterns: [
+      /\b(machine learning|deep learning|artificial intelligence|ai\/ml|llm|large language|gemini|openai|bert|distilbert|tinybert|clip|hnsw|faiss|computer vision|nlp|natural language|tensorflow|pytorch|scikit|random forest|svm|adaboost|pca|smote|yolo|rag|retrieval augmented|neural network|postgres|postgresql|mysql|sqlite|mongodb|supabase|prisma|neon|database|data modeling|row-level security|rls|qdrant|pinecone)\b/,
+    ],
+    sourceLabels: [/data/, /ai/, /machine learning/, /database/, /backend/],
+  },
+  {
+    label: 'Business Analysis',
+    patterns: [
+      /\b(requirements gathering|requirements analysis|business analysis|process mapping|process improvement|stakeholder management|stakeholder|documentation|technical documentation|workflow analysis|workflow|business process)\b/,
+    ],
+    sourceLabels: [/business analysis/, /requirements/],
+  },
+  {
+    label: 'Cybersecurity',
+    patterns: [
+      /\b(iso 27001|cybersecurity|security|access management|access control|risk assessment|risk management|incident management|linux|windows|server|systems administration|backup)\b/,
+    ],
+    sourceLabels: [/security/, /cyber/, /systems?/],
   },
 ];
 
@@ -78,14 +100,13 @@ function categoryFor(profile: CandidateProfile, skill: string) {
 
   const sourceLabel = normalizeText(sourceLabelForSkill(profile, skill));
   const fromSource = SKILL_CATEGORIES.find((category) => category.sourceLabels?.some((pattern) => pattern.test(sourceLabel)));
-  return fromSource?.label ?? 'Cloud, DevOps & Enterprise';
+  return fromSource?.label ?? 'Development Tools & API Platforms';
 }
 
 /**
- * Arrange only the already-selected application-pack skills. Skills retain
- * their JD-ranked order inside a group. Empty groups disappear, but the label
- * set itself is fixed to the canonical template and there is never an
- * "Additional" or "Role-Aligned" catch-all section.
+ * Arrange only already-selected application-pack skills. Skills retain their
+ * JD-ranked order inside each bucket. Empty buckets disappear, while the
+ * visible labels and bucket ordering stay identical to the reference resume.
  */
 export function organizedResumeSkillGroups(profile: CandidateProfile, selectedSkills: string[]): ResumeSkillGroup[] {
   const groups = new Map(SKILL_CATEGORIES.map((category) => [category.label, [] as string[]]));
