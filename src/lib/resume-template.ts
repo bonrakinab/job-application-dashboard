@@ -2,7 +2,7 @@
  * Canonical layout constants for Arnob's uploaded one-page LaTeX resume.
  * Any visual change bumps this version so previously generated packs are stale.
  */
-export const RESUME_TEMPLATE_VERSION = 'arnob-latex-reference.v14';
+export const RESUME_TEMPLATE_VERSION = 'arnob-latex-reference.v15';
 
 export const RESUME_PAGE = {
   width: 595.28,
