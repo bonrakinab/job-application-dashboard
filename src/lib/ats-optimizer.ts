@@ -11,25 +11,16 @@ const STOP_WORDS = new Set([
 ]);
 
 function tokens(value: string) {
-  return [...new Set(normalizeText(value)
-    .split(/\s+/)
-    .map((token) => token.replace(/^[-/.]+|[-/.]+$/g, ''))
-    .filter((token) => token.length >= 2 && !STOP_WORDS.has(token)))];
+  return [...new Set(normalizeText(value).split(/\s+/).map((token) => token.replace(/^[-/.]+|[-/.]+$/g, '')).filter((token) => token.length >= 2 && !STOP_WORDS.has(token)))];
 }
 
 function unique(values: string[]) {
   const seen = new Set<string>();
-  return values.filter((value) => {
-    const key = normalizeText(value);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return values.filter((value) => { const key = normalizeText(value); if (!key || seen.has(key)) return false; seen.add(key); return true; });
 }
 
 function context(job: Job, match?: MatchScore) {
-  return [job.title, job.department, job.description, ...(match?.mustHave ?? []), ...(match?.preferred ?? []),
-    ...(match?.matchedSkills ?? []), ...(match?.strengths ?? [])].filter(Boolean).join(' ');
+  return [job.title, job.department, job.description, ...(match?.mustHave ?? []), ...(match?.preferred ?? []), ...(match?.matchedSkills ?? []), ...(match?.strengths ?? [])].filter(Boolean).join(' ');
 }
 
 function relevance(value: string, jobContext: string) {
@@ -77,13 +68,11 @@ function supportedJobSkills(job: Job, profile: CandidateProfile, match?: MatchSc
 function targetedSummary(job: Job, profile: CandidateProfile, skills: string[]) {
   if (profile.profilePurpose === 'part-time') {
     const first = `${expectedDegreeLine(profile)} with documented experience relevant to ${job.title}.`;
-    const second = skills.length ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')}.`
-      : 'The résumé presents only the experience and qualifications supplied in the separate part-time profile.';
+    const second = skills.length ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')}.` : 'The résumé presents only the experience and qualifications supplied in the separate part-time profile.';
     return `${first} ${second}`;
   }
   const first = `${expectedDegreeLine(profile)} with hands-on experience relevant to ${job.title}.`;
-  const second = skills.length ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')} across professional, academic, and project work.`
-    : 'Background spans enterprise IT, software development, data, and applied AI through verified professional and project work.';
+  const second = skills.length ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')} across professional, academic, and project work.` : 'Background spans enterprise IT, software development, data, and applied AI through verified professional and project work.';
   return `${first} ${second}`;
 }
 
@@ -92,10 +81,8 @@ function targetedHeadline(job: Job, skills: string[]) {
 }
 
 function rankBullets(bullets: Array<{ text: string; evidenceIds: string[] }>, parentSkills: string[], jobContext: string, limit: number) {
-  return bullets
-    .map((item, index) => ({ ...item, index, score: relevance(`${item.text} ${parentSkills.join(' ')}`, jobContext) + evidenceQuality(item.text) }))
-    .sort((a, b) => b.score - a.score || a.index - b.index)
-    .slice(0, limit);
+  return bullets.map((item, index) => ({ ...item, index, score: relevance(`${item.text} ${parentSkills.join(' ')}`, jobContext) + evidenceQuality(item.text) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index).slice(0, limit);
 }
 
 function experienceKey(organization: string, title: string) {
@@ -103,11 +90,14 @@ function experienceKey(organization: string, title: string) {
 }
 
 function optimizedExperience(profile: CandidateProfile, pack: ApplicationPack, jobContext: string) {
-  const sourceRoles = profile.profilePurpose === 'part-time'
-    ? pack.experience.map((selected) => (profile.experience ?? []).find((source) => experienceKey(source.organization, source.title) === experienceKey(selected.organization, selected.title))).filter((role): role is NonNullable<typeof role> => Boolean(role))
-    : (profile.experience ?? []).slice(0, 3);
-  const selectedMap = new Map(pack.experience.map((item) => [experienceKey(item.organization, item.title), item]));
   const profileRoles = profile.experience ?? [];
+  const selectedRoles = pack.experience.map((selected) => profileRoles.find((source) => experienceKey(source.organization, source.title) === experienceKey(selected.organization, selected.title)))
+    .filter((role): role is NonNullable<CandidateProfile['experience']>[number] => Boolean(role));
+  // Preserve the generation plan's role shortlist. The optimizer may rerank the
+  // bullets inside those roles, but it must never append unrelated LinkedIn or
+  // committee history just to fill three slots.
+  const sourceRoles = selectedRoles.length ? selectedRoles : profileRoles.slice(0, Math.min(3, profileRoles.length));
+  const selectedMap = new Map(pack.experience.map((item) => [experienceKey(item.organization, item.title), item]));
 
   return sourceRoles.slice(0, 3).map((source, roleIndex) => {
     const sourceIndex = profileRoles.findIndex((item) => experienceKey(item.organization, item.title) === experienceKey(source.organization, source.title));
@@ -117,25 +107,16 @@ function optimizedExperience(profile: CandidateProfile, pack: ApplicationPack, j
       const evidenceId = `EXP:${sourceIndex}:${bulletIndex}`;
       return { text: rewrites.get(evidenceId) ?? text, evidenceIds: [evidenceId] };
     });
-    // Match the reference density: 3 bullets for the primary role, up to 2 for
-    // the second, and 1 for the third. Quantified achievements receive a small
-    // quality boost so the strongest accomplishment cannot vanish on retuning.
     const limit = profile.profilePurpose === 'part-time' ? 2 : roleIndex === 0 ? 3 : roleIndex === 1 ? 2 : 1;
     const bullets = rankBullets(candidates, source.skills ?? [], jobContext, limit);
-    return {
-      organization: source.organization,
-      title: source.title,
-      bullets: bullets.map((item) => item.text),
-      bulletEvidence: bullets.map((item) => item.evidenceIds),
-    };
+    return { organization: source.organization, title: source.title, bullets: bullets.map((item) => item.text), bulletEvidence: bullets.map((item) => item.evidenceIds) };
   }).filter((item) => item.bullets.length > 0);
 }
 
 function optimizedProjects(profile: CandidateProfile, pack: ApplicationPack, jobContext: string) {
   const selectedByName = new Map(pack.projects.map((project) => [normalizeText(project.name), project]));
   const ranked = (profile.projects ?? []).map((project, index) => ({
-    project,
-    index,
+    project, index,
     score: relevance([project.name, project.description, ...(project.skills ?? []), ...(project.bullets ?? [])].join(' '), jobContext) + evidenceQuality((project.bullets ?? []).join(' ')),
     thesis: /msc thesis|thesis/i.test(project.name),
   })).sort((a, b) => {
@@ -161,8 +142,7 @@ function retunePack(job: Job, profile: CandidateProfile, pack: ApplicationPack, 
   const jobContext = context(job, match);
   const jdSkills = supportedJobSkills(job, profile, match);
   const allowed = new Set(profile.skills.map(normalizeText));
-  const skills = unique([...jdSkills, ...pack.skills.filter((skill) => allowed.has(normalizeText(skill)))])
-    .slice(0, attempt >= 2 ? 24 : 20);
+  const skills = unique([...jdSkills, ...pack.skills.filter((skill) => allowed.has(normalizeText(skill)))]).slice(0, attempt >= 2 ? 24 : 20);
   return {
     ...pack,
     resumeHeadline: targetedHeadline(job, skills),
@@ -183,10 +163,6 @@ function optimizationNotes(score: AtsReadinessScore) {
 
 export function optimizeApplicationPackForAts(job: Job, profile: CandidateProfile, initialPack: ApplicationPack, match?: MatchScore): { pack: ApplicationPack; score: AtsReadinessScore } {
   const initialScore = scoreTailoredResumeWithCoursework(job, profile, initialPack, match);
-
-  // Structural curation is mandatory, not conditional on the ATS score. v11
-  // skipped this entire pass when a raw AI pack happened to score well enough,
-  // which allowed verbose imported bullets and inconsistent layouts to survive.
   let bestPack = retunePack(job, profile, initialPack, match, 1);
   let bestScore = scoreTailoredResumeWithCoursework(job, profile, bestPack, match);
   let attempts = 1;
@@ -205,13 +181,8 @@ export function optimizeApplicationPackForAts(job: Job, profile: CandidateProfil
   const pack: ApplicationPack = {
     ...bestPack,
     atsOptimization: {
-      passScore: ATS_PASS_SCORE,
-      initialScore: initialScore.overall,
-      finalScore: bestScore.overall,
-      attempts,
-      status: bestScore.status,
-      truthfulCeilingReached,
-      notes: optimizationNotes(bestScore),
+      passScore: ATS_PASS_SCORE, initialScore: initialScore.overall, finalScore: bestScore.overall, attempts,
+      status: bestScore.status, truthfulCeilingReached, notes: optimizationNotes(bestScore),
     },
   };
   return { pack, score: scoreTailoredResumeWithCoursework(job, profile, pack, match) };
