@@ -91,13 +91,16 @@ function phraseScore(phrase: string) {
   return score;
 }
 
-/** Extract compact, literal phrases from the JD itself. */
+/** Extract compact, literal phrases from one punctuation-bounded JD clause. */
 export function literalJdKeywordCandidates(job: Job) {
   const source = `${job.title}. ${job.description}`;
   const candidates: Array<{ phrase: string; score: number; order: number }> = [];
   let order = 0;
 
-  for (const clause of source.split(/[\n.;:!?]+/g)) {
+  // Commas are boundaries too. v11 stripped punctuation before forming n-grams,
+  // which could fabricate awkward phrases such as "design development" from
+  // "design, development" even though that phrase never appeared in the JD.
+  for (const clause of source.split(/[\n.;:,!?]+/g)) {
     const words = clause.match(/[A-Za-z0-9][A-Za-z0-9+.#/&-]*/g) ?? [];
     for (let size = 2; size <= 4; size += 1) {
       for (let start = 0; start + size <= words.length; start += 1) {
@@ -130,12 +133,14 @@ export type EvidenceBackedJdKeyword = {
 };
 
 /**
- * Map literal JD phrases to requirements that have already been marked supported
- * by the requirement-to-evidence matrix. This allows employer wording to change
- * without changing the underlying candidate claim.
+ * Map literal JD phrases to requirements already proven by candidate evidence.
+ * Preferred requirements need higher evidence confidence than must-haves before
+ * their semantic wording can be inserted into the resume.
  */
 export function evidenceBackedJdKeywords(job: Job, requirementEvidence: RequirementEvidence[]) {
-  const supported = requirementEvidence.filter((item) => item.support === 'supported' && item.evidence.length > 0);
+  const supported = requirementEvidence.filter((item) => item.support === 'supported'
+    && item.evidence.length > 0
+    && item.confidence >= (item.importance === 'must-have' ? 55 : 70));
   const mapped: EvidenceBackedJdKeyword[] = [];
 
   for (const phrase of literalJdKeywordCandidates(job)) {
@@ -172,7 +177,7 @@ export function evidenceBackedJdKeywords(job: Job, requirementEvidence: Requirem
       seen.add(key);
       return true;
     })
-    .slice(0, 12);
+    .slice(0, 8);
 }
 
 function exactSupportedProfileSkills(profile: CandidateProfile, requirementEvidence: RequirementEvidence[]) {
@@ -199,31 +204,49 @@ function resumeBodyText(pack: ApplicationPack) {
   ].join(' ');
 }
 
+function erpSummaryAnchor(job: Job, profile: CandidateProfile) {
+  if (profile.profilePurpose === 'part-time') return '';
+  const jd = normalizeText(`${job.title} ${job.description}`);
+  if (!/\b(?:oracle fusion|oracle erp|\berp\b|financial systems?|enterprise applications?)\b/.test(jd)) return '';
+  const role = (profile.experience ?? []).find((item) => item.bullets.some((bullet) => /oracle fusion|oracle erp/i.test(bullet)));
+  if (!role) return '';
+  const fusion = role.bullets.find((bullet) => /oracle fusion.*(?:financials|procurement)|financials.*oracle fusion/i.test(bullet));
+  const metric = role.bullets.find((bullet) => /15[,.]?000|15k/i.test(bullet) && /460/i.test(bullet));
+  if (!fusion) return '';
+  const first = 'Oracle Fusion ERP and financial systems professional with hands-on enterprise application experience.';
+  const second = fusion.replace(/^Supported\s+/i, 'Hands-on work includes supporting ').replace(/[.\s]+$/, '.');
+  const third = metric ? metric.replace(/[.\s]+$/, '.') : '';
+  return [first, second, third].filter(Boolean).join(' ');
+}
+
 function improvedSummary(
   sourceSummary: string,
   optimizedSummary: string,
   prioritizedSkills: string[],
   evidenceBackedPhrases: string[],
   existingResumeText: string,
+  anchor = '',
 ) {
-  const preferred = sourceSummary.trim().length >= 80 ? sourceSummary.trim() : optimizedSummary.trim();
+  const preferred = anchor || (sourceSummary.trim().length >= 80 ? sourceSummary.trim() : optimizedSummary.trim());
   const base = preferred || optimizedSummary.trim();
   const skillTerms = prioritizedSkills.filter((skill) => !containsTerm(base, skill));
   const semanticTerms = evidenceBackedPhrases.filter((phrase) => !containsTerm(existingResumeText, phrase) && !containsTerm(base, phrase));
-  const missing = unique([...skillTerms, ...semanticTerms]).slice(0, 6);
+  // A resume summary is positioning, not a keyword dump. Four additions is the
+  // maximum; the rest can appear naturally in skills/evidence bullets.
+  const missing = unique([...skillTerms, ...semanticTerms]).slice(0, 4);
   if (!missing.length) return base;
 
-  const sentence = `Relevant experience also includes ${naturalList(missing)}.`;
+  const sentence = `Relevant strengths include ${naturalList(missing)}.`;
   const normalizedBase = base.replace(/[.\s]+$/, '');
-  if (`${normalizedBase}. ${sentence}`.length <= 620) return `${normalizedBase}. ${sentence}`;
+  if (`${normalizedBase}. ${sentence}`.length <= 560) return `${normalizedBase}. ${sentence}`;
 
   const fitting: string[] = [];
   for (const term of missing) {
-    const candidate = `Relevant experience also includes ${naturalList([...fitting, term])}.`;
-    if (`${normalizedBase}. ${candidate}`.length > 620) break;
+    const candidate = `Relevant strengths include ${naturalList([...fitting, term])}.`;
+    if (`${normalizedBase}. ${candidate}`.length > 560) break;
     fitting.push(term);
   }
-  return fitting.length ? `${normalizedBase}. Relevant experience also includes ${naturalList(fitting)}.` : base;
+  return fitting.length ? `${normalizedBase}. Relevant strengths include ${naturalList(fitting)}.` : base;
 }
 
 function reconciledRequirementEvidence(
@@ -237,16 +260,7 @@ function reconciledRequirementEvidence(
   });
 }
 
-/**
- * Final employer-facing resume policy.
- *
- * - Publications are never allowed into an application pack.
- * - Exact JD skills are promoted when the exact skill exists in the verified profile.
- * - Literal JD phrases may be introduced even when the original resume used different
- *   wording, but only when a supported requirement is linked to candidate evidence.
- * - Semantic JD wording goes to the summary rather than masquerading as an exact
- *   source skill. Unsupported requirements remain gaps.
- */
+/** Final employer-facing resume content policy. */
 export function strengthenResumeForJob(
   job: Job,
   profile: CandidateProfile,
@@ -262,7 +276,7 @@ export function strengthenResumeForJob(
     ...supportedExact,
     ...jdSkills,
     ...optimizedPack.skills.filter((skill) => profile.skills.some((candidate) => normalizeText(candidate) === normalizeText(skill))),
-  ]).slice(0, 26);
+  ]).slice(0, 24);
   const currentText = resumeBodyText({ ...optimizedPack, skills: prioritizedSkills });
 
   return {
@@ -270,9 +284,10 @@ export function strengthenResumeForJob(
     resumeSummary: improvedSummary(
       sourcePack.resumeSummary,
       optimizedPack.resumeSummary,
-      prioritizedSkills.slice(0, 8),
+      prioritizedSkills.slice(0, 7),
       jdKeywords.map((keyword) => keyword.phrase),
       currentText,
+      erpSummaryAnchor(job, profile),
     ),
     skills: prioritizedSkills,
     publications: [],
