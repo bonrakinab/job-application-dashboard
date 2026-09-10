@@ -6,6 +6,7 @@ import { profileWithTailoredCourseworkForResume } from '@/lib/education-tailorin
 import { PART_TIME_PROFILE_ID, profileIdForJob } from '@/lib/part-time-jobs';
 import { assertResumeArtifact, validateResumeDocxArtifact } from '@/lib/resume-artifact-validation';
 import { finalResumeArtifactState } from '@/lib/resume-generation-policy';
+import { RESUME_ENGINE_VERSION, RESUME_TEMPLATE_VERSION } from '@/lib/resume-template';
 import { getJob } from '@/lib/store';
 import { slug } from '@/lib/utils';
 
@@ -20,9 +21,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   if (!profileState) return Response.json({ error: profileId === PART_TIME_PROFILE_ID ? 'Upload the separate part-time résumé first.' : 'Candidate profile is not configured.' }, { status: 409 });
   const packState = await getApplicationPackState(id, profileState.updatedAt, profileId);
   if (!packState.pack) return Response.json({ error: 'Generate the application pack first.' }, { status: 404 });
-  if (packState.stale) {
-    return Response.json({ error: 'This tailored resume is outdated. Regenerate the application pack before downloading.', reasons: packState.reasons }, { status: 409 });
-  }
+  if (packState.stale) return Response.json({ error: 'This tailored resume is outdated. Regenerate the application pack before downloading.', reasons: packState.reasons }, { status: 409 });
   const baseProfile = profileWithTailoredCourseworkForResume(projectTailoredApplicationProfile(externalApplicationProfile(profileState.profile), job), packState.pack);
   const finalState = finalResumeArtifactState(baseProfile, packState.pack);
   const docx = await resumeDocx(finalState.profile, job, finalState.pack);
@@ -33,6 +32,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       'Content-Disposition': `attachment; filename="${slug(job.company)}-${slug(job.title)}-resume.docx"`,
       'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff',
+      'X-Resume-Engine-Version': RESUME_ENGINE_VERSION,
+      'X-Resume-Template-Version': RESUME_TEMPLATE_VERSION,
     },
   });
 }
