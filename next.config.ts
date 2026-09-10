@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
       // both the JS entry and platform binding; DOMMatrix then fails on import.
       './node_modules/@napi-rs/canvas/**',
       './node_modules/@napi-rs/canvas-*/**',
+      // Resume PDFs read Computer Modern font binaries directly from the
+      // filesystem, so explicitly include them in every API function trace.
+      './node_modules/computer-modern/fonts/**',
     ],
   },
 };
