@@ -28,15 +28,8 @@ function unique(values: string[]) {
 }
 
 function context(job: Job, match?: MatchScore) {
-  return [
-    job.title,
-    job.department,
-    job.description,
-    ...(match?.mustHave ?? []),
-    ...(match?.preferred ?? []),
-    ...(match?.matchedSkills ?? []),
-    ...(match?.strengths ?? []),
-  ].filter(Boolean).join(' ');
+  return [job.title, job.department, job.description, ...(match?.mustHave ?? []), ...(match?.preferred ?? []),
+    ...(match?.matchedSkills ?? []), ...(match?.strengths ?? [])].filter(Boolean).join(' ');
 }
 
 function relevance(value: string, jobContext: string) {
@@ -52,6 +45,13 @@ function relevance(value: string, jobContext: string) {
   return score;
 }
 
+function evidenceQuality(text: string) {
+  const numbers = text.match(/\b\d+(?:[.,]\d+)?(?:%|\+)?\b/g)?.length ?? 0;
+  const resultVerb = /\b(?:reduced|increased|improved|consolidated|achieved|resolved|delivered|migrated|built|implemented|optimized|automated|supported)\b/i.test(text) ? 1.5 : 0;
+  const compact = text.length <= 240 ? 0.5 : 0;
+  return Math.min(5, numbers * 1.2 + resultVerb + compact);
+}
+
 function expectedDegreeLine(profile: CandidateProfile) {
   if (profile.profilePurpose === 'part-time') {
     const titles = [...new Set((profile.experience ?? []).map((item) => item.title).filter(Boolean))].slice(0, 2);
@@ -62,9 +62,7 @@ function expectedDegreeLine(profile: CandidateProfile) {
   const expected = /expected|present|current/i.test(degree.end ?? '');
   const field = /artificial intelligence|\bai\b/i.test(degree.field ?? '') ? ' (AI)' : '';
   const timing = degree.end?.replace(/\s*\(Expected\)\s*/i, '').trim();
-  if (expected) {
-    return `MSc Computer Science${field} candidate at ${degree.institution}${timing ? `, expected ${timing}` : ''}`;
-  }
+  if (expected) return `MSc Computer Science${field} candidate at ${degree.institution}${timing ? `, expected ${timing}` : ''}`;
   return `MSc Computer Science${field}`;
 }
 
@@ -72,23 +70,19 @@ function supportedJobSkills(job: Job, profile: CandidateProfile, match?: MatchSc
   const jd = normalizeText(`${job.title} ${job.description}`);
   const allowed = new Map(profile.skills.map((skill) => [normalizeText(skill), skill]));
   const exact = profile.skills.filter((skill) => containsTerm(jd, skill));
-  const matched = (match?.matchedSkills ?? [])
-    .map((skill) => allowed.get(normalizeText(skill)))
-    .filter((skill): skill is string => Boolean(skill));
+  const matched = (match?.matchedSkills ?? []).map((skill) => allowed.get(normalizeText(skill))).filter((skill): skill is string => Boolean(skill));
   return unique([...matched, ...exact]);
 }
 
 function targetedSummary(job: Job, profile: CandidateProfile, skills: string[]) {
   if (profile.profilePurpose === 'part-time') {
     const first = `${expectedDegreeLine(profile)} with documented experience relevant to ${job.title}.`;
-    const second = skills.length
-      ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')}.`
+    const second = skills.length ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')}.`
       : 'The résumé presents only the experience and qualifications supplied in the separate part-time profile.';
     return `${first} ${second}`;
   }
   const first = `${expectedDegreeLine(profile)} with hands-on experience relevant to ${job.title}.`;
-  const second = skills.length
-    ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')} across professional, academic, and project work.`
+  const second = skills.length ? `Relevant verified strengths include ${skills.slice(0, 6).join(', ')} across professional, academic, and project work.`
     : 'Background spans enterprise IT, software development, data, and applied AI through verified professional and project work.';
   return `${first} ${second}`;
 }
@@ -97,14 +91,9 @@ function targetedHeadline(job: Job, skills: string[]) {
   return [job.title, ...skills.slice(0, 3)].filter(Boolean).join(' | ').slice(0, 140);
 }
 
-function rankBullets(
-  bullets: Array<{ text: string; evidenceIds: string[] }>,
-  parentSkills: string[],
-  jobContext: string,
-  limit: number,
-) {
+function rankBullets(bullets: Array<{ text: string; evidenceIds: string[] }>, parentSkills: string[], jobContext: string, limit: number) {
   return bullets
-    .map((item, index) => ({ ...item, index, score: relevance(`${item.text} ${parentSkills.join(' ')}`, jobContext) }))
+    .map((item, index) => ({ ...item, index, score: relevance(`${item.text} ${parentSkills.join(' ')}`, jobContext) + evidenceQuality(item.text) }))
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .slice(0, limit);
 }
@@ -113,76 +102,58 @@ function experienceKey(organization: string, title: string) {
   return `${normalizeText(organization)}|${normalizeText(title)}`;
 }
 
-function optimizedExperience(profile: CandidateProfile, pack: ApplicationPack, jobContext: string, attempt: number) {
-  const limit = attempt >= 2 ? 3 : 2;
-  const sources = new Map((profile.experience ?? []).map((item, sourceIndex) => [
-    experienceKey(item.organization, item.title),
-    { item, sourceIndex },
-  ]));
+function optimizedExperience(profile: CandidateProfile, pack: ApplicationPack, jobContext: string) {
+  const sourceRoles = profile.profilePurpose === 'part-time'
+    ? pack.experience.map((selected) => (profile.experience ?? []).find((source) => experienceKey(source.organization, source.title) === experienceKey(selected.organization, selected.title))).filter((role): role is NonNullable<typeof role> => Boolean(role))
+    : (profile.experience ?? []).slice(0, 3);
+  const selectedMap = new Map(pack.experience.map((item) => [experienceKey(item.organization, item.title), item]));
+  const profileRoles = profile.experience ?? [];
 
-  return pack.experience
-    .map((selected, selectedIndex) => {
-      const source = sources.get(experienceKey(selected.organization, selected.title));
-      const selectedByEvidence = new Map((selected.bulletEvidence ?? []).map((ids, index) => [ids[0], selected.bullets[index]]));
-      const sourceBullets = source
-        ? source.item.bullets.map((text, bulletIndex) => {
-          const evidenceId = `EXP:${source.sourceIndex}:${bulletIndex}`;
-          return { text: selectedByEvidence.get(evidenceId) ?? text, evidenceIds: [evidenceId] };
-        })
-        : selected.bullets.map((text, index) => ({ text, evidenceIds: selected.bulletEvidence?.[index] ?? [] }));
-      const sourceSkills = source?.item.skills ?? [];
-      const bullets = rankBullets(sourceBullets, sourceSkills, jobContext, limit);
-      const score = relevance([
-        selected.organization,
-        selected.title,
-        ...sourceSkills,
-        ...bullets.map((item) => item.text),
-      ].join(' '), jobContext);
-      return {
-        organization: selected.organization,
-        title: selected.title,
-        bullets: bullets.map((item) => item.text),
-        bulletEvidence: bullets.map((item) => item.evidenceIds),
-        score,
-        selectedIndex,
-        sourceIndex: source?.sourceIndex ?? Number.MAX_SAFE_INTEGER,
-      };
-    })
-    .filter((item) => item.bullets.length > 0)
-    .sort((a, b) => b.score - a.score || a.selectedIndex - b.selectedIndex)
-    .slice(0, 3)
-    .sort((a, b) => a.sourceIndex - b.sourceIndex || a.selectedIndex - b.selectedIndex)
-    .map(({ organization, title, bullets, bulletEvidence }) => ({ organization, title, bullets, bulletEvidence }));
+  return sourceRoles.slice(0, 3).map((source, roleIndex) => {
+    const sourceIndex = profileRoles.findIndex((item) => experienceKey(item.organization, item.title) === experienceKey(source.organization, source.title));
+    const selected = selectedMap.get(experienceKey(source.organization, source.title));
+    const rewrites = new Map((selected?.bulletEvidence ?? []).flatMap((ids, index) => ids.length === 1 ? [[ids[0], selected.bullets[index]] as const] : []));
+    const candidates = source.bullets.map((text, bulletIndex) => {
+      const evidenceId = `EXP:${sourceIndex}:${bulletIndex}`;
+      return { text: rewrites.get(evidenceId) ?? text, evidenceIds: [evidenceId] };
+    });
+    // Match the reference density: 3 bullets for the primary role, up to 2 for
+    // the second, and 1 for the third. Quantified achievements receive a small
+    // quality boost so the strongest accomplishment cannot vanish on retuning.
+    const limit = profile.profilePurpose === 'part-time' ? 2 : roleIndex === 0 ? 3 : roleIndex === 1 ? 2 : 1;
+    const bullets = rankBullets(candidates, source.skills ?? [], jobContext, limit);
+    return {
+      organization: source.organization,
+      title: source.title,
+      bullets: bullets.map((item) => item.text),
+      bulletEvidence: bullets.map((item) => item.evidenceIds),
+    };
+  }).filter((item) => item.bullets.length > 0);
 }
 
-function optimizedProjects(profile: CandidateProfile, pack: ApplicationPack, jobContext: string, attempt: number) {
+function optimizedProjects(profile: CandidateProfile, pack: ApplicationPack, jobContext: string) {
   const selectedByName = new Map(pack.projects.map((project) => [normalizeText(project.name), project]));
   const ranked = (profile.projects ?? []).map((project, index) => ({
     project,
     index,
-    score: relevance([project.name, project.description, ...(project.skills ?? []), ...(project.bullets ?? [])].join(' '), jobContext),
+    score: relevance([project.name, project.description, ...(project.skills ?? []), ...(project.bullets ?? [])].join(' '), jobContext) + evidenceQuality((project.bullets ?? []).join(' ')),
     thesis: /msc thesis|thesis/i.test(project.name),
   })).sort((a, b) => {
     if (profile.profilePurpose === 'part-time') return b.score - a.score || a.index - b.index;
-    if (a.thesis !== b.thesis) return a.thesis ? -1 : 1;
+    if (a.thesis !== b.thesis && /\b(?:machine learning|\bai\b|artificial intelligence|data scientist|computer vision|nlp)\b/i.test(jobContext)) return a.thesis ? -1 : 1;
     return b.score - a.score || a.index - b.index;
   });
 
-  const maxProjects = attempt >= 2 ? 3 : 2;
-  return ranked.slice(0, maxProjects).flatMap(({ project, index }) => {
+  return ranked.slice(0, 3).flatMap(({ project, index }) => {
     const selected = selectedByName.get(normalizeText(project.name));
-    const selectedByEvidence = new Map((selected?.bulletEvidence ?? []).map((ids, bulletIndex) => [ids[0], selected?.bullets[bulletIndex]]));
-    const sourceBullets = (project.bullets ?? []).map((text, bulletIndex) => {
+    const rewrites = new Map((selected?.bulletEvidence ?? []).flatMap((ids, bulletIndex) => ids.length === 1 ? [[ids[0], selected!.bullets[bulletIndex]] as const] : []));
+    const candidates = (project.bullets ?? []).map((text, bulletIndex) => {
       const evidenceId = `PROJ:${index}:${bulletIndex}`;
-      return { text: selectedByEvidence.get(evidenceId) ?? text, evidenceIds: [evidenceId] };
+      return { text: rewrites.get(evidenceId) ?? text, evidenceIds: [evidenceId] };
     });
-    const bullets = rankBullets(sourceBullets, project.skills ?? [], jobContext, 2);
+    const bullets = rankBullets(candidates, project.skills ?? [], jobContext, 1);
     if (!bullets.length) return [];
-    return [{
-      name: project.name,
-      bullets: bullets.map((item) => item.text),
-      bulletEvidence: bullets.map((item) => item.evidenceIds),
-    }];
+    return [{ name: project.name, bullets: [bullets[0].text], bulletEvidence: [bullets[0].evidenceIds] }];
   });
 }
 
@@ -190,55 +161,42 @@ function retunePack(job: Job, profile: CandidateProfile, pack: ApplicationPack, 
   const jobContext = context(job, match);
   const jdSkills = supportedJobSkills(job, profile, match);
   const allowed = new Set(profile.skills.map(normalizeText));
-  const skills = unique([
-    ...jdSkills,
-    ...pack.skills.filter((skill) => allowed.has(normalizeText(skill))),
-  ]).slice(0, attempt >= 2 ? 26 : 22);
-
+  const skills = unique([...jdSkills, ...pack.skills.filter((skill) => allowed.has(normalizeText(skill)))])
+    .slice(0, attempt >= 2 ? 24 : 20);
   return {
     ...pack,
     resumeHeadline: targetedHeadline(job, skills),
     resumeSummary: targetedSummary(job, profile, jdSkills),
     skills,
-    // ATS retuning may improve bullet order, but it must never replace the
-    // evidence shortlist with every role in the master LinkedIn history.
-    experience: optimizedExperience(profile, pack, jobContext, attempt),
-    projects: optimizedProjects(profile, pack, jobContext, attempt),
+    experience: optimizedExperience(profile, pack, jobContext),
+    projects: optimizedProjects(profile, pack, jobContext),
   };
 }
 
 function optimizationNotes(score: AtsReadinessScore) {
   if (score.targetReached) return ['Internal ATS optimization target reached using only verified candidate evidence.'];
   if (score.hardBlockers.length) return score.hardBlockers.slice(0, 4);
-  if (score.unsupportedMustHaves.length) {
-    return score.unsupportedMustHaves.slice(0, 4).map((item) => `Unsupported mandatory requirement: ${item}`);
-  }
-  if (score.missingKeywords.length) {
-    return score.missingKeywords.slice(0, 6).map((item) => `Remaining truthful gap: ${item}`);
-  }
+  if (score.unsupportedMustHaves.length) return score.unsupportedMustHaves.slice(0, 4).map((item) => `Unsupported mandatory requirement: ${item}`);
+  if (score.missingKeywords.length) return score.missingKeywords.slice(0, 6).map((item) => `Remaining truthful gap: ${item}`);
   return ['The verified evidence was fully re-ranked and retargeted, but the internal 90-point optimization target was not reached.'];
 }
 
-export function optimizeApplicationPackForAts(
-  job: Job,
-  profile: CandidateProfile,
-  initialPack: ApplicationPack,
-  match?: MatchScore,
-): { pack: ApplicationPack; score: AtsReadinessScore } {
+export function optimizeApplicationPackForAts(job: Job, profile: CandidateProfile, initialPack: ApplicationPack, match?: MatchScore): { pack: ApplicationPack; score: AtsReadinessScore } {
   const initialScore = scoreTailoredResumeWithCoursework(job, profile, initialPack, match);
-  let bestPack = initialPack;
-  let bestScore = initialScore;
-  let attempts = 0;
+
+  // Structural curation is mandatory, not conditional on the ATS score. v11
+  // skipped this entire pass when a raw AI pack happened to score well enough,
+  // which allowed verbose imported bullets and inconsistent layouts to survive.
+  let bestPack = retunePack(job, profile, initialPack, match, 1);
+  let bestScore = scoreTailoredResumeWithCoursework(job, profile, bestPack, match);
+  let attempts = 1;
 
   if (!bestScore.eligibleToApply) {
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
+    for (let attempt = 2; attempt <= 3; attempt += 1) {
       attempts = attempt;
       const candidate = retunePack(job, profile, bestPack, match, attempt);
       const candidateScore = scoreTailoredResumeWithCoursework(job, profile, candidate, match);
-      if (candidateScore.overall >= bestScore.overall) {
-        bestPack = candidate;
-        bestScore = candidateScore;
-      }
+      if (candidateScore.overall >= bestScore.overall) { bestPack = candidate; bestScore = candidateScore; }
       if (bestScore.eligibleToApply) break;
     }
   }
@@ -256,6 +214,5 @@ export function optimizeApplicationPackForAts(
       notes: optimizationNotes(bestScore),
     },
   };
-
   return { pack, score: scoreTailoredResumeWithCoursework(job, profile, pack, match) };
 }
