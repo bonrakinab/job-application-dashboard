@@ -3,7 +3,7 @@ import { normalizeText } from './utils';
 import { RESUME_LAYOUT_ATTEMPTS, RESUME_PAGE } from './resume-template';
 import { coverLetterBodyParagraphs, coverLetterDate } from './cover-letter';
 import { EMBEDDED_RESUME_FONTS } from './resume-fonts';
-import { formatResumeDateRange, resumeTemplateContactItems } from './resume-content';
+import { formatResumeDateRange, resumeTemplateContactItems, selectedProjectSkills } from './resume-content';
 import { organizedResumeSkillGroups } from './resume-skill-groups';
 
 const A4_WIDTH = RESUME_PAGE.width;
@@ -81,8 +81,8 @@ function fittedSize(text: string, maxWidth: number, preferred: number, minimum: 
 
 class ResumeCanvas {
   commands: string[] = [];
-  // Baseline measured against the supplied one-page LaTeX reference.
-  y = 785;
+  // Baseline follows the canonical TeX top margin (.35in) and 27pt name line.
+  y = A4_HEIGHT - RESUME_PAGE.top - 18;
   overflow = false;
   constructor(readonly scale: number) {}
   size(value: number) { return value * this.scale; }
@@ -123,25 +123,24 @@ class ResumeCanvas {
   }
   consume(amount: number) { this.y -= this.gap(amount); if (this.y < BOTTOM) this.overflow = true; }
   section(label: string) {
-    this.consume(0.8);
-    // The reference uses CMCSC10. Reproduce its visual hierarchy with genuine
-    // Computer Modern glyphs and small-cap sizing instead of a plain heading.
-    this.smallCaps(label, MARGIN, this.y, this.size(11.96), this.size(9.55));
-    this.rule(this.y - this.gap(2.4));
-    this.consume(13.4);
+    // Mirrors \vspace{2.4pt}, \large\scshape, -3.2pt rule placement.
+    this.consume(2.4);
+    this.smallCaps(label, MARGIN, this.y, this.size(11.65), this.size(9.3));
+    this.rule(this.y - this.gap(3.2));
+    this.consume(12.1);
   }
-  paragraph(text: string, baseSize = 9.96, lineHeight = 11.05) {
+  paragraph(text: string, baseSize = 9.7, lineHeight = 11.1) {
     const size = this.size(baseSize);
     for (const line of wrapWidth(text, RIGHT - MARGIN, size)) {
       this.text(line, MARGIN, this.y, size);
       this.consume(lineHeight);
     }
   }
-  subBulletText(text: string, left = MARGIN + 31, baseSize = 9.96, lineHeight = 11.05) {
+  subBulletText(text: string, left = MARGIN + 31, baseSize = 9.2, lineHeight = 10.35) {
     const size = this.size(baseSize);
     const lines = wrapWidth(text, RIGHT - left, size);
     if (!lines.length) return;
-    this.subBullet(left - 11, this.y + this.gap(2.45));
+    this.subBullet(left - 11, this.y + this.gap(2.35));
     for (const line of lines) {
       this.text(line, left, this.y, size);
       this.consume(lineHeight);
@@ -166,44 +165,67 @@ function pairedRow(canvas: ResumeCanvas, leftText: string, rightText: string, ba
     for (const [index, line] of lines.entries()) {
       canvas.text(line, left, canvas.y, size, font);
       if (index === 0 && rightText) canvas.right(rightText, canvas.y, canvas.size(rightSize), rightFont);
-      canvas.consume(baseSize + 1.0);
+      canvas.consume(baseSize + 0.7);
     }
   } else {
     for (const line of wrapWidth(leftText, RIGHT - left, size, font)) {
       canvas.text(line, left, canvas.y, size, font);
-      canvas.consume(baseSize + 1.0);
+      canvas.consume(baseSize + 0.7);
     }
     for (const line of wrapWidth(rightText, RIGHT - left, canvas.size(rightSize), rightFont)) {
       canvas.right(line, canvas.y, canvas.size(rightSize), rightFont);
-      canvas.consume(rightSize + 1.0);
+      canvas.consume(rightSize + 0.7);
     }
   }
 }
 
 function addRole(canvas: ResumeCanvas, profile: CandidateProfile, item: ApplicationPack['experience'][number], maxBullets: number, roleIndex: number) {
   const source = roleSource(profile, item.organization, item.title);
-  canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(2));
-  pairedRow(canvas, item.organization, source?.location ?? '', 9.96, 9.96, 'TB');
-  pairedRow(canvas, item.title, formatResumeDateRange(source?.start, source?.end), 9.96, 9.96, 'TI', 'TI');
+  canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(1.9));
+  pairedRow(canvas, item.organization, source?.location ?? '', 9.7, 9.3, 'TB');
+  pairedRow(canvas, item.title, formatResumeDateRange(source?.start, source?.end), 9.2, 9.2, 'TI', 'TI');
   const referenceBudget = roleIndex === 0 ? 3 : roleIndex === 1 ? 2 : 1;
   for (const bullet of item.bullets.slice(0, Math.min(maxBullets, referenceBudget))) canvas.subBulletText(bullet);
-  canvas.consume(0.8);
+  canvas.consume(0.45);
 }
 
 function renderSkills(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack, maxSkills: number) {
   const groups = organizedResumeSkillGroups(profile, pack.skills.slice(0, maxSkills));
   for (const group of groups) {
-    canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(2));
+    canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(1.85));
     const label = `${group.label}:`;
-    const labelSize = canvas.size(9.96);
+    const labelSize = canvas.size(9.35);
     canvas.text(label, MARGIN + 10, canvas.y, labelSize, 'TB');
     const left = MARGIN + 10 + width(label, labelSize, 'TB') + 4;
-    const bodySize = canvas.size(9.96);
+    const bodySize = canvas.size(9.2);
     const lines = wrapWidth(group.skills.join(', '), RIGHT - left, bodySize);
     lines.forEach((line, index) => {
       canvas.text(line, index === 0 ? left : MARGIN + 21, canvas.y, bodySize);
-      canvas.consume(11.0);
+      canvas.consume(10.05);
     });
+  }
+}
+
+function renderProjectHeading(canvas: ResumeCanvas, profile: CandidateProfile, pack: ApplicationPack, projectName: string) {
+  const left = MARGIN + 10;
+  const titleSize = canvas.size(9.45);
+  const metaSize = canvas.size(8.5);
+  const skills = selectedProjectSkills(profile, pack, projectName);
+  const metadata = skills.length ? ` - ${skills.join(', ')}` : '';
+  const available = RIGHT - left;
+  const titleWidth = width(projectName, titleSize, 'TB');
+  canvas.text(projectName, left, canvas.y, titleSize, 'TB');
+  if (metadata && titleWidth + 5 + width(metadata, metaSize, 'TI') <= available) {
+    canvas.text(metadata, left + titleWidth + 5, canvas.y, metaSize, 'TI');
+    canvas.consume(10.35);
+    return;
+  }
+  canvas.consume(10.35);
+  if (metadata) {
+    for (const line of wrapWidth(metadata.replace(/^ - /, ''), RIGHT - (MARGIN + 21), metaSize, 'TI')) {
+      canvas.text(line, MARGIN + 21, canvas.y, metaSize, 'TI');
+      canvas.consume(9.2);
+    }
   }
 }
 
@@ -212,34 +234,34 @@ function renderProjects(canvas: ResumeCanvas, profile: CandidateProfile, pack: A
   for (const item of pack.projects.slice(0, options.maxProjects)) {
     const source = sources.get(normalizeText(item.name));
     if (!source) continue;
-    canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(2));
-    pairedRow(canvas, source.name, '', 9.96, 9.96, 'TB', 'TI');
-    for (const bullet of item.bullets.slice(0, options.maxProjectBullets)) canvas.subBulletText(bullet, MARGIN + 31, 9.96, 11.05);
-    canvas.consume(0.8);
+    canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(1.9));
+    renderProjectHeading(canvas, profile, pack, source.name);
+    for (const bullet of item.bullets.slice(0, options.maxProjectBullets)) canvas.subBulletText(bullet);
+    canvas.consume(0.45);
   }
 }
 
 function renderEducation(canvas: ResumeCanvas, profile: CandidateProfile) {
   for (const degree of profile.degrees ?? []) {
-    canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(2));
-    pairedRow(canvas, degree.institution, degree.location ?? '', 9.96, 9.96, 'TB');
+    canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(1.9));
+    pairedRow(canvas, degree.institution, degree.location ?? '', 9.7, 9.2, 'TB');
     const degreeText = [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : '');
-    pairedRow(canvas, degreeText, formatResumeDateRange(degree.start, degree.end), 9.96, 9.96, 'TI', 'TI');
-    canvas.consume(0.6);
+    pairedRow(canvas, degreeText, formatResumeDateRange(degree.start, degree.end), 9.2, 9.2, 'TI', 'TI');
+    canvas.consume(0.45);
   }
 }
 
 function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, options: LayoutOptions) {
   const canvas = new ResumeCanvas(options.scale);
-  const nameSize = canvas.size(24.79);
+  const nameSize = canvas.size(27);
   canvas.center(profile.name, canvas.y, nameSize, 'TB');
-  canvas.consume(20.8);
+  canvas.consume(22.8);
 
   const contactText = resumeTemplateContactItems(profile).join('   ');
   if (contactText) {
-    const contactSize = fittedSize(contactText, RIGHT - MARGIN, canvas.size(8.97), canvas.size(8.2));
+    const contactSize = fittedSize(contactText, RIGHT - MARGIN, canvas.size(8.8), canvas.size(7.8));
     canvas.center(contactText, canvas.y, contactSize);
-    canvas.consume(13.1);
+    canvas.consume(8.8);
   }
 
   canvas.section('Professional Summary');
@@ -257,10 +279,10 @@ function buildResumeStream(profile: CandidateProfile, pack: ApplicationPack, opt
   if ((pack.certifications ?? []).length) {
     canvas.section('Certifications');
     for (const certification of pack.certifications ?? []) {
-      canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(2));
-      for (const line of wrapWidth(certification, RIGHT - MARGIN - 10, canvas.size(9.96))) {
-        canvas.text(line, MARGIN + 10, canvas.y, canvas.size(9.96));
-        canvas.consume(10.85);
+      canvas.mainBullet(MARGIN + 1.5, canvas.y + canvas.gap(1.8));
+      for (const line of wrapWidth(certification, RIGHT - MARGIN - 10, canvas.size(8.9))) {
+        canvas.text(line, MARGIN + 10, canvas.y, canvas.size(8.9));
+        canvas.consume(9.65);
       }
     }
   }
@@ -314,12 +336,7 @@ function pdfFromStreams(streams: string[], pageSize: [number, number], fonts: Re
 }
 
 const FONT_MAP: Record<FontName, FontVariant> = {
-  TR: 'regular',
-  TB: 'bold',
-  TI: 'italic',
-  TBI: 'boldItalic',
-  HR: 'regular',
-  HB: 'bold',
+  TR: 'regular', TB: 'bold', TI: 'italic', TBI: 'boldItalic', HR: 'regular', HB: 'bold',
 };
 
 export function resumePdf(profile: CandidateProfile, _job: Job, pack: ApplicationPack): Buffer {
