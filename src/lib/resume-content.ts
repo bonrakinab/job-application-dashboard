@@ -68,10 +68,13 @@ export function formatResumeDateRange(start?: string, end?: string) {
   return [formatResumeDate(start), formatResumeDate(end)].filter(Boolean).join(' - ');
 }
 
-export function selectedProjectSkills(profile: CandidateProfile, pack: ApplicationPack, projectName: string) {
-  const project = (profile.projects ?? []).find((item) => normalizeText(item.name) === normalizeText(projectName));
-  const selected = new Set(pack.skills.map(normalizeText));
-  return (project?.skills ?? []).filter((skill) => selected.has(normalizeText(skill))).slice(0, 6);
+/**
+ * The canonical reference does not print a separate technology suffix on
+ * project headings. Project-specific tools should appear naturally in the
+ * tailored bullet or in Skills, not as an extra visual metadata line.
+ */
+export function selectedProjectSkills(_profile: CandidateProfile, _pack: ApplicationPack, _projectName: string) {
+  return [] as string[];
 }
 
 export function resumeContactLines(profile: CandidateProfile) {
@@ -121,11 +124,7 @@ export function visibleResumeText(profile: CandidateProfile, pack: ApplicationPa
     ...pack.skills,
     ...(pack.projects.length ? [
       'PROJECTS',
-      ...pack.projects.flatMap((project) => [
-        project.name,
-        ...selectedProjectSkills(profile, pack, project.name),
-        ...project.bullets,
-      ]),
+      ...pack.projects.flatMap((project) => [project.name, ...project.bullets]),
     ] : []),
     'EDUCATION',
     ...(profile.degrees ?? []).flatMap((degree) => [
@@ -133,7 +132,6 @@ export function visibleResumeText(profile: CandidateProfile, pack: ApplicationPa
       [degree.degree, degree.field].filter(Boolean).join(' - ') + (degree.gpa ? `; GPA: ${degree.gpa}` : ''),
       degree.location ?? '',
       formatResumeDateRange(degree.start, degree.end),
-      ...(degree.coursework ?? []).slice(0, 2),
     ]),
     ...((pack.certifications ?? []).length ? ['CERTIFICATIONS', ...(pack.certifications ?? [])] : []),
     ...((pack.publications ?? []).length ? ['PUBLICATIONS', ...(pack.publications ?? [])] : []),

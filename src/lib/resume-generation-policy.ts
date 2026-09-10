@@ -43,6 +43,8 @@ const KEYWORD_STOP_WORDS = new Set([
   'ability', 'demonstrated', 'demonstrate', 'good', 'minimum', 'must', 'plus', 'solid', 'understanding',
 ]);
 
+const LOW_VALUE_JD_PHRASES = /\b(?:design development|development design|solution design|enterprise architecture|design architecture|technical design)\b/i;
+
 function keywordStem(value: string) {
   const word = normalizeText(value).replace(/[^a-z0-9+#.]/g, '');
   const irregular: Record<string, string> = {
@@ -88,15 +90,14 @@ function phraseScore(phrase: string) {
   let score = JD_PHRASE_HEADS.has(head) ? 5 : 0;
   score += Math.min(3, keywordTokens(phrase).length);
   if (phrase.includes('-')) score += 0.5;
+  if (LOW_VALUE_JD_PHRASES.test(phrase)) score -= 6;
   return score;
 }
 
-/** Extract compact, literal phrases from the JD itself. */
 export function literalJdKeywordCandidates(job: Job) {
   const source = `${job.title}. ${job.description}`;
   const candidates: Array<{ phrase: string; score: number; order: number }> = [];
   let order = 0;
-
   for (const clause of source.split(/[\n.;:!?]+/g)) {
     const words = clause.match(/[A-Za-z0-9][A-Za-z0-9+.#/&-]*/g) ?? [];
     for (let size = 2; size <= 4; size += 1) {
@@ -110,12 +111,11 @@ export function literalJdKeywordCandidates(job: Job) {
         if (!JD_PHRASE_HEADS.has(last)) continue;
         const phrase = slice.join(' ').trim();
         const content = keywordTokens(phrase);
-        if (content.length < 2 || content.length > 5 || phrase.length > 64) continue;
+        if (content.length < 2 || content.length > 5 || phrase.length > 64 || LOW_VALUE_JD_PHRASES.test(phrase)) continue;
         candidates.push({ phrase, score: phraseScore(phrase), order: order += 1 });
       }
     }
   }
-
   return unique(candidates
     .sort((a, b) => b.score - a.score || a.phrase.split(/\s+/).length - b.phrase.split(/\s+/).length || a.order - b.order)
     .map((item) => item.phrase));
@@ -129,15 +129,9 @@ export type EvidenceBackedJdKeyword = {
   evidenceIds: string[];
 };
 
-/**
- * Map literal JD phrases to requirements that have already been marked supported
- * by the requirement-to-evidence matrix. This allows employer wording to change
- * without changing the underlying candidate claim.
- */
 export function evidenceBackedJdKeywords(job: Job, requirementEvidence: RequirementEvidence[]) {
   const supported = requirementEvidence.filter((item) => item.support === 'supported' && item.evidence.length > 0);
   const mapped: EvidenceBackedJdKeyword[] = [];
-
   for (const phrase of literalJdKeywordCandidates(job)) {
     const ranked = supported.map((item) => {
       const requirementOverlap = tokenOverlap(phrase, item.requirement);
@@ -146,12 +140,10 @@ export function evidenceBackedJdKeywords(job: Job, requirementEvidence: Requirem
       const score = requirementOverlap * 0.72 + evidenceOverlap * 0.18 + (exactTermMatch ? 0.25 : 0);
       return { item, score, requirementOverlap, exactTermMatch };
     }).sort((a, b) => b.score - a.score || b.item.confidence - a.item.confidence);
-
     const best = ranked[0];
     if (!best) continue;
     if (!best.exactTermMatch && best.requirementOverlap < 0.5) continue;
     if (best.score < 0.38) continue;
-
     mapped.push({
       phrase,
       requirement: best.item.requirement,
@@ -160,19 +152,17 @@ export function evidenceBackedJdKeywords(job: Job, requirementEvidence: Requirem
       evidenceIds: best.item.evidence.map((evidence) => evidence.id),
     });
   }
-
   const seen = new Set<string>();
   return mapped
     .sort((a, b) => (a.importance === b.importance ? 0 : a.importance === 'must-have' ? -1 : 1)
-      || b.confidence - a.confidence
-      || phraseScore(b.phrase) - phraseScore(a.phrase))
+      || b.confidence - a.confidence || phraseScore(b.phrase) - phraseScore(a.phrase))
     .filter((item) => {
       const key = normalizeText(item.phrase);
       if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
     })
-    .slice(0, 12);
+    .slice(0, 10);
 }
 
 function exactSupportedProfileSkills(profile: CandidateProfile, requirementEvidence: RequirementEvidence[]) {
@@ -190,46 +180,27 @@ function jdMentionedProfileSkills(job: Job, profile: CandidateProfile) {
 }
 
 function resumeBodyText(pack: ApplicationPack) {
-  return [
-    pack.resumeSummary,
-    ...pack.skills,
-    ...pack.experience.flatMap((item) => item.bullets),
-    ...pack.projects.flatMap((item) => item.bullets),
-    ...(pack.certifications ?? []),
-  ].join(' ');
+  return [pack.resumeSummary, ...pack.skills, ...pack.experience.flatMap((item) => item.bullets), ...pack.projects.flatMap((item) => item.bullets), ...(pack.certifications ?? [])].join(' ');
 }
 
-function improvedSummary(
-  sourceSummary: string,
-  optimizedSummary: string,
-  prioritizedSkills: string[],
-  evidenceBackedPhrases: string[],
-  existingResumeText: string,
-) {
-  const preferred = sourceSummary.trim().length >= 80 ? sourceSummary.trim() : optimizedSummary.trim();
-  const base = preferred || optimizedSummary.trim();
+function improvedSummary(sourceSummary: string, optimizedSummary: string, prioritizedSkills: string[], evidenceBackedPhrases: string[], existingResumeText: string) {
+  // Prefer the job-tailored/optimized prose. The source summary is a fallback, not a reason to undo tailoring.
+  const preferred = optimizedSummary.trim().length >= 80 ? optimizedSummary.trim() : sourceSummary.trim();
+  const base = preferred || sourceSummary.trim();
+  const semanticTerms = evidenceBackedPhrases
+    .filter((phrase) => !LOW_VALUE_JD_PHRASES.test(phrase))
+    .filter((phrase) => !containsTerm(existingResumeText, phrase) && !containsTerm(base, phrase));
   const skillTerms = prioritizedSkills.filter((skill) => !containsTerm(base, skill));
-  const semanticTerms = evidenceBackedPhrases.filter((phrase) => !containsTerm(existingResumeText, phrase) && !containsTerm(base, phrase));
-  const missing = unique([...skillTerms, ...semanticTerms]).slice(0, 6);
+  // Avoid the previous keyword-dump sentence. Three high-value additions is the maximum.
+  const missing = unique([...semanticTerms, ...skillTerms]).slice(0, 3);
   if (!missing.length) return base;
-
-  const sentence = `Relevant experience also includes ${naturalList(missing)}.`;
+  const sentence = `Relevant strengths include ${naturalList(missing)}.`;
   const normalizedBase = base.replace(/[.\s]+$/, '');
-  if (`${normalizedBase}. ${sentence}`.length <= 620) return `${normalizedBase}. ${sentence}`;
-
-  const fitting: string[] = [];
-  for (const term of missing) {
-    const candidate = `Relevant experience also includes ${naturalList([...fitting, term])}.`;
-    if (`${normalizedBase}. ${candidate}`.length > 620) break;
-    fitting.push(term);
-  }
-  return fitting.length ? `${normalizedBase}. Relevant experience also includes ${naturalList(fitting)}.` : base;
+  if (`${normalizedBase}. ${sentence}`.length <= 600) return `${normalizedBase}. ${sentence}`;
+  return base;
 }
 
-function reconciledRequirementEvidence(
-  matrix: RequirementEvidence[],
-  keywords: EvidenceBackedJdKeyword[],
-) {
+function reconciledRequirementEvidence(matrix: RequirementEvidence[], keywords: EvidenceBackedJdKeyword[]) {
   return matrix.map((item) => {
     if (item.support !== 'supported') return item;
     const mapped = keywords.filter((keyword) => normalizeText(keyword.requirement) === normalizeText(item.requirement)).map((keyword) => keyword.phrase);
@@ -237,23 +208,7 @@ function reconciledRequirementEvidence(
   });
 }
 
-/**
- * Final employer-facing resume policy.
- *
- * - Publications are never allowed into an application pack.
- * - Exact JD skills are promoted when the exact skill exists in the verified profile.
- * - Literal JD phrases may be introduced even when the original resume used different
- *   wording, but only when a supported requirement is linked to candidate evidence.
- * - Semantic JD wording goes to the summary rather than masquerading as an exact
- *   source skill. Unsupported requirements remain gaps.
- */
-export function strengthenResumeForJob(
-  job: Job,
-  profile: CandidateProfile,
-  optimizedPack: ApplicationPack,
-  sourcePack: ApplicationPack,
-  requirementEvidence: RequirementEvidence[] = [],
-): ApplicationPack {
+export function strengthenResumeForJob(job: Job, profile: CandidateProfile, optimizedPack: ApplicationPack, sourcePack: ApplicationPack, requirementEvidence: RequirementEvidence[] = []): ApplicationPack {
   const jdKeywords = evidenceBackedJdKeywords(job, requirementEvidence);
   const reconciledEvidence = reconciledRequirementEvidence(requirementEvidence, jdKeywords);
   const supportedExact = exactSupportedProfileSkills(profile, reconciledEvidence);
@@ -262,31 +217,17 @@ export function strengthenResumeForJob(
     ...supportedExact,
     ...jdSkills,
     ...optimizedPack.skills.filter((skill) => profile.skills.some((candidate) => normalizeText(candidate) === normalizeText(skill))),
-  ]).slice(0, 26);
+  ]).slice(0, 24);
   const currentText = resumeBodyText({ ...optimizedPack, skills: prioritizedSkills });
-
   return {
     ...optimizedPack,
-    resumeSummary: improvedSummary(
-      sourcePack.resumeSummary,
-      optimizedPack.resumeSummary,
-      prioritizedSkills.slice(0, 8),
-      jdKeywords.map((keyword) => keyword.phrase),
-      currentText,
-    ),
+    resumeSummary: improvedSummary(sourcePack.resumeSummary, optimizedPack.resumeSummary, prioritizedSkills.slice(0, 8), jdKeywords.map((keyword) => keyword.phrase), currentText),
     skills: prioritizedSkills,
     publications: [],
     requirementEvidence: reconciledEvidence,
   };
 }
 
-/**
- * The uploaded career reference is a compact one-page layout with no separate
- * headline, no location in its contact row, no project technology sub-line,
- * no education coursework sub-line, and no publications section. The isolated
- * part-time profile keeps its own contact location while sharing the same safety
- * rules and generation pipeline.
- */
 export function referenceTemplateProfile(profile: CandidateProfile): CandidateProfile {
   const career = profile.profilePurpose !== 'part-time';
   return {
@@ -299,17 +240,36 @@ export function referenceTemplateProfile(profile: CandidateProfile): CandidatePr
 }
 
 export function referenceTemplatePack(pack: ApplicationPack): ApplicationPack {
+  return { ...pack, resumeHeadline: '', publications: [] };
+}
+
+function projectBulletPenalty(value: string) {
+  const text = normalizeText(value);
+  let penalty = Math.max(0, value.length - 190) / 10;
+  if (/major challenges|benefits of new setup|technologies used|objective:|key achievements:/.test(text)) penalty += 25;
+  if ((value.match(/:/g) ?? []).length >= 3) penalty += 10;
+  if (value.length > 320) penalty += 20;
+  return penalty;
+}
+
+function cleanFinalProject(project: ApplicationPack['projects'][number]) {
+  const bullets = unique(project.bullets)
+    .map((text, index) => ({ text, evidence: project.bulletEvidence?.[index] ?? [], index, penalty: projectBulletPenalty(text) }))
+    .sort((a, b) => a.penalty - b.penalty || a.index - b.index)
+    .slice(0, 1);
   return {
-    ...pack,
-    resumeHeadline: '',
-    publications: [],
+    ...project,
+    bullets: bullets.map((item) => item.text),
+    bulletEvidence: bullets.map((item) => item.evidence),
   };
 }
 
 /** One canonical artifact state used by preview, scoring, validation and downloads. */
 export function finalResumeArtifactState(profile: CandidateProfile, pack: ApplicationPack) {
-  return {
-    profile: referenceTemplateProfile(profile),
-    pack: referenceTemplatePack(pack),
-  };
+  const finalPack = referenceTemplatePack({
+    ...pack,
+    projects: pack.projects.map(cleanFinalProject),
+    publications: [],
+  });
+  return { profile: referenceTemplateProfile(profile), pack: finalPack };
 }

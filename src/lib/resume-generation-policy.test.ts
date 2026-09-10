@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { ApplicationPack, CandidateProfile, Job, RequirementEvidence } from './types';
-import { evidenceBackedJdKeywords, finalResumeArtifactState, strengthenResumeForJob } from './resume-generation-policy';
+import { evidenceBackedJdKeywords, finalResumeArtifactState, literalJdKeywordCandidates, strengthenResumeForJob } from './resume-generation-policy';
 
 const job: Job = {
   externalId: 'jd-keyword-test',
@@ -42,12 +42,7 @@ const requirements: RequirementEvidence[] = [
     exactTerms: [],
     support: 'supported',
     confidence: 82,
-    evidence: [{
-      id: 'EXP:0:0',
-      label: 'Systems Specialist · Example Employer',
-      excerpt: profile.experience![0].bullets[0],
-      score: 82,
-    }],
+    evidence: [{ id: 'EXP:0:0', label: 'Systems Specialist · Example Employer', excerpt: profile.experience![0].bullets[0], score: 82 }],
   },
   {
     requirement: 'SQL and relational database experience',
@@ -56,12 +51,7 @@ const requirements: RequirementEvidence[] = [
     exactTerms: ['SQL'],
     support: 'supported',
     confidence: 76,
-    evidence: [{
-      id: 'EXP:0:1',
-      label: 'Systems Specialist · Example Employer',
-      excerpt: profile.experience![0].bullets[1],
-      score: 76,
-    }],
+    evidence: [{ id: 'EXP:0:1', label: 'Systems Specialist · Example Employer', excerpt: profile.experience![0].bullets[1], score: 76 }],
   },
   {
     requirement: 'Kubernetes orchestration',
@@ -116,7 +106,6 @@ test('adds evidence-backed JD wording to the summary without inventing a new exa
   assert.ok(!result.skills.includes('requirements gathering'));
   assert.ok(!result.skills.includes('relational databases'));
   assert.ok(result.skills.includes('SQL'));
-
   const reconciled = result.requirementEvidence?.find((item) => item.requirement === 'Manage stakeholders and gather requirements');
   assert.ok(reconciled?.exactTerms?.some((term) => term.toLowerCase() === 'stakeholder management'));
 });
@@ -145,4 +134,32 @@ test('part-time jobs use the same safety pipeline without losing their separate 
   assert.equal(state.profile.location, 'Windsor, Ontario');
   assert.deepEqual(state.profile.publications, []);
   assert.deepEqual(state.pack.publications, []);
+});
+
+test('generic design phrases are not harvested as ATS filler', () => {
+  const designJob = {
+    ...job,
+    description: 'Own enterprise architecture, solution design, and design development. Strong stakeholder management is required.',
+  };
+  const phrases = literalJdKeywordCandidates(designJob).map((value) => value.toLowerCase());
+  assert.ok(!phrases.includes('enterprise architecture'));
+  assert.ok(!phrases.includes('solution design'));
+  assert.ok(!phrases.includes('design development'));
+  assert.ok(phrases.includes('stakeholder management'));
+});
+
+test('final artifact removes raw imported project dumps and keeps the concise evidence bullet', () => {
+  const badDump = 'Major challenges on Initial Configuration: Complex and redundant tax configuration. Benefits of New Setup: Tax Conditions reduced to 450 from 15K. Technologies Used: Oracle Fusion.';
+  const concise = 'Revamped the ESS tax engine by consolidating approximately 15,000 tax conditions to about 450 and resolving PO/invoice tax-calculation issues.';
+  const sourceProfile: CandidateProfile = {
+    ...profile,
+    projects: [{ name: 'Go-Live of ESS Tax Engine Revamp', description: 'ERP tax project', bullets: [badDump, concise], skills: ['SQL'] }],
+  };
+  const sourcePack: ApplicationPack = {
+    ...pack(),
+    projects: [{ name: 'Go-Live of ESS Tax Engine Revamp', bullets: [badDump, concise], bulletEvidence: [['PROJ:0:0'], ['PROJ:0:1']] }],
+  };
+  const state = finalResumeArtifactState(sourceProfile, sourcePack);
+  assert.deepEqual(state.pack.projects[0].bullets, [concise]);
+  assert.deepEqual(state.pack.projects[0].bulletEvidence, [['PROJ:0:1']]);
 });
