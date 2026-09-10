@@ -49,7 +49,7 @@ export function JobActions({
   const router = useRouter();
   const usablePack = hasPack && !packStale;
   const applicationReady = usablePack;
-  const engineLabel = RESUME_TEMPLATE_VERSION.replace('arnob-reference-faithful.', '').replace('arnob-', '');
+  const engineLabel = RESUME_TEMPLATE_VERSION.match(/v\d+$/)?.[0] ?? RESUME_TEMPLATE_VERSION;
 
   useEffect(() => {
     let cancelled = false;
