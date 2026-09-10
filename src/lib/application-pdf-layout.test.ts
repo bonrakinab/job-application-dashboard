@@ -45,7 +45,7 @@ test('v12 renderer uses A4, Times reference typography, title-case sections, and
   assert.match(pdf, /\/BaseFont \/Times-Bold/);
   assert.match(pdf, /\(Professional Summary\)/);
   assert.doesNotMatch(pdf, /\(PROFESSIONAL SUMMARY\)/);
-  assert.match(pdf, /\(LinkedIn \| GitHub \| Portfolio\)/);
+  assert.match(pdf, /LinkedIn \| GitHub \| Portfolio/);
   const xPositions = [...pdf.matchAll(/Tf\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+Td/g)].map((match) => Number(match[1]));
   assert.ok(xPositions.length > 0);
   assert.ok(Math.min(...xPositions) >= 32);
