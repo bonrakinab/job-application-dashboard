@@ -1,6 +1,7 @@
 /**
  * Canonical layout constants for Arnob's uploaded one-page LaTeX resume.
  * Any visual change bumps this version so previously generated packs are stale.
+ * Deployment retry marker: 2026-09-10.
  */
 export const RESUME_TEMPLATE_VERSION = 'arnob-latex-reference.v15';
 
