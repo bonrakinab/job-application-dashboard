@@ -89,7 +89,7 @@ export function resumeTemplateContactItems(profile: CandidateProfile) {
     .filter(([, value]) => value?.trim())
     .map(([rawLabel]) => {
       const label = normalizeText(rawLabel);
-      if (label.includes('linkedin')) return profile.name || 'LinkedIn';
+      if (label.includes('linkedin')) return 'LinkedIn';
       if (label.includes('github')) return 'GitHub';
       if (label.includes('portfolio') || label.includes('website')) return 'Portfolio';
       return rawLabel.replace(/(^|\s)\S/g, (character) => character.toUpperCase());
