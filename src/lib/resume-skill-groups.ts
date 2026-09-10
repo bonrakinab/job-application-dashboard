@@ -10,12 +10,10 @@ type SkillCategory = {
 };
 
 /**
- * Stable, readable taxonomy for employer-facing resumes.
- *
- * The application pack still decides which verified skills belong on a given
- * resume. This layer only arranges those selected skills so a front-end job,
- * ERP job, data job, etc. does not inherit whichever ad-hoc grouping happened
- * to exist in an imported profile.
+ * Employer-facing skills use the same five stable groups as Arnob's canonical
+ * LaTeX resume. The application pack still decides which verified/JD-ranked
+ * skills are selected; this layer only places them into a predictable visual
+ * taxonomy so a resume never degenerates into sparse or ad-hoc buckets.
  */
 const SKILL_CATEGORIES: SkillCategory[] = [
   {
@@ -26,60 +24,32 @@ const SKILL_CATEGORIES: SkillCategory[] = [
     sourceLabels: [/language/, /programming/],
   },
   {
-    label: 'Frontend & Full-Stack',
+    label: 'Full-Stack & APIs',
     patterns: [
-      /\b(next\.?js|react|angular|tailwind|html|css|sass|scss|vite|framer motion|pwa|progressive web|responsive web|html5 canvas|web design)\b/,
+      /\b(next\.?js|react|angular|tailwind|html|css|sass|scss|vite|framer motion|pwa|progressive web|responsive web|html5 canvas|web design|node\.?js|express|rest api|api development|graphql|flask|fastapi|django|spring|auth\.?js|zod|capacitor|websocket|webrtc|peerjs)\b/,
     ],
-    sourceLabels: [/front.?end/, /full.?stack/, /web/],
+    sourceLabels: [/front.?end/, /full.?stack/, /web/, /api/],
   },
   {
-    label: 'Backend, APIs & Data',
+    label: 'Data & Backend',
     patterns: [
-      /\b(node\.?js|express|rest api|api development|graphql|flask|fastapi|django|spring|postgres|postgresql|mysql|sqlite|mongodb|supabase|prisma|neon|database|data modeling|zod|websocket|webrtc|peerjs)\b/,
+      /\b(postgres|postgresql|mysql|sqlite|mongodb|supabase|prisma|neon|database|data modeling|row-level security|rls|edge function|pg[_ ]?cron|qdrant|pinecone)\b/,
     ],
-    sourceLabels: [/backend/, /api/, /database/, /data & backend/],
+    sourceLabels: [/backend/, /database/, /data & backend/],
   },
   {
-    label: 'AI & ML',
+    label: 'Applied AI & ML',
     patterns: [
-      /\b(machine learning|deep learning|artificial intelligence|ai\/ml|llm|large language|bert|distilbert|tinybert|clip|hnsw|faiss|computer vision|nlp|natural language|tensorflow|pytorch|scikit|random forest|svm|adaboost|pca|smote|yolo|rag|retrieval augmented|neural network)\b/,
+      /\b(machine learning|deep learning|artificial intelligence|ai\/ml|llm|large language|gemini|openai|bert|distilbert|tinybert|clip|hnsw|faiss|computer vision|nlp|natural language|tensorflow|pytorch|scikit|random forest|svm|adaboost|pca|smote|yolo|rag|retrieval augmented|neural network)\b/,
     ],
     sourceLabels: [/ai/, /machine learning/, /data & ai/, /applied ai/],
   },
   {
-    label: 'Cloud & DevOps',
+    label: 'Cloud, DevOps & Enterprise',
     patterns: [
-      /\b(oracle cloud|oci|aws|azure|gcp|google cloud|docker|kubernetes|vercel|github actions|ci\/cd|continuous integration|devops|cloud|data flow|api gateway)\b/,
+      /\b(oracle cloud|oci|aws|azure|gcp|google cloud|docker|kubernetes|vercel|github actions|ci\/cd|continuous integration|devops|cloud|data flow|api gateway|oracle fusion|erp|enterprise resource|financials|accounts payable|accounts receivable|general ledger|procurement|bi publisher|visual builder|edms|arcmate|tax rules|tax engine|vat|wht|whv|agile|scrum|jira|confluence|requirements gathering|requirements analysis|business analysis|process mapping|process improvement|stakeholder|project management|change management|documentation|technical documentation|workflow analysis|iso 27001|cybersecurity|security|access management|access control|risk assessment|risk management|incident management|iam|linux|windows|server|systems administration|backup|git|github|postman|jupyter|jupyterlab|streamlit|n8n)\b/,
     ],
-    sourceLabels: [/cloud/, /devops/],
-  },
-  {
-    label: 'Enterprise & ERP',
-    patterns: [
-      /\b(oracle fusion|erp|enterprise resource|financials|accounts payable|accounts receivable|general ledger|procurement|bi publisher|visual builder|edms|arcmate|tax rules|tax engine|vat|wht|whv)\b/,
-    ],
-    sourceLabels: [/enterprise/, /erp/],
-  },
-  {
-    label: 'Business Analysis & Delivery',
-    patterns: [
-      /\b(agile|scrum|jira|confluence|requirements gathering|requirements analysis|business analysis|process mapping|process improvement|stakeholder|project management|change management|documentation|technical documentation|workflow analysis)\b/,
-    ],
-    sourceLabels: [/project management/, /business analysis/, /delivery/],
-  },
-  {
-    label: 'Security & Systems',
-    patterns: [
-      /\b(iso 27001|cybersecurity|security|access management|access control|risk assessment|risk management|incident management|iam|linux|windows|server|systems administration|backup)\b/,
-    ],
-    sourceLabels: [/security/, /cyber/, /systems?/],
-  },
-  {
-    label: 'Tools & Platforms',
-    patterns: [
-      /\b(git|github|postman|jupyter|jupyterlab|streamlit|n8n|qdrant|pinecone)\b/,
-    ],
-    sourceLabels: [/tool/, /platform/, /additional/, /development tools/],
+    sourceLabels: [/cloud/, /devops/, /enterprise/, /erp/, /project management/, /business analysis/, /delivery/, /security/, /cyber/, /systems?/, /tool/, /platform/, /additional/, /development tools/],
   },
 ];
 
@@ -108,14 +78,14 @@ function categoryFor(profile: CandidateProfile, skill: string) {
 
   const sourceLabel = normalizeText(sourceLabelForSkill(profile, skill));
   const fromSource = SKILL_CATEGORIES.find((category) => category.sourceLabels?.some((pattern) => pattern.test(sourceLabel)));
-  return fromSource?.label ?? 'Tools & Platforms';
+  return fromSource?.label ?? 'Cloud, DevOps & Enterprise';
 }
 
 /**
- * Arrange only the already-selected application-pack skills. The ordering of
- * skills inside each category follows the pack, which is already JD-ranked.
- * Empty categories disappear and the vague "Additional" / "Role-Aligned"
- * buckets are never exposed to employers.
+ * Arrange only the already-selected application-pack skills. Skills retain
+ * their JD-ranked order inside a group. Empty groups disappear, but the label
+ * set itself is fixed to the canonical template and there is never an
+ * "Additional" or "Role-Aligned" catch-all section.
  */
 export function organizedResumeSkillGroups(profile: CandidateProfile, selectedSkills: string[]): ResumeSkillGroup[] {
   const groups = new Map(SKILL_CATEGORIES.map((category) => [category.label, [] as string[]]));
