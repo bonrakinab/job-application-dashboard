@@ -8,30 +8,38 @@ const profile: CandidateProfile = {
   targetTitles: [],
   preferredLocations: [],
   skills: [
-    'Python', 'TypeScript', 'JavaScript', 'R',
-    'Next.js', 'React', 'Node.js', 'REST APIs', 'Tailwind CSS', 'Angular', 'Zod',
+    'Python', 'TypeScript', 'JavaScript', 'SQL', 'R', 'MATLAB',
+    'Next.js', 'React', 'Node.js', 'REST APIs', 'Tailwind CSS', 'Angular', 'Zod', 'HTML5 Canvas', 'Responsive Web Design',
+    'PostgreSQL', 'Supabase', 'Neon', 'Prisma ORM',
     'Machine Learning', 'Deep Learning', 'BERT', 'CLIP', 'HNSW', 'FAISS', 'Computer Vision', 'NLP',
-    'GitHub Actions/CI', 'HTML5 Canvas', 'Responsive Web Design',
+    'GitHub Actions/CI', 'Oracle Fusion ERP Cloud', 'JIRA', 'ISO 27001',
   ],
   skillGroups: [
-    { label: 'Languages', skills: ['Python', 'TypeScript', 'JavaScript', 'R'] },
-    { label: 'Full-Stack & APIs', skills: ['Next.js', 'React', 'Node.js', 'REST APIs', 'Tailwind CSS', 'Angular', 'Zod'] },
+    { label: 'Languages', skills: ['Python', 'TypeScript', 'JavaScript', 'SQL', 'R', 'MATLAB'] },
+    { label: 'Full-Stack & APIs', skills: ['Next.js', 'React', 'Node.js', 'REST APIs', 'Tailwind CSS', 'Angular', 'Zod', 'HTML5 Canvas', 'Responsive Web Design'] },
+    { label: 'Data & Backend', skills: ['PostgreSQL', 'Supabase', 'Neon', 'Prisma ORM'] },
     { label: 'Applied AI & ML', skills: ['Machine Learning', 'Deep Learning', 'BERT', 'CLIP', 'HNSW', 'FAISS', 'Computer Vision', 'NLP'] },
-    { label: 'Cloud, DevOps & Enterprise', skills: ['GitHub Actions/CI'] },
-    { label: 'Additional', skills: ['HTML5 Canvas', 'Responsive Web Design'] },
+    { label: 'Cloud, DevOps & Enterprise', skills: ['GitHub Actions/CI', 'Oracle Fusion ERP Cloud', 'JIRA', 'ISO 27001'] },
   ],
 };
 
-test('front-end resume skills are reorganized into coherent employer-facing groups', () => {
+test('resume skills use the same five-group taxonomy as the canonical LaTeX template', () => {
   const groups = organizedResumeSkillGroups(profile, profile.skills);
   const byLabel = Object.fromEntries(groups.map((group) => [group.label, group.skills]));
 
-  assert.deepEqual(byLabel.Languages, ['Python', 'TypeScript', 'JavaScript', 'R']);
-  assert.deepEqual(byLabel['Frontend & Full-Stack'], ['Next.js', 'React', 'Tailwind CSS', 'Angular', 'HTML5 Canvas', 'Responsive Web Design']);
-  assert.deepEqual(byLabel['Backend, APIs & Data'], ['Node.js', 'REST APIs', 'Zod']);
-  assert.deepEqual(byLabel['AI & ML'], ['Machine Learning', 'Deep Learning', 'BERT', 'CLIP', 'HNSW', 'FAISS', 'Computer Vision', 'NLP']);
-  assert.deepEqual(byLabel['Cloud & DevOps'], ['GitHub Actions/CI']);
-  assert.ok(!groups.some((group) => group.label === 'Additional' || group.label === 'Role-Aligned'));
+  assert.deepEqual(groups.map((group) => group.label), [
+    'Languages',
+    'Full-Stack & APIs',
+    'Data & Backend',
+    'Applied AI & ML',
+    'Cloud, DevOps & Enterprise',
+  ]);
+  assert.deepEqual(byLabel.Languages, ['Python', 'TypeScript', 'JavaScript', 'SQL', 'R', 'MATLAB']);
+  assert.deepEqual(byLabel['Full-Stack & APIs'], ['Next.js', 'React', 'Node.js', 'REST APIs', 'Tailwind CSS', 'Angular', 'Zod', 'HTML5 Canvas', 'Responsive Web Design']);
+  assert.deepEqual(byLabel['Data & Backend'], ['PostgreSQL', 'Supabase', 'Neon', 'Prisma ORM']);
+  assert.deepEqual(byLabel['Applied AI & ML'], ['Machine Learning', 'Deep Learning', 'BERT', 'CLIP', 'HNSW', 'FAISS', 'Computer Vision', 'NLP']);
+  assert.deepEqual(byLabel['Cloud, DevOps & Enterprise'], ['GitHub Actions/CI', 'Oracle Fusion ERP Cloud', 'JIRA', 'ISO 27001']);
+  assert.ok(!groups.some((group) => /Additional|Role-Aligned|Tools & Platforms|Business Analysis/i.test(group.label)));
 });
 
 test('organizer changes presentation only and never invents or drops selected skills', () => {
