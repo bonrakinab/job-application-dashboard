@@ -1,10 +1,12 @@
 import JSZip from 'jszip';
 import type { ApplicationPack, CandidateProfile, Job } from './types';
-import { formatResumeDateRange, resumeTemplateContactItems } from './resume-content';
+import { formatResumeDateRange, resumeTemplateContactItems, selectedProjectSkills } from './resume-content';
 import { organizedResumeSkillGroups } from './resume-skill-groups';
 import { normalizeText } from './utils';
 
-const RESUME_FONT = 'CMU Serif';
+// The canonical TeX uses \usepackage{lmodern}. Word will use the installed
+// Latin Modern Roman face where available; PDF export embeds the resume font.
+const RESUME_FONT = 'Latin Modern Roman';
 
 function xml(value: string) {
   return value.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
@@ -44,11 +46,11 @@ function paragraph(
 }
 
 function section(label: string) {
-  return paragraph(label, { style: 'SectionHeading', keepNext: true, before: 28, after: 10 });
+  return paragraph(label, { style: 'SectionHeading', keepNext: true, before: 24, after: 8 });
 }
 
 function subBullet(text: string) {
-  return paragraph([run('◦ '), run(text)], { style: 'SubBullet', after: 2 });
+  return paragraph([run('◦ '), run(text)], { style: 'SubBullet', after: 1 });
 }
 
 function sourceExperience(profile: CandidateProfile, organization: string, title: string) {
@@ -61,12 +63,12 @@ function pairedLine(left: string | string[], right: string, options: { style?: s
   return paragraph([
     ...leftRuns,
     ...(right ? [tabRun(), run(right, { italic: options.italicLeft })] : []),
-  ], { style: options.style, keepNext: options.keepNext, after: 0, rightTab: 11200 });
+  ], { style: options.style, keepNext: options.keepNext, after: 0, rightTab: 10880 });
 }
 
 function skillsParagraphs(profile: CandidateProfile, pack: ApplicationPack) {
   return organizedResumeSkillGroups(profile, pack.skills).map((group) => (
-    paragraph([run('• '), run(`${group.label}: `, { bold: true }), run(group.skills.join(', '))], { after: 2 })
+    paragraph([run('• '), run(`${group.label}: `, { bold: true }), run(group.skills.join(', '))], { after: 1 })
   ));
 }
 
@@ -74,13 +76,21 @@ function sourceProject(profile: CandidateProfile, name: string) {
   return (profile.projects ?? []).find((project) => normalizeText(project.name) === normalizeText(name));
 }
 
-function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
-  const body: string[] = [paragraph(profile.name, { style: 'Name', align: 'center', after: 16 })];
-  if (pack.resumeHeadline.trim()) body.push(paragraph(pack.resumeHeadline, { style: 'Headline', align: 'center', after: 8 }));
-  const contact = resumeTemplateContactItems(profile);
-  if (contact.length) body.push(paragraph(contact.join('   '), { style: 'Contact', align: 'center', after: 17 }));
+function projectHeading(profile: CandidateProfile, pack: ApplicationPack, projectName: string) {
+  const skills = selectedProjectSkills(profile, pack, projectName);
+  return [
+    run('• '),
+    run(projectName, { bold: true }),
+    ...(skills.length ? [run(` — ${skills.join(', ')}`, { italic: true, size: 17 })] : []),
+  ];
+}
 
-  body.push(section('Professional Summary'), paragraph(pack.resumeSummary, { after: 8 }));
+function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
+  const body: string[] = [paragraph(profile.name, { style: 'Name', align: 'center', after: 8 })];
+  const contact = resumeTemplateContactItems(profile);
+  if (contact.length) body.push(paragraph(contact.join('   '), { style: 'Contact', align: 'center', after: 8 }));
+
+  body.push(section('Professional Summary'), paragraph(pack.resumeSummary, { after: 5 }));
   body.push(section('Experience'));
   pack.experience.slice(0, 3).forEach((item, roleIndex) => {
     const source = sourceExperience(profile, item.organization, item.title);
@@ -96,8 +106,8 @@ function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
     for (const project of pack.projects.slice(0, 3)) {
       const source = sourceProject(profile, project.name);
       if (!source) continue;
-      body.push(paragraph([run('• '), run(source.name, { bold: true })], { keepNext: true, after: 1 }));
-      project.bullets.slice(0, 1).forEach((projectBullet) => body.push(subBullet(projectBullet)));
+      body.push(paragraph(projectHeading(profile, pack, source.name), { keepNext: true, after: 1 }));
+      project.bullets.slice(0, 2).forEach((projectBullet) => body.push(subBullet(projectBullet)));
     }
   }
 
@@ -110,7 +120,7 @@ function documentBody(profile: CandidateProfile, pack: ApplicationPack) {
 
   if (pack.certifications?.length) {
     body.push(section('Certifications'));
-    pack.certifications.forEach((certification) => body.push(paragraph([run('• '), run(certification)], { after: 1 })));
+    pack.certifications.forEach((certification) => body.push(paragraph([run('• '), run(certification)], { after: 0 })));
   }
   return body.join('');
 }
@@ -139,14 +149,13 @@ const DOCUMENT_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-  <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${RESUME_FONT}" w:hAnsi="${RESUME_FONT}" w:eastAsia="${RESUME_FONT}" w:cs="${RESUME_FONT}"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:lang w:val="en-CA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="205" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+  <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${RESUME_FONT}" w:hAnsi="${RESUME_FONT}" w:eastAsia="${RESUME_FONT}" w:cs="${RESUME_FONT}"/><w:sz w:val="19"/><w:szCs w:val="19"/><w:lang w:val="en-CA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="222" w:lineRule="exact"/></w:pPr></w:pPrDefault></w:docDefaults>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
-  <w:style w:type="paragraph" w:styleId="Name"><w:name w:val="Name"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:rFonts w:ascii="${RESUME_FONT}" w:hAnsi="${RESUME_FONT}"/><w:b/><w:sz w:val="50"/><w:szCs w:val="50"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="Headline"><w:name w:val="Headline"/><w:basedOn w:val="Normal"/><w:rPr><w:b/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="Name"><w:name w:val="Name"/><w:basedOn w:val="Normal"/><w:qFormat/><w:rPr><w:rFonts w:ascii="${RESUME_FONT}" w:hAnsi="${RESUME_FONT}"/><w:b/><w:sz w:val="54"/><w:szCs w:val="54"/></w:rPr></w:style>
   <w:style w:type="paragraph" w:styleId="Contact"><w:name w:val="Contact"/><w:basedOn w:val="Normal"/><w:rPr><w:sz w:val="18"/><w:szCs w:val="18"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="SectionHeading"><w:name w:val="Section Heading"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="000000"/></w:pBdr></w:pPr><w:rPr><w:smallCaps/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="RoleLine"><w:name w:val="Role Line"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="220"/></w:pPr><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style>
-  <w:style w:type="paragraph" w:styleId="SubBullet"><w:name w:val="Sub Bullet"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="500" w:hanging="180"/><w:spacing w:after="2"/></w:pPr><w:rPr><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="SectionHeading"><w:name w:val="Section Heading"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="3" w:space="1" w:color="000000"/></w:pBdr></w:pPr><w:rPr><w:smallCaps/><w:sz w:val="23"/><w:szCs w:val="23"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="RoleLine"><w:name w:val="Role Line"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="210"/></w:pPr><w:rPr><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
+  <w:style w:type="paragraph" w:styleId="SubBullet"><w:name w:val="Sub Bullet"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="480" w:hanging="175"/><w:spacing w:after="1"/></w:pPr><w:rPr><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
 </w:styles>`;
 
 export async function resumeDocx(profile: CandidateProfile, _job: Job, pack: ApplicationPack): Promise<Buffer> {
@@ -156,11 +165,11 @@ export async function resumeDocx(profile: CandidateProfile, _job: Job, pack: App
   zip.folder('word')!.file('styles.xml', STYLES);
   zip.folder('word')!.folder('_rels')!.file('document.xml.rels', DOCUMENT_RELS);
   zip.folder('word')!.file('document.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${documentBody(profile, pack)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="680" w:right="677" w:bottom="300" w:left="677" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`);
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${documentBody(profile, pack)}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="504" w:right="662" w:bottom="490" w:left="662" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr></w:body></w:document>`);
   const timestamp = new Date().toISOString();
   zip.folder('docProps')!.file('core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(profile.name)} Resume</dc:title><dc:creator>${xml(profile.name)}</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${timestamp}</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">${timestamp}</dcterms:modified></cp:coreProperties>`);
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/main"><dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">${xml(profile.name)} Resume</dc:title><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">${xml(profile.name)}</dc:creator></cp:coreProperties>`);
   zip.folder('docProps')!.file('app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Job Application Dashboard</Application></Properties>`);
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Job Application Dashboard</Application></Properties>`);
   return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE', compressionOptions: { level: 6 } });
 }
