@@ -1,27 +1,23 @@
 /**
- * Canonical layout constants for the uploaded one-page LaTeX resume reference.
- * The PDF and DOCX renderers consume this module so template changes are
- * versioned and automatically invalidate older application packs.
+ * Canonical layout constants for Arnob's uploaded one-page LaTeX resume reference.
+ * Any visual change bumps this version so previously generated packs are stale.
  */
-export const RESUME_TEMPLATE_VERSION = 'arnob-cm-reference.v11';
+export const RESUME_TEMPLATE_VERSION = 'arnob-reference-faithful.v12';
 
 export const RESUME_PAGE = {
   width: 595.28,
   height: 841.89,
-  // The uploaded A4 reference uses a compact ~20 pt content margin.
-  margin: 20,
+  // Measured from the uploaded reference PDF: content begins at ~33.84 pt.
+  margin: 33.84,
   bottom: 18,
 } as const;
 
-// Preserve the selected evidence whenever possible. Scaling is preferred over
-// silently dropping a bullet or certification, because artifact validation must
-// compare the actual exported text with the saved application pack.
+// The source template is already dense. Never enlarge it above its reference scale.
+// Project entries in the supplied template use one concise evidence bullet each.
 export const RESUME_LAYOUT_ATTEMPTS = [
-  { scale: 1.08, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
-  { scale: 1.04, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
-  { scale: 1, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
-  { scale: 0.96, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
-  { scale: 0.92, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
-  { scale: 0.88, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
-  { scale: 0.84, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 3 },
+  { scale: 1.00, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 1 },
+  { scale: 0.97, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 1 },
+  { scale: 0.94, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 1 },
+  { scale: 0.91, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 1 },
+  { scale: 0.88, maxExperienceBullets: 3, maxProjects: 3, maxProjectBullets: 1 },
 ] as const;
