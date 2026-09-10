@@ -21,6 +21,10 @@ const profile: CandidateProfile = {
   targetTitles: [],
   preferredLocations: [],
   skills: ['Python', 'Machine Learning'],
+  skillGroups: [
+    { label: 'Languages', skills: ['Python'] },
+    { label: 'Applied AI & ML', skills: ['Machine Learning'] },
+  ],
   experience: [
     { organization: 'Banglalink', title: 'Enterprise Solutions and Services Specialist Engineer, IT', start: 'Sept 2023', end: 'June 2024', location: 'Dhaka, Bangladesh', bullets: ['Supported enterprise systems and reduced approximately 15,000 tax conditions to 460 rules.'] },
     { organization: 'Banglalink', title: 'Information Technology Intern', start: 'June 2023', end: 'Sept 2023', location: 'Dhaka, Bangladesh', bullets: ['Built an internal support chatbot and maintained ERP documentation.'] },
@@ -64,13 +68,15 @@ const pack: ApplicationPack = {
   claimsAudit: [],
 };
 
-test('reference renderer omits coursework and uses title-case section text', () => {
-  const pdf = resumePdf(profile, job, pack).toString('utf8');
+test('reference renderer omits coursework and embeds Computer Modern at reference sizes', () => {
+  const pdf = resumePdf(profile, job, pack).toString('latin1');
   assert.doesNotMatch(pdf, /Relevant Coursework|Statistical Learning|Software Engineering/);
-  assert.match(pdf, /\(Professional Summary\)/);
-  assert.match(pdf, /\(Experience\)/);
-  assert.match(pdf, /\(Skills\)/);
-  assert.doesNotMatch(pdf, /\(PROFESSIONAL SUMMARY\)/);
+  assert.match(pdf, /CMUSerif-Roman/);
+  assert.match(pdf, /CMUSerif-Bold/);
+  assert.match(pdf, /CMUSerif-Italic/);
+  assert.doesNotMatch(pdf, /DejaVuSerif|TimesNewRoman/);
+  assert.match(pdf, /\/TB 24\.79 Tf/);
+  assert.match(pdf, /\/TR 9\.96 Tf/);
 });
 
 test('renderer defensively caps experience and keeps every content baseline on the A4 page', () => {
@@ -78,7 +84,7 @@ test('renderer defensively caps experience and keeps every content baseline on t
     ...pack,
     experience: profile.experience!.map((item) => ({ organization: item.organization, title: item.title, bullets: item.bullets })),
   };
-  const pdf = resumePdf(profile, job, crowded).toString('utf8');
+  const pdf = resumePdf(profile, job, crowded).toString('latin1');
   assert.match(pdf, /\/MediaBox \[0 0 595\.28 841\.89\]/);
   assert.match(pdf, /\/Subtype \/TrueType/);
   assert.match(pdf, /\/FontFile2/);
@@ -102,7 +108,7 @@ test('final reference export renders every selected certification and never publ
     { ...profile, profilePurpose: 'career', publications: ['Hidden Publication'] },
     { ...pack, certifications, publications: ['Hidden Publication'] },
   );
-  const pdf = resumePdf(state.profile, job, state.pack).toString('utf8');
+  const pdf = resumePdf(state.profile, job, state.pack).toString('latin1');
   for (const certification of certifications) assert.match(pdf, new RegExp(certification.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   assert.doesNotMatch(pdf, /Publications|PUBLICATIONS|Hidden Publication/);
 });
