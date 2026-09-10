@@ -33,7 +33,7 @@ const profile: CandidateProfile = {
       degree: 'Master of Science in Computer Science',
       field: 'AI Specialization',
       start: 'Sept 2024',
-      end: 'Aug 2026 (Expected)',
+      end: 'Aug 2026',
       location: 'Windsor, Ontario, Canada',
       coursework: ['Statistical Learning', 'Neural Networks and Deep Learning'],
     },
@@ -53,7 +53,7 @@ const profile: CandidateProfile = {
 const pack: ApplicationPack = {
   summary: 'test',
   resumeHeadline: 'Machine Learning Engineer',
-  resumeSummary: 'MSc Computer Science candidate with verified machine-learning and software-engineering coursework.',
+  resumeSummary: 'MSc Computer Science graduate with verified machine-learning and software-engineering experience.',
   skills: ['Python', 'Machine Learning'],
   experience: [],
   projects: [],
@@ -64,12 +64,13 @@ const pack: ApplicationPack = {
   claimsAudit: [],
 };
 
-test('coursework renders as dedicated education text instead of being concatenated into degree/date lines', () => {
+test('reference renderer omits coursework and uses title-case section text', () => {
   const pdf = resumePdf(profile, job, pack).toString('utf8');
-  assert.match(pdf, /Relevant Coursework: Statistical Learning/);
-  assert.match(pdf, /Relevant Coursework: Software Engineering/);
-  assert.doesNotMatch(pdf, /AI Specialization; Relevant Coursework/);
-  assert.doesNotMatch(pdf, /Computer Science and Engineering; Relevant Coursework/);
+  assert.doesNotMatch(pdf, /Relevant Coursework|Statistical Learning|Software Engineering/);
+  assert.match(pdf, /\(Professional Summary\)/);
+  assert.match(pdf, /\(Experience\)/);
+  assert.match(pdf, /\(Skills\)/);
+  assert.doesNotMatch(pdf, /\(PROFESSIONAL SUMMARY\)/);
 });
 
 test('renderer defensively caps experience and keeps every content baseline on the A4 page', () => {
@@ -102,5 +103,5 @@ test('final reference export renders every selected certification and never publ
   );
   const pdf = resumePdf(state.profile, job, state.pack).toString('utf8');
   for (const certification of certifications) assert.match(pdf, new RegExp(certification.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  assert.doesNotMatch(pdf, /PUBLICATIONS|Hidden Publication/);
+  assert.doesNotMatch(pdf, /Publications|PUBLICATIONS|Hidden Publication/);
 });
