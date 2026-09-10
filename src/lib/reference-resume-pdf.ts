@@ -58,6 +58,15 @@ function fittedSize(value: string, maxWidth: number, preferred: number, minimum:
   return Math.max(minimum, size);
 }
 
+function circlePath(x: number, y: number, radius: number) {
+  const k = radius * 0.5522847498;
+  return `${(x + radius).toFixed(2)} ${y.toFixed(2)} m `
+    + `${(x + radius).toFixed(2)} ${(y + k).toFixed(2)} ${(x + k).toFixed(2)} ${(y + radius).toFixed(2)} ${x.toFixed(2)} ${(y + radius).toFixed(2)} c `
+    + `${(x - k).toFixed(2)} ${(y + radius).toFixed(2)} ${(x - radius).toFixed(2)} ${(y + k).toFixed(2)} ${(x - radius).toFixed(2)} ${y.toFixed(2)} c `
+    + `${(x - radius).toFixed(2)} ${(y - k).toFixed(2)} ${(x - k).toFixed(2)} ${(y - radius).toFixed(2)} ${x.toFixed(2)} ${(y - radius).toFixed(2)} c `
+    + `${(x + k).toFixed(2)} ${(y - radius).toFixed(2)} ${(x + radius).toFixed(2)} ${(y - k).toFixed(2)} ${(x + radius).toFixed(2)} ${y.toFixed(2)} c`;
+}
+
 class Canvas {
   commands: string[] = [];
   y = 804;
@@ -77,8 +86,8 @@ class Canvas {
     this.text(value, Math.max(MARGIN, (PAGE_W - textWidth(value, size, font)) / 2), y, size, font);
   }
   rule(y: number) { this.commands.push(`0.32 w ${MARGIN} ${y.toFixed(2)} m ${RIGHT} ${y.toFixed(2)} l S`); }
-  solidBullet(x: number, y: number) { this.commands.push(`${x.toFixed(2)} ${y.toFixed(2)} 1.45 0 360 arc f`); }
-  hollowBullet(x: number, y: number) { this.commands.push(`0.45 w ${x.toFixed(2)} ${y.toFixed(2)} 1.35 0 360 arc S`); }
+  solidBullet(x: number, y: number) { this.commands.push(`${circlePath(x, y, 1.45)} f`); }
+  hollowBullet(x: number, y: number) { this.commands.push(`0.45 w ${circlePath(x, y, 1.35)} S`); }
   section(label: string) {
     this.consume(2.0);
     this.text(label, MARGIN, this.y, this.s(10.7), 'TR');
@@ -224,7 +233,6 @@ function buildStream(profile: CandidateProfile, job: Job, pack: ApplicationPack,
       }
     }
   }
-  // Publications are intentionally never rendered.
   c.center('1', 8.0, c.s(6.8));
   return { stream: c.commands.join('\n'), overflow: c.overflow, bottomY: c.y };
 }
