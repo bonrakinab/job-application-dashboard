@@ -103,14 +103,11 @@ class ResumeCanvas {
     this.commands.push(`BT /${font} ${size.toFixed(2)} Tf ${x.toFixed(2)} ${y.toFixed(2)} Td (${escapePdf(text)}) Tj ET`);
   }
   smallCaps(text: string, x: number, y: number, largeSize: number, smallSize: number) {
-    let cursor = x;
-    for (const original of ascii(text)) {
-      const isLower = original >= 'a' && original <= 'z';
-      const glyph = isLower ? original.toUpperCase() : original;
-      const size = isLower ? smallSize : largeSize;
-      this.text(glyph, cursor, y, size, 'TR');
-      cursor += width(glyph, size, 'TR');
-    }
+    const heading = ascii(text).toUpperCase();
+    // Keep each section heading in one PDF text run. Splitting it into
+    // character-sized runs caused the inter-word space to disappear during
+    // extraction (e.g. PROFESSIONALSUMMARY), which breaks ATS reading order.
+    this.text(heading, x, y, (largeSize + smallSize) / 2, 'TR');
   }
   rule(y: number) { this.commands.push(`0.35 w ${MARGIN} ${y.toFixed(2)} m ${RIGHT} ${y.toFixed(2)} l S`); }
   mainBullet(x: number, y: number) {
