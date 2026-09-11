@@ -45,14 +45,20 @@ function escapeRegex(value: string) {
 }
 
 /**
- * PDF text extractors do not guarantee that a visually separated heading is
- * returned as its own line. In particular, kerning/font maps may produce
- * "PROFESSIONALSUMMARY" or split the words across line boundaries. Resume
- * headings are emitted in uppercase, so match those exact uppercase labels
- * while allowing arbitrary extractor whitespace. This avoids treating normal
- * lowercase prose such as "skills and projects" as section headings.
+ * DOCX parsers preserve the underlying title-case text of small-caps headings,
+ * while PDF extractors may collapse heading whitespace or line breaks. Prefer
+ * a standalone, case-insensitive heading line first (the DOCX/Mammoth case),
+ * then fall back to the exact uppercase label with flexible whitespace for PDF
+ * extraction. The uppercase fallback avoids mistaking ordinary prose such as
+ * "skills and projects" for section headings.
  */
 function sectionHeadingPosition(text: string, section: string) {
+  let offset = 0;
+  for (const part of text.split(/(\r?\n)/)) {
+    if (!/^\r?\n$/.test(part) && normalizeText(part.trim()) === section) return offset;
+    offset += part.length;
+  }
+
   const pattern = section.toUpperCase().split(/\s+/).map(escapeRegex).join('\\s*');
   const match = new RegExp(pattern).exec(text.normalize('NFKC'));
   return match?.index ?? -1;
