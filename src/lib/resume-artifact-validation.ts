@@ -45,12 +45,10 @@ function escapeRegex(value: string) {
 }
 
 /**
- * DOCX parsers preserve the underlying title-case text of small-caps headings,
- * while PDF extractors may collapse heading whitespace or line breaks. Prefer
- * a standalone, case-insensitive heading line first (the DOCX/Mammoth case),
- * then fall back to the exact uppercase label with flexible whitespace for PDF
- * extraction. The uppercase fallback avoids mistaking ordinary prose such as
- * "skills and projects" for section headings.
+ * PDF extractors may collapse heading whitespace or line breaks. Prefer a
+ * standalone, case-insensitive heading line first, then fall back to the exact
+ * uppercase label with flexible whitespace. The uppercase fallback avoids
+ * mistaking ordinary prose such as "skills and projects" for section headings.
  */
 function sectionHeadingPosition(text: string, section: string) {
   let offset = 0;
@@ -68,6 +66,50 @@ function markerPresent(extracted: string, normalizedExtracted: string, marker: s
   const normalizedMarker = normalizeArtifactText(marker);
   if (normalizedExtracted.includes(normalizedMarker)) return true;
   return SECTIONS.includes(normalizedMarker) && sectionHeadingPosition(extracted, normalizedMarker) >= 0;
+}
+
+function xmlText(value: string) {
+  return value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'");
+}
+
+/**
+ * For DOCX, paragraph order in word/document.xml is the authoritative reading
+ * order. Mammoth is still used to prove that the visible content round-trips
+ * through a parser, but its flattened raw-text whitespace is not used to infer
+ * section ordering. This prevents harmless parser whitespace/style behavior
+ * from rejecting an otherwise correctly structured single-column résumé.
+ */
+function docxSectionHeadings(documentXml: string) {
+  const headings: string[] = [];
+  for (const paragraph of documentXml.match(/<w:p\b[\s\S]*?<\/w:p>/gi) ?? []) {
+    if (!/<w:pStyle\b[^>]*w:val="SectionHeading"/i.test(paragraph)) continue;
+    const text = [...paragraph.matchAll(/<w:t\b[^>]*>([\s\S]*?)<\/w:t>/gi)]
+      .map((match) => xmlText(match[1]))
+      .join('');
+    const normalized = normalizeText(text);
+    if (SECTIONS.includes(normalized)) headings.push(normalized);
+  }
+  return headings;
+}
+
+function exactSectionOrder(expected: string[], actual: string[]) {
+  return expected.length === actual.length && expected.every((section, index) => section === actual[index]);
+}
+
+function withSectionOrder(validation: ResumeArtifactValidation, sectionOrderValid: boolean): ResumeArtifactValidation {
+  return {
+    ...validation,
+    sectionOrderValid,
+    safe: validation.parseCoverage >= 92
+      && !validation.missingMarkers.length
+      && sectionOrderValid
+      && !validation.structuralIssues.length,
+  };
 }
 
 export function validateExtractedResumeText(
@@ -123,7 +165,13 @@ export async function validateResumeDocxArtifact(docx: Buffer, profile: Candidat
   if (documentXml && /<w:txbxContent\b/i.test(documentXml)) issues.push('Text boxes are present.');
   if (documentXml && /<w:cols\b[^>]*w:num="(?:[2-9]|\d{2,})"/i.test(documentXml)) issues.push('Multiple columns are present.');
   if (fileNames.some((name) => /^word\/(?:header|footer)\d*\.xml$/i.test(name))) issues.push('Header or footer content is present.');
-  return validateExtractedResumeText(parsed.value, profile, pack, issues);
+
+  const parsedValidation = validateExtractedResumeText(parsed.value, profile, pack, issues);
+  if (!documentXml) return withSectionOrder(parsedValidation, false);
+
+  const expectedSections = sectionHeadings(visibleResumeText(profile, pack));
+  const actualSections = docxSectionHeadings(documentXml);
+  return withSectionOrder(parsedValidation, exactSectionOrder(expectedSections, actualSections));
 }
 
 export function assertResumeArtifact(validation: ResumeArtifactValidation, format: 'PDF' | 'DOCX') {
