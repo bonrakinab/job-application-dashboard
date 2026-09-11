@@ -40,6 +40,30 @@ function sectionHeadings(text: string) {
   return text.split(/\r?\n/).map((line) => normalizeText(line.trim())).filter((line) => SECTIONS.includes(line));
 }
 
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * PDF text extractors do not guarantee that a visually separated heading is
+ * returned as its own line. In particular, kerning/font maps may produce
+ * "PROFESSIONALSUMMARY" or split the words across line boundaries. Resume
+ * headings are emitted in uppercase, so match those exact uppercase labels
+ * while allowing arbitrary extractor whitespace. This avoids treating normal
+ * lowercase prose such as "skills and projects" as section headings.
+ */
+function sectionHeadingPosition(text: string, section: string) {
+  const pattern = section.toUpperCase().split(/\s+/).map(escapeRegex).join('\\s*');
+  const match = new RegExp(pattern).exec(text.normalize('NFKC'));
+  return match?.index ?? -1;
+}
+
+function markerPresent(extracted: string, normalizedExtracted: string, marker: string) {
+  const normalizedMarker = normalizeArtifactText(marker);
+  if (normalizedExtracted.includes(normalizedMarker)) return true;
+  return SECTIONS.includes(normalizedMarker) && sectionHeadingPosition(extracted, normalizedMarker) >= 0;
+}
+
 export function validateExtractedResumeText(
   extracted: string,
   profile: CandidateProfile,
@@ -53,10 +77,10 @@ export function validateExtractedResumeText(
   const parseCoverage = Math.round((expectedTokens.length
     ? expectedTokens.filter((token) => actualTokens.has(token)).length / expectedTokens.length
     : 1) * 100);
-  const missingMarkers = expectedMarkers(profile, pack).filter((marker) => !actual.includes(normalizeArtifactText(marker)));
+  const missingMarkers = expectedMarkers(profile, pack).filter((marker) => !markerPresent(extracted, actual, marker));
   const expectedSections = sectionHeadings(expected);
-  const actualSections = sectionHeadings(extracted);
-  const sectionOrderValid = JSON.stringify(expectedSections) === JSON.stringify(actualSections);
+  const sectionPositions = expectedSections.map((section) => sectionHeadingPosition(extracted, section));
+  const sectionOrderValid = sectionPositions.every((position, index) => position >= 0 && (index === 0 || position > sectionPositions[index - 1]));
   return {
     safe: parseCoverage >= 92 && !missingMarkers.length && sectionOrderValid && !structuralIssues.length,
     parseCoverage,
