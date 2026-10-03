@@ -35,7 +35,7 @@ import type { CandidateProfileId, JobWithMatch, MatchScore } from '@/lib/types';
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
-export function needsDetailedRequirementAnalysis(match: MatchScore | undefined, description: string, profileId?: CandidateProfileId) {
+function needsDetailedRequirementAnalysis(match: MatchScore | undefined, description: string, profileId?: CandidateProfileId) {
   if (!match) return true;
   const model = match.model ?? '';
   const noRequirements = !(match.mustHave?.length || match.preferred?.length || match.missingSkills?.length);

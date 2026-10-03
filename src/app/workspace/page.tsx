@@ -1,5 +1,11 @@
 const tools = [
   {
+    href: '/ats-analyzer',
+    title: 'ATS Analyzer',
+    description: 'Compare any résumé with a job description across every internal ATS checker.',
+    action: 'Check a résumé',
+  },
+  {
     href: '/insights',
     title: 'Skills insights',
     description: 'See common skills and learning gaps.',

@@ -3,6 +3,7 @@ import './globals.css';
 import './mobile.css';
 import './job-detail.css';
 import './simple-ui.css';
+import './ats-analyzer.css';
 import { Sidebar } from '@/components/Sidebar';
 
 export const metadata: Metadata = { title: 'Job Dashboard', description: 'Find jobs, prepare application documents, and track applications.' };

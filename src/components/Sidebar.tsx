@@ -2,6 +2,7 @@ const primaryLinks = [
   { href: '/', label: 'Home' },
   { href: '/recommended', label: 'Jobs' },
   { href: '/applications', label: 'Applications' },
+  { href: '/ats-analyzer', label: 'ATS Analyzer' },
   { href: '/settings', label: 'Profile & settings' },
   { href: '/workspace', label: 'More' },
 ];
