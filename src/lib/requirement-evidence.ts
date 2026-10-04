@@ -13,7 +13,7 @@ type EvidenceRecord = {
   label: string;
   excerpt: string;
   text: string;
-  kind: 'experience' | 'project' | 'skill' | 'education' | 'certification' | 'course' | 'language' | 'award' | 'publication' | 'profile';
+  kind: 'experience' | 'project' | 'skill' | 'education' | 'certification' | 'course' | 'language' | 'award' | 'publication' | 'profile' | 'resume';
 };
 
 const STOP_WORDS = new Set([
@@ -64,6 +64,15 @@ const CONCEPT_GROUPS = [
   ['requirements gathering', 'requirements analysis', 'gather requirements', 'gathering requirements'],
   ['process mapping', 'business process mapping'],
   ['technical documentation', 'documentation'],
+  ['debugging', 'debug', 'troubleshooting', 'troubleshoot', 'root cause analysis', 'root-cause analysis'],
+  ['testing', 'test'],
+  ['verification', 'verify'],
+  ['validation', 'validate'],
+  ['source control', 'version control', 'git'],
+  ['ide', 'integrated development environment'],
+  ['embedded system', 'embedded systems', 'microcontroller', 'microcontrollers'],
+  ['simulation', 'simulator', 'simulated'],
+  ['c++', 'cpp'],
   ['data integration', 'data integrations'],
   ['rest api', 'rest apis', 'restful api', 'restful apis'],
 ] as const;
@@ -77,6 +86,12 @@ function stem(token: string) {
     designed: 'design', designing: 'design',
     implemented: 'implement', implementing: 'implement', implementation: 'implement',
     integrated: 'integrate', integrating: 'integrate', integration: 'integrate',
+    analyzed: 'analyze', analysing: 'analyze', analyzing: 'analyze', analysis: 'analyze',
+    debugged: 'debug', debugging: 'debug',
+    troubleshot: 'troubleshoot', troubleshooting: 'troubleshoot',
+    tested: 'test', testing: 'test',
+    verified: 'verify', verification: 'verify',
+    validated: 'validate', validation: 'validate',
     gathered: 'gather', gathering: 'gather',
     coordinated: 'coordinate', coordinating: 'coordinate', coordination: 'coordinate',
     collaborated: 'collaborate', collaborating: 'collaborate', collaboration: 'collaborate',
@@ -103,8 +118,22 @@ function concepts(value: string) {
   return CONCEPT_GROUPS.flatMap((group, index) => group.some((term) => containsTerm(normalized, term)) ? [index] : []);
 }
 
-function evidenceRecords(profile: CandidateProfile): EvidenceRecord[] {
+function evidenceRecords(profile: CandidateProfile, rawResumeText?: string): EvidenceRecord[] {
   const records: EvidenceRecord[] = [];
+  if (profile.headline?.trim()) records.push({
+    id: 'PROFILE:HEADLINE',
+    label: 'Resume headline',
+    excerpt: profile.headline.trim(),
+    text: profile.headline.trim(),
+    kind: 'profile',
+  });
+  if (profile.summary?.trim()) records.push({
+    id: 'PROFILE:SUMMARY',
+    label: 'Profile summary',
+    excerpt: profile.summary.trim(),
+    text: profile.summary.trim(),
+    kind: 'profile',
+  });
   (profile.experience ?? []).forEach((item, experienceIndex) => {
     item.bullets.forEach((bullet, bulletIndex) => records.push({
       id: `EXP:${experienceIndex}:${bulletIndex}`,
@@ -173,6 +202,19 @@ function evidenceRecords(profile: CandidateProfile): EvidenceRecord[] {
     text: authorization,
     kind: 'profile',
   }));
+  if (rawResumeText?.trim()) {
+    rawResumeText.split(/\n+/)
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter((line) => line.length >= 3)
+      .slice(0, 180)
+      .forEach((line, index) => records.push({
+        id: `RESUME:${index}`,
+        label: 'Uploaded résumé text',
+        excerpt: line,
+        text: line,
+        kind: 'resume',
+      }));
+  }
   return records;
 }
 
@@ -258,6 +300,12 @@ function uniqueRequirements(values: string[]) {
   });
 }
 
+function usefulExactTerm(term: string) {
+  const normalized = normalizeText(term);
+  const alphanumeric = normalized.match(/[a-z0-9+#]/g)?.length ?? 0;
+  return normalized.length >= 2 && alphanumeric >= 2;
+}
+
 function exactTerms(requirement: string, profile: CandidateProfile, match?: MatchScore) {
   const normalized = normalizeText(requirement);
   const profileTerms = [
@@ -268,13 +316,19 @@ function exactTerms(requirement: string, profile: CandidateProfile, match?: Matc
     ...(profile.certifications ?? []),
   ].filter((term) => term.length >= 2 && containsTerm(normalized, term));
   const acronyms = requirement.match(/\b[A-Z][A-Z0-9+.#/-]{1,12}\b/g) ?? [];
-  const values = uniqueRequirements([...profileTerms, ...acronyms]);
+  const values = uniqueRequirements([...profileTerms, ...acronyms]).filter(usefulExactTerm);
   return values.filter((term, index) => !values.some((other, otherIndex) => otherIndex < index
     && normalizeText(other).split(' ').includes(normalizeText(term))))
     .slice(0, 8);
 }
 
-function supportStatus(requirement: string, profile: CandidateProfile, ranked: ReturnType<typeof rankEvidence>, match?: MatchScore): RequirementSupport {
+function supportStatus(
+  requirement: string,
+  profile: CandidateProfile,
+  ranked: ReturnType<typeof rankEvidence>,
+  records: EvidenceRecord[],
+  match?: MatchScore,
+): RequirementSupport {
   const numeric = numericRequirementSupport(requirement, profile);
   if (numeric) return numeric;
   const degree = degreeSupport(requirement, profile);
@@ -286,7 +340,6 @@ function supportStatus(requirement: string, profile: CandidateProfile, ranked: R
     return certification && certification.exact >= 0.72 ? 'supported' : certification && certification.exact >= 0.26 ? 'partial' : 'gap';
   }
   const requiredTerms = exactTerms(requirement, profile, match);
-  const records = evidenceRecords(profile);
   const missingSpecific = requiredTerms.some((term) => !records.some((record) => containsTerm(record.text, term)));
   if (missingSpecific) return top.exact >= 0.26 || top.related >= 0.5 ? 'partial' : 'gap';
   if (top.exact >= 0.72 || (top.exact >= 0.34 && top.related >= 0.5) || top.score >= 0.68) return 'supported';
@@ -347,24 +400,57 @@ export function deterministicJobRequirements(job: Job) {
   }));
 }
 
+function reconciledRequirementImportance(
+  job: Job,
+  requirement: string,
+  fallback: 'must-have' | 'preferred',
+) {
+  const lines = job.description.split(/\n+/).map(cleanJdClause).filter(Boolean);
+  let section: 'must-have' | 'preferred' | null = null;
+  let best: { importance: 'must-have' | 'preferred'; score: number } | null = null;
+  const requirementTokens = tokens(requirement);
+  for (const line of lines) {
+    if (/^(required(?: skills| qualifications| experience)?(?: and experience)?|requirements|required skills and experience|minimum qualifications?)\s*:?\s*$/i.test(line)) {
+      section = 'must-have';
+      continue;
+    }
+    if (/^(preferred(?: skills| qualifications| experience)?(?: and experience)?|preferred skills and experience|nice to have|nice-to-have|bonus qualifications?)\s*:?\s*$/i.test(line)) {
+      section = 'preferred';
+      continue;
+    }
+    if (!section || !requirementTokens.length) continue;
+    const lineTokens = new Set(tokens(line));
+    const overlap = requirementTokens.filter((token) => lineTokens.has(token)).length / requirementTokens.length;
+    const exact = containsTerm(normalizeText(line), normalizeText(requirement)) ? 1 : 0;
+    const score = Math.max(overlap, exact);
+    if (!best || score > best.score) best = { importance: section, score };
+  }
+  return best && best.score >= 0.55 ? best.importance : fallback;
+}
+
 export function buildRequirementEvidenceMatrix(
   job: Job,
   profile: CandidateProfile,
   match?: MatchScore,
+  rawResumeText?: string,
 ): RequirementEvidence[] {
-  const records = evidenceRecords(profile);
+  const records = evidenceRecords(profile, rawResumeText);
   const analyzed = [
     ...uniqueRequirements(match?.mustHave ?? []).map((requirement) => ({ requirement, importance: 'must-have' as const })),
     ...uniqueRequirements(match?.preferred ?? [])
       .filter((requirement) => !(match?.mustHave ?? []).some((must) => normalizeText(must) === normalizeText(requirement)))
       .map((requirement) => ({ requirement, importance: 'preferred' as const })),
   ];
-  const requirements = analyzed.length ? analyzed : deterministicJobRequirements(job);
+  const requirements = (analyzed.length ? analyzed : deterministicJobRequirements(job))
+    .map((item) => ({
+      ...item,
+      importance: reconciledRequirementImportance(job, item.requirement, item.importance),
+    }));
 
   return requirements.slice(0, 18).map(({ requirement, importance }) => {
     const ranked = rankEvidence(requirement, records);
     const top = ranked[0];
-    const support = supportStatus(requirement, profile, ranked, match);
+    const support = supportStatus(requirement, profile, ranked, records, match);
     const minimum = support === 'supported' ? 0.28 : 0.2;
     const evidence = support === 'gap' ? [] : ranked
       .filter((item) => item.score >= minimum)

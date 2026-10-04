@@ -143,14 +143,14 @@ export function analyzeUploadedResume(options: {
   selectedModel: string;
 }): AtsAnalyzerResult {
   const { job, profile, match, inspection } = options;
-  const requirements = buildRequirementEvidenceMatrix(job, profile, match);
+  const requirements = buildRequirementEvidenceMatrix(job, profile, match, inspection.text);
   const sourcePack = uploadedResumePack(profile, requirements);
   const verifiedPack = verifyApplicationPackClaims(sourcePack, {
     resumeSummary: sourcePack.resumeSummary,
     coverLetter: '',
     outreachMessage: '',
   }, profile, job, match);
-  const readiness = scoreTailoredResume(job, profile, verifiedPack, match);
+  const readiness = scoreTailoredResume(job, profile, verifiedPack, match, inspection.text);
   const requirementsScore = supportScore(requirements, readiness.requirementCoverage);
   const keywordScore = clamp(
     readiness.exactKeywordCoverage * 0.55

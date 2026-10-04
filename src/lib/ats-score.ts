@@ -108,13 +108,24 @@ function compactRequirementKeywords(match?: MatchScore) {
     });
 }
 
+function usefulKeyword(value: string) {
+  const normalized = normalizeText(value);
+  const alphanumeric = normalized.match(/[a-z0-9+#]/g)?.length ?? 0;
+  return normalized.length >= 2 && alphanumeric >= 2;
+}
+
 function exactKeywordUniverse(job: Job, profile: CandidateProfile, pack: ApplicationPack, match?: MatchScore) {
-  const requirementTerms = uniqueByNormalized((pack.requirementEvidence ?? []).flatMap((item) => item.exactTerms ?? []));
+  const allowed = profileSkillMap(profile);
+  const supportedSkills = jobSkillUniverse(job, profile, match)
+    .filter((skill) => allowed.has(normalizeText(skill)));
+  const requirementTerms = uniqueByNormalized((pack.requirementEvidence ?? [])
+    .filter((item) => item.support !== 'gap')
+    .flatMap((item) => item.exactTerms ?? []));
   return uniqueByNormalized([
     job.title,
-    ...jobSkillUniverse(job, profile, match),
+    ...supportedSkills,
     ...(requirementTerms.length ? requirementTerms : compactRequirementKeywords(match)),
-  ]).slice(0, 28);
+  ]).filter(usefulKeyword).slice(0, 28);
 }
 
 function phraseCoverage(phrase: string, haystack: string) {
@@ -188,8 +199,43 @@ function formatHygiene(profile: CandidateProfile, pack: ApplicationPack) {
   return { score: clampScore(score), issues };
 }
 
-function rolePositioning(job: Job, pack: ApplicationPack, supportedJobSkills: string[]) {
-  const positioningText = `${pack.resumeHeadline} ${pack.resumeSummary}`;
+function rawResumeSections(rawResumeText?: string) {
+  if (!rawResumeText?.trim()) return null;
+  const text = rawResumeText.trim();
+  const lower = text.toLowerCase();
+  const indexOfHeading = (headings: string[]) => {
+    const indexes = headings
+      .map((heading) => lower.search(new RegExp(`(^|\\n)\\s*${heading}\\s*($|\\n)`, 'i')))
+      .filter((index) => index >= 0);
+    return indexes.length ? Math.min(...indexes) : -1;
+  };
+  const experienceIndex = indexOfHeading(['experience', 'work experience', 'professional experience']);
+  const skillsIndex = indexOfHeading(['skills', 'technical skills']);
+  const projectsIndex = indexOfHeading(['projects']);
+  const educationIndex = indexOfHeading(['education']);
+  const certificationsIndex = indexOfHeading(['certifications']);
+
+  const topEnd = [experienceIndex, skillsIndex, projectsIndex, educationIndex]
+    .filter((index) => index > 0)
+    .sort((a, b) => a - b)[0] ?? Math.min(text.length, 1800);
+  const top = text.slice(0, Math.min(topEnd, 2200));
+
+  const sectionEnd = (start: number) => [skillsIndex, projectsIndex, educationIndex, certificationsIndex]
+    .filter((index) => index > start)
+    .sort((a, b) => a - b)[0] ?? text.length;
+
+  const recent = experienceIndex >= 0
+    ? text.slice(experienceIndex, Math.min(sectionEnd(experienceIndex), experienceIndex + 2200))
+    : '';
+  const skills = skillsIndex >= 0
+    ? text.slice(skillsIndex, Math.min(sectionEnd(skillsIndex), skillsIndex + 1600))
+    : '';
+  return { top, recent, skills };
+}
+
+function rolePositioning(job: Job, pack: ApplicationPack, supportedJobSkills: string[], rawResumeText?: string) {
+  const raw = rawResumeSections(rawResumeText);
+  const positioningText = raw?.top || `${pack.resumeHeadline} ${pack.resumeSummary}`;
   const titleCoverage = phraseCoverage(job.title, positioningText);
   const skillCoverage = supportedJobSkills.length
     ? supportedJobSkills.filter((skill) => exactPhrasePresent(skill, positioningText)).length / supportedJobSkills.length
@@ -197,11 +243,12 @@ function rolePositioning(job: Job, pack: ApplicationPack, supportedJobSkills: st
   return clampScore((titleCoverage * 0.65 + Math.min(1, skillCoverage * 1.5) * 0.35) * 100);
 }
 
-function keywordPlacement(pack: ApplicationPack, supportedJobSkills: string[]) {
+function keywordPlacement(pack: ApplicationPack, supportedJobSkills: string[], rawResumeText?: string) {
   if (!supportedJobSkills.length) return 100;
-  const top = `${pack.resumeHeadline} ${pack.resumeSummary}`;
-  const recent = pack.experience[0]?.bullets.join(' ') ?? '';
-  const skills = pack.skills.join(' ');
+  const raw = rawResumeSections(rawResumeText);
+  const top = raw?.top || `${pack.resumeHeadline} ${pack.resumeSummary}`;
+  const recent = raw?.recent || pack.experience[0]?.bullets.join(' ') || '';
+  const skills = raw?.skills || pack.skills.join(' ');
   return clampScore(average(supportedJobSkills.map((skill) => {
     let score = 0;
     if (exactPhrasePresent(skill, top)) score += 0.45;
@@ -219,8 +266,7 @@ function requirementCoverage(pack: ApplicationPack, match: MatchScore | undefine
     for (const item of matrix) {
       const weight = item.importance === 'must-have' ? 1 : 0.35;
       const evidenceFactor = item.support === 'supported' ? 1 : item.support === 'partial' ? 0.55 : 0;
-      const wordingFactor = phraseCoverage(item.requirement, text);
-      weighted += weight * evidenceFactor * wordingFactor;
+      weighted += weight * evidenceFactor;
       total += weight;
     }
     return clampScore(total ? (weighted / total) * 100 : fallback);
@@ -251,8 +297,14 @@ function detailedAnalysisIncomplete(job: Job, match?: MatchScore) {
   return noRequirements;
 }
 
-export function scoreTailoredResume(job: Job, profile: CandidateProfile, pack: ApplicationPack, match?: MatchScore): AtsReadinessScore {
-  const text = visibleResumeText(profile, pack);
+export function scoreTailoredResume(
+  job: Job,
+  profile: CandidateProfile,
+  pack: ApplicationPack,
+  match?: MatchScore,
+  rawResumeText?: string,
+): AtsReadinessScore {
+  const text = rawResumeText?.trim() || visibleResumeText(profile, pack);
   const allowedSkills = profileSkillMap(profile);
   const jobSkills = jobSkillUniverse(job, profile, match);
   const supportedJobSkills = jobSkills.filter((skill) => allowedSkills.has(normalizeText(skill)));
@@ -272,8 +324,8 @@ export function scoreTailoredResume(job: Job, profile: CandidateProfile, pack: A
   const requirements = requirementCoverage(pack, match, text, skillCoverage);
   const evidence = evidenceRelevance(job, pack, match);
   const hygiene = formatHygiene(profile, pack);
-  const placement = keywordPlacement(pack, supportedJobSkills);
-  const positioning = rolePositioning(job, pack, supportedJobSkills);
+  const placement = keywordPlacement(pack, supportedJobSkills, rawResumeText);
+  const positioning = rolePositioning(job, pack, supportedJobSkills, rawResumeText);
 
   const unsupportedRequired = unsupportedMustHaves(pack, match);
   const hardBlockers = [...new Set(match?.blockers ?? [])];

@@ -93,3 +93,69 @@ test('ATS analyzer returns a separate score and breakdown for every internal che
   assert.ok(result.missingKeywords.some((keyword) => keyword.toLowerCase().includes('salesforce')));
   assert.ok(result.requirements.some((requirement) => requirement.requirement === 'Salesforce' && requirement.support === 'gap'));
 });
+
+test('ATS analyzer scores exact keywords from the uploaded resume text, not only the LLM extraction', () => {
+  const extractedProfile: CandidateProfile = {
+    ...profile,
+    headline: 'C/C++ | Embedded Systems',
+    summary: 'Engineering graduate with Python, Linux, testing, and troubleshooting experience.',
+    skills: ['C/C++', 'Python', 'Linux', 'Git', 'Jira'],
+    experience: [{
+      organization: 'Example Engineering',
+      title: 'Software Development Intern',
+      bullets: ['Tested software changes and debugged defects in an Agile workflow.'],
+      skills: ['Git', 'Jira'],
+    }],
+  };
+  const softwareJob: Job = {
+    ...job,
+    title: 'Software Analyst',
+    company: 'Hitachi Rail',
+    description: [
+      'Required Skills and Experience:',
+      'Foundational engineering analysis and troubleshooting skills.',
+      'Experience using source control, IDE, and requirements management tools such as Git and Jira.',
+      'Preferred Skills and Experience:',
+      'Professional Engineer (P.Eng.) designation.',
+    ].join('\n'),
+  };
+  const softwareMatch: MatchScore = {
+    ...match,
+    mustHave: ['Foundational engineering analysis and troubleshooting skills'],
+    preferred: ['Professional Engineer (P.Eng.) designation'],
+    matchedSkills: ['Git', 'Jira', 'C/C++', 'Python', 'Linux'],
+    missingSkills: ['P.Eng. designation'],
+  };
+  const rawResume = [
+    'Sample Candidate',
+    'Software Analyst | C/C++ | Embedded Systems',
+    'PROFILE SUMMARY',
+    'Engineering graduate with Python, Linux, engineering analysis and troubleshooting, testing and verification.',
+    'EXPERIENCE',
+    'Used Git, Jira, and an IDE-based Agile workflow to test software changes.',
+    'SKILLS',
+    'C/C++, Python, Linux, Git, Jira',
+  ].join('\n');
+
+  const result = analyzeUploadedResume({
+    job: softwareJob,
+    profile: extractedProfile,
+    match: softwareMatch,
+    inspection: {
+      text: rawResume,
+      format: 'PDF',
+      pageCount: 1,
+      structuralIssues: [],
+      parseabilityScore: 100,
+    },
+    resumeFileName: 'hitachi_resume.pdf',
+    profileExtractionModel: 'test-extractor',
+    selectedModel: 'test-model',
+  });
+
+  assert.ok(result.matchedKeywords.some((keyword) => keyword.toLowerCase() === 'software analyst'));
+  assert.ok(!result.missingKeywords.some((keyword) => keyword.toLowerCase() === 'software analyst'));
+  assert.ok(!result.missingKeywords.includes('P.'));
+  const troubleshooting = result.requirements.find((item) => /engineering analysis and troubleshooting/i.test(item.requirement));
+  assert.equal(troubleshooting?.support, 'supported');
+});
