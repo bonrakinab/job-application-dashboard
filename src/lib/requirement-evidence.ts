@@ -410,11 +410,11 @@ function reconciledRequirementImportance(
   let best: { importance: 'must-have' | 'preferred'; score: number } | null = null;
   const requirementTokens = tokens(requirement);
   for (const line of lines) {
-    if (/^(required(?: skills| qualifications| experience)?(?: and experience)?|requirements|required skills and experience|minimum qualifications?)\s*:?s*$/i.test(line)) {
+    if (/^(required(?: skills| qualifications| experience)?(?: and experience)?|requirements|required skills and experience|minimum qualifications?)\s*:?\s*$/i.test(line)) {
       section = 'must-have';
       continue;
     }
-    if (/^(preferred(?: skills| qualifications| experience)?(?: and experience)?|preferred skills and experience|nice to have|nice-to-have|bonus qualifications?)\s*:?s*$/i.test(line)) {
+    if (/^(preferred(?: skills| qualifications| experience)?(?: and experience)?|preferred skills and experience|nice to have|nice-to-have|bonus qualifications?)\s*:?\s*$/i.test(line)) {
       section = 'preferred';
       continue;
     }
