@@ -258,7 +258,7 @@ function keywordPlacement(pack: ApplicationPack, supportedJobSkills: string[], r
   }), 1) * 100);
 }
 
-function requirementCoverage(pack: ApplicationPack, match: MatchScore | undefined, text: string, fallback: number) {
+function requirementCoverage(pack: ApplicationPack, match: MatchScore | undefined, _text: string, fallback: number) {
   const matrix = pack.requirementEvidence ?? [];
   if (matrix.length) {
     let weighted = 0;
