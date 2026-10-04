@@ -97,3 +97,68 @@ test('literal JD requirements are extracted when AI analysis has no requirements
   assert.equal(matrix.find((item) => /kubernetes/i.test(item.requirement))?.support, 'gap');
   assert.ok(!matrix.some((item) => /equal opportunity/i.test(item.requirement)));
 });
+
+test('raw resume evidence prevents false gaps and JD headings override wrong AI importance', () => {
+  const hitachiProfile: CandidateProfile = {
+    ...profile,
+    headline: 'C/C++ | Embedded Systems',
+    summary: 'Software engineering graduate with testing and verification experience.',
+    skills: ['C/C++', 'Python', 'Git', 'Jira', 'Embedded Systems'],
+    experience: [{
+      organization: 'Banglalink',
+      title: 'Enterprise Solutions and Services Specialist Engineer, IT',
+      bullets: ['Performed engineering analysis and troubleshooting for application and integration failures.'],
+      skills: [],
+    }, {
+      organization: 'GAOTek',
+      title: 'Software Development Intern - Team Leader',
+      bullets: ['Implemented Angular components and tested software changes in an Agile workflow.'],
+      skills: [],
+    }],
+  };
+  const hitachiJob: Job = {
+    ...job,
+    title: 'Software Analyst',
+    company: 'Hitachi Rail',
+    description: [
+      'Required Skills and Experience:',
+      'Foundational engineering analysis and troubleshooting skills, including the ability to diagnose issues using logs and correlate events to failures.',
+      'Experience using source control, IDE, and requirements management tools such as Git, Jira, Eclipse, ClearCase, ClearQuest, and DOORS.',
+      'Basic knowledge of railway signaling systems, including SelTrac CBTC.',
+      'Preferred Skills and Experience:',
+      'Professional Engineer (P.Eng.) designation.',
+      'Experience developing software for embedded systems using C and C++.',
+    ].join('\n'),
+  };
+  const hitachiMatch: MatchScore = {
+    ...match,
+    mustHave: [
+      'Foundational engineering analysis and troubleshooting skills',
+      'Experience using source control, IDE, and requirements management tools such as Git, Jira',
+    ],
+    // Simulate an LLM putting a Required-section item in the wrong bucket.
+    preferred: [
+      'Basic knowledge of railway signaling systems',
+      'Professional Engineer (P.Eng.) designation',
+      'Experience developing software for embedded systems using C and C++',
+    ],
+    matchedSkills: ['Git', 'Jira', 'C/C++', 'Python'],
+    missingSkills: ['SelTrac CBTC', 'P.Eng. designation'],
+  };
+  const rawResume = [
+    'Software Analyst | C/C++ | Embedded Systems',
+    'Performed engineering analysis and troubleshooting for application and integration failures.',
+    'Used Git, Jira, and an IDE-based Agile workflow to implement components, test software changes, and participate in code reviews.',
+  ].join('\n');
+
+  const matrix = buildRequirementEvidenceMatrix(hitachiJob, hitachiProfile, hitachiMatch, rawResume);
+  const troubleshooting = matrix.find((item) => /engineering analysis and troubleshooting/i.test(item.requirement));
+  const sourceControl = matrix.find((item) => /source control/i.test(item.requirement));
+  const railway = matrix.find((item) => /railway signaling/i.test(item.requirement));
+
+  assert.equal(troubleshooting?.support, 'supported');
+  assert.notEqual(sourceControl?.support, 'gap');
+  assert.equal(railway?.importance, 'must-have');
+  assert.equal(railway?.support, 'gap');
+  assert.ok((troubleshooting?.evidence ?? []).some((item) => /engineering analysis and troubleshooting/i.test(item.excerpt)));
+});
