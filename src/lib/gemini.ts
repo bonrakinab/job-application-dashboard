@@ -98,7 +98,7 @@ export function gatewayFallbackModelChain(
 }
 
 export function aiGatewayRuntimeConfigured(env: NodeJS.ProcessEnv = process.env) {
-  return Boolean(env.AI_GATEWAY_API_KEY || env.VERCEL_OIDC_TOKEN || env.VERCEL);
+  return Boolean(env.AI_GATEWAY_API_KEY || env.VERCEL_OIDC_TOKEN);
 }
 
 type StructuredResult<T> = { value: T; model: string };

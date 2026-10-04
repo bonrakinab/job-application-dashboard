@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { aiProviderConfigured, aiStatus, deterministicApplicationPack, selectedAIProvider } from './ai';
-import { gatewayFallbackModelChain, geminiDirectModelChain, outputText as geminiOutputText } from './gemini';
+import {
+  aiGatewayRuntimeConfigured,
+  gatewayFallbackModelChain,
+  geminiDirectModelChain,
+  outputText as geminiOutputText,
+} from './gemini';
 import type { CandidateProfile, Job, MatchScore } from './types';
 
 function env(values: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
@@ -30,6 +35,12 @@ test('AI status reports provider and key presence without values', () => {
     aiStatus(env({ GEMINI_API_KEY: 'gemini-secret', OPENAI_API_KEY: 'openai-secret' })),
     { provider: 'gemini', configured: true, gateway: false, gemini: true, openai: true },
   );
+});
+
+test('running on Vercel alone does not imply AI Gateway authentication', () => {
+  assert.equal(aiGatewayRuntimeConfigured(env({ VERCEL: '1' })), false);
+  assert.equal(aiGatewayRuntimeConfigured(env({ VERCEL_OIDC_TOKEN: 'oidc-token' })), true);
+  assert.equal(aiGatewayRuntimeConfigured(env({ AI_GATEWAY_API_KEY: 'gateway-key' })), true);
 });
 
 test('multi-model router uses current Gemini, Qwen, and NVIDIA fallbacks', () => {
