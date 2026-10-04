@@ -17,8 +17,9 @@ export default async function SettingsPage() {
   const ai = aiStatus();
   const configs: Array<[string, boolean, string]> = [
     ['Supabase', isLiveMode(), 'Persistent database'],
-    ['AI provider', ai.configured, ai.provider === 'gemini' ? 'Gemini 3.6 Flash · scoring + application packs' : 'OpenAI · scoring, research + application packs'],
-    ['Gemini key', ai.gemini, 'Primary free-tier provider when AI_PROVIDER=gemini'],
+    ['AI provider', ai.configured, ai.provider === 'gemini' ? 'Gemini 3.8 Flash · multi-provider fallback enabled' : 'OpenAI · scoring, research + application packs'],
+    ['AI Gateway', ai.gateway, 'Fallback routing across Gemini, Qwen, and NVIDIA Nemotron'],
+    ['Gemini key', ai.gemini, 'Direct Gemini fallback when AI Gateway is unavailable'],
     ['OpenAI key', ai.openai, 'Optional paid provider when AI_PROVIDER=openai'],
     ['Gmail OAuth', gmailAuth.authorized, gmailAuth.authorized ? `Authorized via ${gmail.credentialSource} credential` : gmail.oauth ? 'Configured but authorization is invalid; reconnect required' : 'Required for outreach draft creation'],
     ['Gmail digest', Boolean(gmail.digest && gmailAuth.authorized), gmail.digestTo ? 'Daily recipient configured' : 'Daily recipient is not configured'],
@@ -55,7 +56,7 @@ export default async function SettingsPage() {
         <summary>Technical status</summary>
         <div className="advanced-panel-body">
           <div className="grid config-grid">{configs.map(([name, on, desc]) => <div className="config" key={name}><b><span className={`status-dot ${on ? 'on' : ''}`}/>{name}</b><span>{on ? 'Ready' : 'Needs attention'} · {desc}</span></div>)}</div>
-          {ai.provider === 'gemini' ? <p className="small muted">Gemini is the current AI provider. Company web research requires the OpenAI connection.</p> : null}
+          {ai.provider === 'gemini' ? <p className="small muted">Gemini 3.8 Flash is primary. Capacity and provider failures automatically fall back through Qwen, NVIDIA Nemotron, and older stable Gemini models. Company web research still requires the OpenAI connection.</p> : null}
           {gmailAuth.error ? <p className="small muted">Gmail: {gmailAuth.error}</p> : null}
         </div>
       </details>

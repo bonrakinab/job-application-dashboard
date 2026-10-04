@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { aiProviderConfigured, aiStatus, deterministicApplicationPack, selectedAIProvider } from './ai';
-import { outputText as geminiOutputText } from './gemini';
+import { gatewayFallbackModelChain, geminiDirectModelChain, outputText as geminiOutputText } from './gemini';
 import type { CandidateProfile, Job, MatchScore } from './types';
 
 function env(values: Record<string, string | undefined> = {}): NodeJS.ProcessEnv {
@@ -28,8 +28,20 @@ test('selected provider must have its own key', () => {
 test('AI status reports provider and key presence without values', () => {
   assert.deepEqual(
     aiStatus(env({ GEMINI_API_KEY: 'gemini-secret', OPENAI_API_KEY: 'openai-secret' })),
-    { provider: 'gemini', configured: true, gemini: true, openai: true },
+    { provider: 'gemini', configured: true, gateway: false, gemini: true, openai: true },
   );
+});
+
+test('multi-model router uses current Gemini, Qwen, and NVIDIA fallbacks', () => {
+  assert.deepEqual(geminiDirectModelChain().slice(0, 3), [
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+  ]);
+  const fallbacks = gatewayFallbackModelChain();
+  assert.ok(fallbacks.includes('alibaba/qwen3.8-flash'));
+  assert.ok(fallbacks.includes('alibaba/qwen3.8-max'));
+  assert.ok(fallbacks.includes('nvidia/nemotron-3-super-120b-a12b'));
 });
 
 test('Gemini structured output concatenates split JSON text chunks', () => {

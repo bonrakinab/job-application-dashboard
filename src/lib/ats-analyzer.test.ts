@@ -78,6 +78,7 @@ test('ATS analyzer returns a separate score and breakdown for every internal che
     },
     resumeFileName: 'resume.docx',
     profileExtractionModel: 'test-extractor',
+    selectedModel: 'google/gemini-3.8-flash',
   });
 
   assert.equal(result.checkers.length, 6);
@@ -85,6 +86,7 @@ test('ATS analyzer returns a separate score and breakdown for every internal che
     'readiness', 'match', 'requirements', 'keywords', 'format', 'integrity',
   ]);
   assert.equal(result.models.jobAnalysis, 'test-model');
+  assert.equal(result.models.selected, 'google/gemini-3.8-flash');
   assert.ok(result.combinedScore >= 0 && result.combinedScore <= 100);
   assert.ok(result.checkers.every((checker) => checker.score >= 0 && checker.score <= 100));
   assert.ok(result.checkers.find((checker) => checker.id === 'format')?.needsWork.some((item) => item.includes('Tables')));

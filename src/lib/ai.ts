@@ -1,6 +1,6 @@
 import type { ApplicationPack, CandidateProfile, CompanyIntelligence, Job, MatchScore, RequirementEvidence } from './types';
 import { applicationPackEligibility } from './application-pack-eligibility';
-import { analyzeJobWithGemini, createApplicationPackWithGemini, extractResumeProfileWithGemini } from './gemini';
+import { aiGatewayRuntimeConfigured, analyzeJobWithGemini, createApplicationPackWithGemini, extractResumeProfileWithGemini } from './gemini';
 import {
   analyzeJobWithAI as analyzeJobWithOpenAI,
   createApplicationPack as createApplicationPackWithOpenAI,
@@ -11,6 +11,7 @@ import { deterministicTailoringPlan, materializeApplicationPack } from './resume
 import { deterministicScore } from './scoring';
 import { calculateStartupFit } from './startup-fit';
 import { employerFacingCandidateProfile } from './profile-curation';
+import type { AtsLlmModelId } from './ats-models';
 
 export type AIProvider = 'gemini' | 'openai';
 
@@ -20,7 +21,7 @@ export function selectedAIProvider(env: NodeJS.ProcessEnv = process.env): AIProv
 
 export function aiProviderConfigured(env: NodeJS.ProcessEnv = process.env) {
   return selectedAIProvider(env) === 'gemini'
-    ? Boolean(env.GEMINI_API_KEY)
+    ? Boolean(env.GEMINI_API_KEY) || aiGatewayRuntimeConfigured(env)
     : Boolean(env.OPENAI_API_KEY);
 }
 
@@ -29,13 +30,18 @@ export function aiStatus(env: NodeJS.ProcessEnv = process.env) {
   return {
     provider,
     configured: aiProviderConfigured(env),
+    gateway: aiGatewayRuntimeConfigured(env),
     gemini: Boolean(env.GEMINI_API_KEY),
     openai: Boolean(env.OPENAI_API_KEY),
   };
 }
 
-export async function analyzeJobWithAI(job: Job, profile: CandidateProfile): Promise<MatchScore> {
+export async function analyzeJobWithAI(job: Job, profile: CandidateProfile, selectedModel?: AtsLlmModelId): Promise<MatchScore> {
   const safeProfile = employerFacingCandidateProfile(profile);
+  if (selectedModel) {
+    const match = await analyzeJobWithGemini(job, safeProfile, selectedModel, true);
+    return { ...match, startupFit: calculateStartupFit(job, safeProfile) };
+  }
   const provider = selectedAIProvider();
   if (!aiProviderConfigured()) {
     const match = deterministicScore(job, safeProfile);
@@ -67,7 +73,7 @@ export async function createApplicationPack(
   const primary = selectedAIProvider();
   const secondary: AIProvider = primary === 'gemini' ? 'openai' : 'gemini';
   const configured = {
-    gemini: Boolean(process.env.GEMINI_API_KEY),
+    gemini: Boolean(process.env.GEMINI_API_KEY) || aiGatewayRuntimeConfigured(),
     openai: Boolean(process.env.OPENAI_API_KEY),
   };
   const failures: string[] = [];
@@ -107,7 +113,8 @@ export async function researchCompanyAndHiringTeam(job: Job): Promise<{ research
   return researchCompanyAndHiringTeamWithOpenAI(job);
 }
 
-export async function extractPartTimeResumeProfile(text: string, fileName: string) {
+export async function extractPartTimeResumeProfile(text: string, fileName: string, selectedModel?: AtsLlmModelId) {
+  if (selectedModel) return extractResumeProfileWithGemini(text, fileName, selectedModel, true);
   if (!aiProviderConfigured()) throw new Error('Connect an AI provider before importing a résumé.');
   return selectedAIProvider() === 'gemini'
     ? extractResumeProfileWithGemini(text, fileName)

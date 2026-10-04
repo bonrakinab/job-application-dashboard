@@ -2,6 +2,7 @@ import { analyzeJobWithAI, extractPartTimeResumeProfile } from '@/lib/ai';
 import { analyzeUploadedResume } from '@/lib/ats-analyzer';
 import { extractDocumentFileText, inspectResumeFile } from '@/lib/resume-file-text';
 import { partTimeProfileFromResumeExtraction } from '@/lib/resume-profile-import';
+import { DEFAULT_ATS_LLM_MODEL, isAtsLlmModelId } from '@/lib/ats-models';
 import type { Job } from '@/lib/types';
 
 export const runtime = 'nodejs';
@@ -31,6 +32,12 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Choose a résumé file first.' }, { status: 400 });
     }
 
+    const requestedModel = value(form, 'model');
+    if (requestedModel && !isAtsLlmModelId(requestedModel)) {
+      return Response.json({ error: 'Choose a supported ATS analysis model.' }, { status: 400 });
+    }
+    const selectedModel = isAtsLlmModelId(requestedModel) ? requestedModel : DEFAULT_ATS_LLM_MODEL;
+
     const jobDescriptionFile = form.get('jobDescriptionFile');
     const typedDescription = value(form, 'jobDescription');
     const jobDescriptionPromise = jobDescriptionFile instanceof File && jobDescriptionFile.size
@@ -44,7 +51,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Upload or paste a complete job description (at least 80 characters).' }, { status: 400 });
     }
 
-    const { extraction, model } = await extractPartTimeResumeProfile(inspection.text, resume.name);
+    const { extraction, model } = await extractPartTimeResumeProfile(inspection.text, resume.name, selectedModel);
     const title = value(form, 'jobTitle') || inferredTitle(jobDescription);
     const company = value(form, 'company') || 'Target employer';
     const suppliedLocation = value(form, 'location');
@@ -75,7 +82,7 @@ export async function POST(request: Request) {
       description: jobDescription.slice(0, 60000),
       remote: !suppliedLocation,
     };
-    const match = await analyzeJobWithAI(job, profile);
+    const match = await analyzeJobWithAI(job, profile, selectedModel);
     const result = analyzeUploadedResume({
       job,
       profile,
@@ -83,6 +90,7 @@ export async function POST(request: Request) {
       inspection,
       resumeFileName: resume.name,
       profileExtractionModel: model,
+      selectedModel,
     });
 
     return Response.json(result, {

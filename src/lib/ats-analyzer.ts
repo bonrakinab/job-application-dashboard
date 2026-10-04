@@ -32,7 +32,7 @@ export interface AtsAnalyzerResult {
   label: string;
   job: { title: string; company: string; location?: string };
   resume: { name: string; format: string; pages?: number };
-  models: { profileExtraction: string; jobAnalysis: string };
+  models: { selected: string; profileExtraction: string; jobAnalysis: string };
   checkers: AtsCheckerResult[];
   matchedKeywords: string[];
   missingKeywords: string[];
@@ -140,6 +140,7 @@ export function analyzeUploadedResume(options: {
   inspection: ResumeFileInspection;
   resumeFileName: string;
   profileExtractionModel: string;
+  selectedModel: string;
 }): AtsAnalyzerResult {
   const { job, profile, match, inspection } = options;
   const requirements = buildRequirementEvidenceMatrix(job, profile, match);
@@ -310,7 +311,11 @@ export function analyzeUploadedResume(options: {
     label: scoreLabel(combinedScore),
     job: { title: job.title, company: job.company, location: job.location },
     resume: { name: options.resumeFileName, format: inspection.format, pages: inspection.pageCount },
-    models: { profileExtraction: options.profileExtractionModel, jobAnalysis: match.model ?? 'deterministic-v3' },
+    models: {
+      selected: options.selectedModel,
+      profileExtraction: options.profileExtractionModel,
+      jobAnalysis: match.model ?? 'deterministic-v3',
+    },
     checkers,
     matchedKeywords: readiness.matchedKeywords,
     missingKeywords: readiness.missingKeywords,
