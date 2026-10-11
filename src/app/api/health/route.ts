@@ -19,6 +19,7 @@ export async function GET() {
     dashboardAuth: present(process.env.DASHBOARD_PASSWORD) && present(process.env.AUTH_SECRET),
     ai: ai.configured,
     gemini: ai.gemini,
+    openrouter: ai.openrouter,
     openai: ai.openai,
     gmailConfigured: gmail.oauth,
     gmailAuthorized: gmailAuth.authorized,

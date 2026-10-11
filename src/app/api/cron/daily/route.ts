@@ -1,6 +1,7 @@
 import { collapseDuplicateJobs } from '@/lib/job-duplicates';
 import { sendDigest } from '@/lib/gmail';
 import { isMainCareerJob } from '@/lib/part-time-jobs';
+import { runDiscoveryAndAnalysis } from '@/lib/orchestrator';
 import { listJobs, logActivity } from '@/lib/store';
 
 export const runtime = 'nodejs';
@@ -23,6 +24,7 @@ async function safeLogActivity(event: string, payload: unknown) {
 export async function GET(request: Request) {
   if (!authorizedCron(request)) return new Response('Unauthorized', { status: 401 });
   try {
+    const discovery = await runDiscoveryAndAnalysis();
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
     const recentRaw = (await listJobs(500)).filter(isMainCareerJob).filter((job) => {
       const discovered = job.discoveredAt ? Date.parse(job.discoveredAt) : 0;
@@ -63,6 +65,10 @@ export async function GET(request: Request) {
     }
 
     await safeLogActivity('cron.daily.completed', {
+      discoveryFetched: discovery.fetched,
+      discoveryRelevant: discovery.relevant,
+      discoveryErrors: discovery.errors,
+      discoveryAnalyzed: discovery.analyzed.length,
       newListings: recent.length,
       duplicatesCollapsed: recentRaw.length - recent.length,
       digestJobs: jobs.length,
@@ -72,6 +78,7 @@ export async function GET(request: Request) {
     });
     return Response.json({
       ok: true,
+      discovery,
       newListings: recent.length,
       duplicatesCollapsed: recentRaw.length - recent.length,
       digestJobs: jobs.length,

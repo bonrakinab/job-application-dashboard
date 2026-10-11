@@ -5,6 +5,8 @@ import {
   aiGatewayRuntimeConfigured,
   gatewayFallbackModelChain,
   geminiDirectModelChain,
+  openRouterModelId,
+  openRouterRuntimeConfigured,
   outputText as geminiOutputText,
 } from './gemini';
 import type { CandidateProfile, Job, MatchScore } from './types';
@@ -33,8 +35,17 @@ test('selected provider must have its own key', () => {
 test('AI status reports provider and key presence without values', () => {
   assert.deepEqual(
     aiStatus(env({ GEMINI_API_KEY: 'gemini-secret', OPENAI_API_KEY: 'openai-secret' })),
-    { provider: 'gemini', configured: true, gateway: false, gemini: true, openai: true },
+    { provider: 'gemini', configured: true, gateway: false, gemini: true, openrouter: false, openai: true },
   );
+});
+
+test('OpenRouter configuration and ATS model mappings are explicit', () => {
+  assert.equal(openRouterRuntimeConfigured(env()), false);
+  assert.equal(openRouterRuntimeConfigured(env({ OPENROUTER_API_KEY: 'router-key' })), true);
+  assert.equal(openRouterModelId('alibaba/qwen3.8-flash'), 'qwen/qwen3.8-flash');
+  assert.equal(openRouterModelId('alibaba/qwen3.8-max-prime'), 'qwen/qwen3.8-max-prime');
+  assert.equal(openRouterModelId('nvidia/nemotron-3-super-120b-a12b'), 'nvidia/nemotron-3-super-120b-a12b');
+  assert.equal(openRouterModelId('google/gemini-3.8-flash'), undefined);
 });
 
 test('running on Vercel alone does not imply AI Gateway authentication', () => {

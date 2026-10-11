@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { JobValidityStatus, JobWithMatch } from '@/lib/types';
 import { applicationLabel } from '@/lib/application-state';
+import { sourcePostingFreshness } from '@/lib/fresh-openings';
 import {
   countActiveFreshOpeningFilters,
   DEFAULT_FRESH_OPENING_FILTERS,
@@ -41,15 +42,27 @@ function discoveredRank(job: JobWithMatch) {
   return job.discoveredAt ? Date.parse(job.discoveredAt) || 0 : 0;
 }
 
+function freshnessLabel(job: JobWithMatch) {
+  const freshness = sourcePostingFreshness(job);
+  if (freshness === 'verified-fresh') return 'Verified ≤24h';
+  if (freshness === 'older') return 'Older source date';
+  return 'Date unverified';
+}
+
+function freshnessRank(job: JobWithMatch) {
+  return sourcePostingFreshness(job) === 'verified-fresh' ? 1 : 0;
+}
+
 export function FreshOpeningsClient({ jobs }: { jobs: JobWithMatch[] }) {
   const [filters, setFilters] = useState<FreshOpeningFilters>({ ...DEFAULT_FRESH_OPENING_FILTERS });
   const [page, setPage] = useState(1);
 
   const sources = useMemo(() => [...new Set(jobs.map((job) => job.source))].sort(), [jobs]);
+  const verifiedFreshCount = useMemo(() => jobs.filter((job) => sourcePostingFreshness(job) === 'verified-fresh').length, [jobs]);
   const activeFilterCount = countActiveFreshOpeningFilters(filters);
   const visible = useMemo(() => jobs
     .filter((job) => matchesFreshOpening(job, filters))
-    .sort((a, b) => discoveredRank(b) - discoveredRank(a)), [jobs, filters]);
+    .sort((a, b) => freshnessRank(b) - freshnessRank(a) || discoveredRank(b) - discoveredRank(a)), [jobs, filters]);
 
   const totalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const paged = useMemo(() => visible.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [visible, page]);
@@ -61,9 +74,9 @@ export function FreshOpeningsClient({ jobs }: { jobs: JobWithMatch[] }) {
     setFilters((current) => ({ ...current, [key]: value }));
   }
 
-  function ageOptions() {
+  function ageOptions(allLabel: string) {
     return <>
-      <option value="all">All ≤24h</option>
+      <option value="all">{allLabel}</option>
       <option value="1">Last hour</option>
       <option value="3">Last 3h</option>
       <option value="6">Last 6h</option>
@@ -74,7 +87,7 @@ export function FreshOpeningsClient({ jobs }: { jobs: JobWithMatch[] }) {
 
   return <>
     <div className="row" style={{ justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-      <span className="small muted">Showing {visible.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, visible.length)} of {visible.length} matching fresh jobs · {jobs.length} in the 24-hour window · {activeFilterCount} active filter{activeFilterCount === 1 ? '' : 's'}</span>
+      <span className="small muted">Showing {visible.length ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, visible.length)} of {visible.length} recent discoveries · {verifiedFreshCount} verified posted ≤24h · {jobs.length - verifiedFreshCount} older/date-unverified · {activeFilterCount} active filter{activeFilterCount === 1 ? '' : 's'}</span>
       <span className="small muted">Page {page} of {totalPages}</span>
     </div>
 
@@ -82,7 +95,7 @@ export function FreshOpeningsClient({ jobs }: { jobs: JobWithMatch[] }) {
 
     <div className="table-wrap">
       <table className={styles.table}>
-        <thead><tr><th>Opportunity</th><th>Date posted</th><th>Added to Fresh</th><th>Application</th><th>Type</th><th>Location</th><th>Posting state</th><th>Match</th><th>Decision</th><th></th></tr>
+        <thead><tr><th>Opportunity</th><th>Source date</th><th>Discovered</th><th>Application</th><th>Type</th><th>Location</th><th>Posting state</th><th>Match</th><th>Decision</th><th></th></tr>
         <tr className={styles.filterRow}>
           <th><div className={styles.stack}>
             <input className={`input ${styles.control}`} aria-label="Filter by opportunity" placeholder="Title or company" value={filters.query} onChange={(event) => setFilter('query', event.target.value)} />
@@ -91,8 +104,8 @@ export function FreshOpeningsClient({ jobs }: { jobs: JobWithMatch[] }) {
               {sources.map((value) => <option value={value} key={value}>{value}</option>)}
             </select>
           </div></th>
-          <th><select className={`select ${styles.control}`} aria-label="Filter by date posted" value={filters.postedWithin} onChange={(event) => setFilter('postedWithin', event.target.value as FreshAgeFilter)}>{ageOptions()}</select></th>
-          <th><select className={`select ${styles.control}`} aria-label="Filter by time added to Fresh" value={filters.addedWithin} onChange={(event) => setFilter('addedWithin', event.target.value as FreshAgeFilter)}>{ageOptions()}</select></th>
+          <th><select className={`select ${styles.control}`} aria-label="Filter by source date" value={filters.postedWithin} onChange={(event) => setFilter('postedWithin', event.target.value as FreshAgeFilter)}>{ageOptions('Any source date')}</select></th>
+          <th><select className={`select ${styles.control}`} aria-label="Filter by discovery time" value={filters.addedWithin} onChange={(event) => setFilter('addedWithin', event.target.value as FreshAgeFilter)}>{ageOptions('All recent discoveries')}</select></th>
           <th><select className={`select ${styles.control}`} aria-label="Filter by application status" value={filters.application} onChange={(event) => setFilter('application', event.target.value as FreshApplicationFilter)}>
             <option value="all">All states</option>
             <option value="not-applied">Not applied</option>
@@ -149,7 +162,7 @@ export function FreshOpeningsClient({ jobs }: { jobs: JobWithMatch[] }) {
           const labels = jobTypeLabels(job);
           return <tr key={job.id}>
             <td><div className="job-title">{job.title}</div><div className="job-company">{job.company} · {job.source}</div></td>
-            <td><b>{formatDate(job.postedAt)}</b></td>
+            <td><b>{job.postedAt ? formatDate(job.postedAt) : 'Not available/verified'}</b><div className="small muted">{freshnessLabel(job)}</div></td>
             <td>{formatDate(job.discoveredAt)}</td>
             <td><span className="tag"><b>{applicationLabel(job.application)}</b></span></td>
             <td>{labels.length ? <div className="tag-list">{labels.map((label) => <span className="tag" key={label}>{label}</span>)}</div> : <span className="muted">—</span>}</td>

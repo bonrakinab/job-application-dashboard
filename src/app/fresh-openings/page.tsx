@@ -13,14 +13,14 @@ export default async function FreshOpeningsPage() {
   return <>
     <div className="topbar simple-topbar">
       <div>
-        <h1 className="title">Fresh openings</h1>
-        <div className="sub">Jobs posted and discovered during the last {FRESH_OPENINGS_WINDOW_HOURS} hours.</div>
+        <h1 className="title">Recent openings</h1>
+        <div className="sub">Jobs discovered during the last {FRESH_OPENINGS_WINDOW_HOURS} hours. Verified fresh postings appear first; older or unverified source dates remain visible.</div>
       </div>
       <a className="btn ghost" href="/recommended">Find best matches →</a>
     </div>
 
     <JobsNav />
-    <div className="section-head"><h2>{jobs.length} fresh job{jobs.length === 1 ? '' : 's'}</h2></div>
+    <div className="section-head"><h2>{jobs.length} recently discovered job{jobs.length === 1 ? '' : 's'}</h2></div>
     <FreshOpeningsClient jobs={tableJobs} />
   </>;
 }

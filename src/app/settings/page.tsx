@@ -17,9 +17,10 @@ export default async function SettingsPage() {
   const ai = aiStatus();
   const configs: Array<[string, boolean, string]> = [
     ['Supabase', isLiveMode(), 'Persistent database'],
-    ['AI provider', ai.configured, ai.provider === 'gemini' ? 'Gemini 3.8 Flash · multi-provider fallback enabled' : 'OpenAI · scoring, research + application packs'],
-    ['AI Gateway', ai.gateway, 'Fallback routing across Gemini, Qwen, and NVIDIA Nemotron'],
+    ['AI provider', ai.configured, ai.provider === 'gemini' ? 'Gemini for default scoring and application packs' : 'OpenAI · scoring, research + application packs'],
+    ['AI Gateway', ai.gateway, 'Optional fallback routing for default Gemini workflows'],
     ['Gemini key', ai.gemini, 'Direct Gemini fallback when AI Gateway is unavailable'],
+    ['OpenRouter key', ai.openrouter, 'Required for user-selected Qwen and NVIDIA Nemotron ATS reviews'],
     ['OpenAI key', ai.openai, 'Optional paid provider when AI_PROVIDER=openai'],
     ['Gmail OAuth', gmailAuth.authorized, gmailAuth.authorized ? `Authorized via ${gmail.credentialSource} credential` : gmail.oauth ? 'Configured but authorization is invalid; reconnect required' : 'Required for outreach draft creation'],
     ['Gmail digest', Boolean(gmail.digest && gmailAuth.authorized), gmail.digestTo ? 'Daily recipient configured' : 'Daily recipient is not configured'],
@@ -56,7 +57,7 @@ export default async function SettingsPage() {
         <summary>Technical status</summary>
         <div className="advanced-panel-body">
           <div className="grid config-grid">{configs.map(([name, on, desc]) => <div className="config" key={name}><b><span className={`status-dot ${on ? 'on' : ''}`}/>{name}</b><span>{on ? 'Ready' : 'Needs attention'} · {desc}</span></div>)}</div>
-          {ai.provider === 'gemini' ? <p className="small muted">Gemini 3.8 Flash is primary. Capacity and provider failures automatically fall back through Qwen, NVIDIA Nemotron, and older stable Gemini models. Company web research still requires the OpenAI connection.</p> : null}
+          {ai.provider === 'gemini' ? <p className="small muted">Gemini is used for the default workflow. In ATS Analyzer, your selected model is respected: Gemini models use Google, while Qwen and NVIDIA Nemotron models use OpenRouter. Company web research still requires the OpenAI connection.</p> : null}
           {gmailAuth.error ? <p className="small muted">Gmail: {gmailAuth.error}</p> : null}
         </div>
       </details>

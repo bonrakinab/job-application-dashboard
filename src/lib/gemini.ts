@@ -1,4 +1,5 @@
 import { generateText, jsonSchema, Output } from 'ai';
+import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import type { CandidateProfile, Job, MatchScore, RequirementEvidence } from './types';
 import { deterministicScore } from './scoring';
 import { clamp } from './utils';
@@ -26,6 +27,12 @@ const DEFAULT_GATEWAY_FALLBACKS = [
   'google/gemini-3.7-flash',
   'google/gemini-3.6-flash',
 ] as const;
+const OPENROUTER_MODEL_IDS: Record<string, string> = {
+  'alibaba/qwen3.8-flash': 'qwen/qwen3.8-flash',
+  'alibaba/qwen3.8-max-prime': 'qwen/qwen3.8-max-prime',
+  'nvidia/nemotron-3-super-120b-a12b': 'nvidia/nemotron-3-super-120b-a12b',
+  'nvidia/nemotron-3-ultra-550b-a55b': 'nvidia/nemotron-3-ultra-550b-a55b',
+};
 
 type ThinkingLevel = 'minimal' | 'low' | 'medium' | 'high';
 
@@ -101,6 +108,20 @@ export function aiGatewayRuntimeConfigured(env: NodeJS.ProcessEnv = process.env)
   return Boolean(env.AI_GATEWAY_API_KEY || env.VERCEL_OIDC_TOKEN);
 }
 
+export function openRouterRuntimeConfigured(env: NodeJS.ProcessEnv = process.env) {
+  return Boolean(env.OPENROUTER_API_KEY);
+}
+
+export function openRouterModelId(model: string) {
+  return OPENROUTER_MODEL_IDS[model];
+}
+
+function selectedStructuredModelConfigured(model: string, env: NodeJS.ProcessEnv = process.env) {
+  return openRouterModelId(model)
+    ? openRouterRuntimeConfigured(env)
+    : Boolean(env.GEMINI_API_KEY) || aiGatewayRuntimeConfigured(env);
+}
+
 type StructuredResult<T> = { value: T; model: string };
 
 async function structuredGatewayInteraction<T>(options: {
@@ -134,6 +155,45 @@ async function structuredGatewayInteraction<T>(options: {
   };
 }
 
+async function structuredOpenRouterInteraction<T>(options: {
+  model: string;
+  schema: Record<string, unknown>;
+  system: string;
+  user: string;
+  maxOutputTokens?: number;
+}): Promise<StructuredResult<T>> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  const modelId = openRouterModelId(options.model);
+  if (!modelId) throw new Error(`No OpenRouter mapping is configured for ${options.model}.`);
+  if (!apiKey) throw new Error(`${options.model} requires OPENROUTER_API_KEY.`);
+
+  const openrouter = createOpenRouter({
+    apiKey,
+    compatibility: 'strict',
+    headers: {
+      'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://job-application-dashboard-fx6j.vercel.app',
+      'X-OpenRouter-Title': 'Job Application Dashboard',
+    },
+  });
+  const result = await generateText({
+    model: openrouter(modelId, {
+      extraBody: {
+        provider: { require_parameters: true },
+      },
+    }),
+    system: options.system,
+    prompt: options.user,
+    maxOutputTokens: options.maxOutputTokens ?? 2400,
+    maxRetries: 2,
+    output: Output.object({ schema: jsonSchema<T>(options.schema as any) }),
+  });
+
+  return {
+    value: result.output,
+    model: result.response.modelId || modelId,
+  };
+}
+
 async function structuredInteraction<T>(options: {
   model: string;
   schema: Record<string, unknown>;
@@ -143,6 +203,10 @@ async function structuredInteraction<T>(options: {
   thinkingLevel?: ThinkingLevel;
   strictModel?: boolean;
 }): Promise<StructuredResult<T>> {
+  if (openRouterModelId(options.model)) {
+    return structuredOpenRouterInteraction<T>(options);
+  }
+
   const key = process.env.GEMINI_API_KEY;
   const failures: string[] = [];
 
@@ -262,11 +326,13 @@ export async function analyzeJobWithGemini(
   strictModel = false,
 ): Promise<MatchScore> {
   const baseline = deterministicScore(job, profile);
-  if (!strictModel && (baseline.blockers.length || (!process.env.GEMINI_API_KEY && !aiGatewayRuntimeConfigured()))) return baseline;
-  if (strictModel && !process.env.GEMINI_API_KEY && !aiGatewayRuntimeConfigured()) {
-    throw new Error('The selected ATS model is unavailable because neither AI Gateway nor Gemini is configured.');
-  }
   const model = modelOverride || process.env.GEMINI_MODEL_JOB_ANALYSIS || DEFAULT_GEMINI_MODEL;
+  if (!strictModel && (baseline.blockers.length || !selectedStructuredModelConfigured(model))) return baseline;
+  if (strictModel && !selectedStructuredModelConfigured(model)) {
+    throw new Error(openRouterModelId(model)
+      ? `The selected ATS model ${model} is unavailable because OpenRouter is not configured.`
+      : 'The selected ATS model is unavailable because neither AI Gateway nor Gemini is configured.');
+  }
 
   try {
     const generated = await structuredInteraction<Omit<MatchScore, 'model'>>({
@@ -293,7 +359,7 @@ export async function analyzeJobWithGemini(
     if (strictModel) throw error;
     return {
       ...baseline,
-      explanation: `${baseline.explanation} Gemini analysis unavailable: ${error instanceof Error ? error.message : String(error)}`,
+      explanation: `${baseline.explanation} AI analysis unavailable: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }
@@ -320,8 +386,12 @@ export async function extractResumeProfileWithGemini(
   modelOverride?: string,
   strictModel = false,
 ) {
-  if (!process.env.GEMINI_API_KEY && !aiGatewayRuntimeConfigured()) throw new Error('AI Gateway or Gemini must be configured to import a résumé.');
   const model = modelOverride || process.env.GEMINI_MODEL_PROFILE_IMPORT || process.env.GEMINI_MODEL_APPLICATION_PACK || DEFAULT_GEMINI_MODEL;
+  if (!selectedStructuredModelConfigured(model)) {
+    throw new Error(openRouterModelId(model)
+      ? `The selected ATS model ${model} requires OpenRouter to import a résumé.`
+      : 'AI Gateway or Gemini must be configured to import a résumé.');
+  }
   const generated = await structuredInteraction<ResumeProfileExtraction>({
     model,
     schema: resumeProfileExtractionSchema,

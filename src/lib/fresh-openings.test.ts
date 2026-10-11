@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { FRESH_OPENINGS_WINDOW_HOURS, freshOpenings, isFreshOpening } from './fresh-openings';
+import { FRESH_OPENINGS_WINDOW_HOURS, freshOpenings, isFreshOpening, sourcePostingFreshness } from './fresh-openings';
 import type { JobWithMatch } from './types';
 
 const now = Date.parse('2026-08-15T16:21:00Z');
@@ -21,7 +21,7 @@ function job(id: string, discoveredAt: string, postedAt?: string): JobWithMatch 
   };
 }
 
-test('fresh openings requires both discovery and source posting times within 24 hours', () => {
+test('recent openings are included by discovery time even when the source date is old or unverified', () => {
   const boundaryTime = new Date(now - FRESH_OPENINGS_WINDOW_HOURS * hour).toISOString();
   const boundary = job('boundary', boundaryTime, boundaryTime);
   const oldPosting = job('old-posting', new Date(now - hour).toISOString(), new Date(now - 25 * hour).toISOString());
@@ -29,15 +29,23 @@ test('fresh openings requires both discovery and source posting times within 24 
   const unknownPosting = job('unknown-posting', new Date(now - hour).toISOString());
 
   assert.equal(isFreshOpening(boundary, now), true);
-  assert.equal(isFreshOpening(oldPosting, now), false);
+  assert.equal(isFreshOpening(oldPosting, now), true);
   assert.equal(isFreshOpening(oldDiscovery, now), false);
-  assert.equal(isFreshOpening(unknownPosting, now), false);
+  assert.equal(isFreshOpening(unknownPosting, now), true);
+  assert.equal(sourcePostingFreshness(boundary, now), 'verified-fresh');
+  assert.equal(sourcePostingFreshness(oldPosting, now), 'older');
+  assert.equal(sourcePostingFreshness(unknownPosting, now), 'unverified');
 });
 
-test('fresh openings drops stale jobs and sorts by source posting time', () => {
+test('recent openings prioritize verified fresh posts, then retain older and unverified discoveries', () => {
   const newestPosted = job('newest-posted', new Date(now - hour).toISOString(), new Date(now - hour).toISOString());
   const newestDiscovered = job('newest-discovered', new Date(now - 10 * 60_000).toISOString(), new Date(now - 2 * hour).toISOString());
-  const stale = job('stale', new Date(now - hour).toISOString(), new Date(now - 25 * hour).toISOString());
+  const oldPosting = job('old-posting', new Date(now - 5 * 60_000).toISOString(), new Date(now - 25 * hour).toISOString());
+  const unknownPosting = job('unknown-posting', new Date(now - 2 * 60_000).toISOString());
+  const staleDiscovery = job('stale-discovery', new Date(now - 25 * hour).toISOString(), new Date(now - hour).toISOString());
 
-  assert.deepEqual(freshOpenings([newestDiscovered, stale, newestPosted], now).map((item) => item.id), ['newest-posted', 'newest-discovered']);
+  assert.deepEqual(
+    freshOpenings([unknownPosting, oldPosting, newestDiscovered, staleDiscovery, newestPosted], now).map((item) => item.id),
+    ['newest-posted', 'newest-discovered', 'unknown-posting', 'old-posting'],
+  );
 });

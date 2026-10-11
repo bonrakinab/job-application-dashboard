@@ -1,6 +1,6 @@
 import type { ApplicationPack, CandidateProfile, CompanyIntelligence, Job, MatchScore, RequirementEvidence } from './types';
 import { applicationPackEligibility } from './application-pack-eligibility';
-import { aiGatewayRuntimeConfigured, analyzeJobWithGemini, createApplicationPackWithGemini, extractResumeProfileWithGemini } from './gemini';
+import { aiGatewayRuntimeConfigured, analyzeJobWithGemini, createApplicationPackWithGemini, extractResumeProfileWithGemini, openRouterRuntimeConfigured } from './gemini';
 import {
   analyzeJobWithAI as analyzeJobWithOpenAI,
   createApplicationPack as createApplicationPackWithOpenAI,
@@ -32,6 +32,7 @@ export function aiStatus(env: NodeJS.ProcessEnv = process.env) {
     configured: aiProviderConfigured(env),
     gateway: aiGatewayRuntimeConfigured(env),
     gemini: Boolean(env.GEMINI_API_KEY),
+    openrouter: openRouterRuntimeConfigured(env),
     openai: Boolean(env.OPENAI_API_KEY),
   };
 }
