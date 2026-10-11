@@ -101,6 +101,14 @@ export function verifyGoogleOAuthState(state: string) {
 }
 
 export function googleOAuthCallbackUrl(request: Request) {
+  const configured = process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim();
+  if (configured) {
+    const callback = new URL(configured);
+    if (!['http:', 'https:'].includes(callback.protocol)) {
+      throw new Error('GOOGLE_OAUTH_REDIRECT_URI must use http or https.');
+    }
+    return callback.toString();
+  }
   const url = new URL(request.url);
   return `${url.origin}/api/auth/google/callback`;
 }
