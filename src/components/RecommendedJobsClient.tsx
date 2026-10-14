@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import type { JobValidityStatus, SearchProfile } from '@/lib/types';
 import type { RecommendedOpportunity } from '@/lib/recommendations';
 import { jobMatchesType, jobTypeLabels, type JobTypeFilter } from '@/lib/job-type';
+import { JOB_ROLE_OPTIONS, jobMatchesRole, type JobRoleFilter } from '@/lib/job-role';
 import { applicationLabel, matchesApplicationFilter, type ApplicationFilter } from '@/lib/application-state';
 import { StatusPill } from './StatusPill';
 
@@ -31,6 +32,7 @@ export function RecommendedJobsClient({
 }) {
   const [q, setQ] = useState('');
   const [stage, setStage] = useState('all');
+  const [roleFamily, setRoleFamily] = useState<JobRoleFilter>('all');
   const [jobType, setJobType] = useState<JobTypeFilter>('all');
   const [applicationState, setApplicationState] = useState<ApplicationFilter>('all');
   const [source, setSource] = useState('all');
@@ -41,10 +43,11 @@ export function RecommendedJobsClient({
     const text = `${item.job.title} ${item.job.company} ${item.job.location ?? ''} ${item.family}`.toLowerCase();
     return (!q || text.includes(q.toLowerCase()))
       && (stage === 'all' || item.stage === stage)
+      && jobMatchesRole(item.job, roleFamily)
       && jobMatchesType(item.job, jobType)
       && matchesApplicationFilter(item.job.application, applicationState)
       && (source === 'all' || item.job.source === source);
-  }), [items, q, stage, jobType, applicationState, source]);
+  }), [items, q, stage, roleFamily, jobType, applicationState, source]);
 
   function toggle(id?: string) {
     if (!id) return;
@@ -80,8 +83,11 @@ export function RecommendedJobsClient({
           <option value="entry-level">Entry level</option>
           <option value="experienced">Experienced</option>
         </select>
-        <select className="select" aria-label="Job type" value={jobType} onChange={(event) => setJobType(event.target.value as JobTypeFilter)}>
-          <option value="all">All job types</option>
+        <select className="select" aria-label="Role family" value={roleFamily} onChange={(event) => setRoleFamily(event.target.value as JobRoleFilter)}>
+          {JOB_ROLE_OPTIONS.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+        </select>
+        <select className="select" aria-label="Employment and work arrangement" value={jobType} onChange={(event) => setJobType(event.target.value as JobTypeFilter)}>
+          <option value="all">All employment types</option>
           <option value="full-time">Full-time</option>
           <option value="part-time">Part-time</option>
           <option value="contract">Contract</option>
@@ -109,7 +115,7 @@ export function RecommendedJobsClient({
       </div>
     </div>
 
-    {!visible.length ? <div className="notice">No recommended jobs match the selected filters. Try another application state, job type, career stage, source, or search term.</div> : null}
+    {!visible.length ? <div className="notice">No recommended jobs match the selected filters. Try another role family, application state, employment type, career stage, source, or search term.</div> : null}
 
     <div className="recommendation-grid simple-job-cards">
       {visible.map((item) => {
