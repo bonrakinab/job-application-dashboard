@@ -52,7 +52,7 @@ const roleMatchers: Record<Exclude<JobRoleFilter, 'all' | 'other'>, (job: RoleJo
   'cloud-devops': (job) => /\b(cloud engineer|cloud analyst|cloud developer|devops|site reliability|sre|platform engineer|platform developer|infrastructure engineer)\b/.test(roleText(job)),
   'erp-enterprise': (job) => /\b(oracle fusion|oracle erp|oracle cloud|oracle applications|oracle financials|erp|sap|enterprise applications|enterprise systems|business systems|functional analyst|functional consultant)\b/.test(roleText(job)),
   cybersecurity: (job) => /\b(cybersecurity|cyber security|security analyst|security engineer|soc analyst|security operations|identity and access|iam analyst|iam engineer|information security)\b/.test(roleText(job)),
-  'qa-testing': (job) => /\b(quality assurance|qa engineer|qa analyst|test engineer|test analyst|software tester|automation tester|test automation|sdet)\b/.test(roleText(job)),
+  'qa-testing': (job) => /\b(quality assurance|quality engineer|qa(?: automation)? engineer|qa analyst|test engineer|test analyst|software tester|automation tester|test automation|sdet)\b/.test(roleText(job)),
   'clerical-transcription': (job) => /\b(transcriptionist|transcription|unit clerk|ward clerk|records? clerk|health records?|booking clerk|scheduling clerk|staffing clerk|administrative clerk|office clerk|data entry clerk|data input clerk|payroll clerk|revenue clerk|court clerk|filing clerk|referral clerk|medical imaging clerk|business clerk|clerical support)\b/.test(roleText(job)),
 };
 
