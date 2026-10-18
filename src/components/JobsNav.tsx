@@ -3,7 +3,7 @@ const links = [
   { href: '/fresh-openings', label: 'Recent' },
   { href: '/part-time-jobs', label: 'Part-time' },
   { href: '/jobs', label: 'All jobs' },
-  { href: '/target-jobs', label: 'Target companies' },
+  { href: '/target-jobs', label: 'Fortune 500' },
   { href: '/jobs/new', label: 'Add job' },
 ];
 
