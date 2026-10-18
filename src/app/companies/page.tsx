@@ -14,6 +14,10 @@ function hasCompletedScan(sourceMetadata?: Record<string, unknown>) {
   return typeof checkedAt === 'string' && checkedAt.length > 0;
 }
 
+function isCurrentJob(job: { validityStatus?: string }) {
+  return !['closed', 'likely_closed'].includes(job.validityStatus ?? 'unknown');
+}
+
 function LoadFailure() {
   return <>
     <div className="topbar">
@@ -36,7 +40,8 @@ export default async function CompaniesPage() {
       getCandidateProfile(),
     ]);
     const companies = filterFortune500Companies(watchlist);
-    const opportunities = rankTargetCompanyJobs(allJobs.filter(isMainCareerJob), companies, profile);
+    const currentJobs = allJobs.filter(isMainCareerJob).filter(isCurrentJob);
+    const opportunities = rankTargetCompanyJobs(currentJobs, companies, profile);
     const byCompany = new Map<string, typeof opportunities>();
     for (const item of opportunities) {
       byCompany.set(item.watchedCompany, [...(byCompany.get(item.watchedCompany) ?? []), item]);
