@@ -1,5 +1,6 @@
 import { TargetCompanyJobsClient } from '@/components/TargetCompanyJobsClient';
 import { JobsNav } from '@/components/JobsNav';
+import { filterFortune500Companies } from '@/lib/fortune500';
 import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { getCandidateProfile, listCompanyWatchlist, listJobs } from '@/lib/store';
 import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
@@ -10,7 +11,7 @@ function LoadFailure() {
   return <>
     <div className="topbar">
       <div>
-        <h1 className="title">Target company jobs</h1>
+        <h1 className="title">Fortune 500 jobs</h1>
         <div className="sub">These jobs are temporarily unavailable.</div>
       </div>
       <div className="row"><a className="btn ghost" href="/companies">Target companies →</a></div>
@@ -34,15 +35,16 @@ export default async function TargetCompanyJobsPage({
       getCandidateProfile(),
       listCompanyWatchlist(),
     ]);
-    const items = rankTargetCompanyJobs(jobs.filter(isMainCareerJob), watchlist, profile);
+    const fortune500Companies = filterFortune500Companies(watchlist);
+    const items = rankTargetCompanyJobs(jobs.filter(isMainCareerJob), fortune500Companies, profile);
     return <>
       <div className="topbar">
         <div>
-          <h1 className="title">Target company jobs</h1>
-          <div className="sub">Open roles from employers you want to follow.</div>
+          <h1 className="title">Fortune 500 jobs</h1>
+          <div className="sub">Open roles from the 2026 Fortune 500 target-company universe.</div>
         </div>
         <div className="row">
-          <a className="btn ghost" href="/companies">Manage companies</a>
+          <a className="btn ghost" href="/companies">View Fortune 500 companies</a>
         </div>
       </div>
 
