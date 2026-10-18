@@ -4,28 +4,37 @@ import { useMemo, useState } from 'react';
 import type { CompanyWatch } from '@/lib/types';
 import { fortune500Rank } from '@/lib/fortune500';
 
-type CompanyCoverage = CompanyWatch & { jobs: number; recommended: number };
+type SourceCoverage = {
+  totalSources: number;
+  completedSources: number;
+  errorSources: number;
+  pendingSources: number;
+  lastCheckedAt?: string;
+};
+
+type CompanyCoverage = CompanyWatch & { jobs: number; sourceCoverage?: SourceCoverage };
 
 function careersSearchUrl(company: string) {
-  return `https://www.google.com/search?q=${encodeURIComponent(`${company} careers Canada official`)}`;
+  return `https://www.google.com/search?q=${encodeURIComponent(`${company} official careers jobs`)}`;
 }
 
-function scanMetadata(company: CompanyWatch) {
-  const value = company.sourceMetadata?.fortune500_scan;
-  return value && typeof value === 'object' ? value as Record<string, unknown> : null;
+function sourceState(company: CompanyCoverage) {
+  const coverage = company.sourceCoverage;
+  if (!coverage || coverage.totalSources === 0) return 'unmapped';
+  if (coverage.completedSources === coverage.totalSources) return 'synced';
+  if (coverage.completedSources > 0) return 'partial';
+  if (coverage.errorSources > 0) return 'error';
+  return 'pending';
 }
 
-function checkedAt(company: CompanyWatch) {
-  const value = scanMetadata(company)?.last_checked_at;
-  return typeof value === 'string' && value ? value : null;
-}
-
-function checkedLabel(company: CompanyWatch) {
-  const value = checkedAt(company);
-  if (!value) return 'Scan pending';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'Checked';
-  return `Checked ${date.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}`;
+function sourceLabel(company: CompanyCoverage) {
+  const coverage = company.sourceCoverage;
+  const state = sourceState(company);
+  if (state === 'unmapped') return 'Source mapping pending';
+  if (state === 'synced') return coverage?.lastCheckedAt ? 'Live sources synced' : 'Synced';
+  if (state === 'partial') return `${coverage?.completedSources ?? 0}/${coverage?.totalSources ?? 0} sources synced`;
+  if (state === 'error') return 'Source needs retry';
+  return 'Source sync pending';
 }
 
 function officialCareersUrl(company: CompanyWatch) {
@@ -45,12 +54,12 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
   const visible = useMemo(() => companies.filter((company) => {
     const text = `${company.company} ${company.sector}`.toLowerCase();
     const queryMatch = !q || text.includes(q.toLowerCase());
-    const wasChecked = Boolean(checkedAt(company));
+    const state = sourceState(company);
     const showMatch = show === 'all'
       || (show === 'jobs' && company.jobs > 0)
-      || (show === 'recommended' && company.recommended > 0)
-      || (show === 'checked-empty' && wasChecked && company.jobs === 0)
-      || (show === 'pending' && !wasChecked);
+      || (show === 'synced' && state === 'synced')
+      || (show === 'incomplete' && ['pending', 'partial', 'error'].includes(state))
+      || (show === 'unmapped' && state === 'unmapped');
     return queryMatch && showMatch;
   }), [companies, q, show]);
 
@@ -66,9 +75,9 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
       <select className="select" aria-label="Show companies" value={show} onChange={(event) => setShow(event.target.value)}>
         <option value="all">All 500 companies</option>
         <option value="jobs">Companies with current openings</option>
-        <option value="recommended">Companies with recommended jobs</option>
-        <option value="pending">Not checked yet</option>
-        <option value="checked-empty">Checked — no Canada openings found</option>
+        <option value="synced">All mapped sources synced</option>
+        <option value="incomplete">Source sync incomplete</option>
+        <option value="unmapped">Source mapping pending</option>
       </select>
     </div>
 
@@ -79,7 +88,7 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
     <div className="company-grid">
       {visible.map((company) => {
         const rank = fortune500Rank(company);
-        const wasChecked = Boolean(checkedAt(company));
+        const state = sourceState(company);
         const careersUrl = officialCareersUrl(company);
         return <div className="card company-card" key={company.company}>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -88,23 +97,22 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
               <div className="job-company">{company.sector}</div>
               {rank ? <span className="tag">Fortune #{rank}</span> : null}
             </div>
-            <span className={`pill ${wasChecked ? 'strong' : ''}`}>{checkedLabel(company)}</span>
+            <span className={`pill ${state === 'synced' ? 'strong' : ''}`}>{sourceLabel(company)}</span>
           </div>
 
           <div className="small muted">
             {company.jobs > 0
-              ? `${company.jobs} current opening${company.jobs === 1 ? '' : 's'} · ${company.recommended} recommended`
-              : wasChecked
-                ? 'No active Ontario/Canada openings found in the latest scan'
-                : 'Not scanned yet — zero here does not mean zero company jobs'}
+              ? `${company.jobs.toLocaleString()} current opening${company.jobs === 1 ? '' : 's'}`
+              : state === 'synced'
+                ? 'No current openings returned by the mapped live source(s)'
+                : state === 'unmapped'
+                  ? 'Source mapping is still pending — zero is not definitive'
+                  : 'Source sync is incomplete — zero is not definitive'}
           </div>
 
           <div className="row company-actions">
             {company.jobs > 0
-              ? <a className="btn primary" href={`/target-jobs?company=${encodeURIComponent(company.company)}&fit=all`}>Openings ({company.jobs})</a>
-              : null}
-            {company.recommended > 0
-              ? <a className="btn ghost" href={`/target-jobs?company=${encodeURIComponent(company.company)}&fit=recommended`}>Recommended ({company.recommended})</a>
+              ? <a className="btn primary" href={`/target-jobs?company=${encodeURIComponent(company.company)}`}>Openings ({company.jobs.toLocaleString()})</a>
               : null}
             <a
               className="btn ghost"
