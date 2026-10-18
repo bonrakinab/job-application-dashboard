@@ -1,8 +1,9 @@
 import { TargetCompanyJobsClient } from '@/components/TargetCompanyJobsClient';
 import { JobsNav } from '@/components/JobsNav';
 import { filterFortune500Companies } from '@/lib/fortune500';
+import { listCompleteCareerJobs } from '@/lib/fortune500-jobs-store';
 import { isMainCareerJob } from '@/lib/part-time-jobs';
-import { getCandidateProfile, listCompanyWatchlist, listJobs } from '@/lib/store';
+import { getCandidateProfile, listCompanyWatchlist } from '@/lib/store';
 import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,7 @@ export default async function TargetCompanyJobsPage({
 
   try {
     const [jobs, profile, watchlist] = await Promise.all([
-      listJobs(2000),
+      listCompleteCareerJobs(),
       getCandidateProfile(),
       listCompanyWatchlist(),
     ]);
@@ -43,7 +44,7 @@ export default async function TargetCompanyJobsPage({
       <div className="topbar">
         <div>
           <h1 className="title">Fortune 500 jobs</h1>
-          <div className="sub">Open jobs currently stored from 2026 Fortune 500 employers.</div>
+          <div className="sub">Current Ontario/Canada openings from Fortune 500 employers, with newest verified postings first.</div>
         </div>
         <div className="row">
           <a className="btn ghost" href="/companies">Fortune 500 companies</a>
@@ -51,12 +52,12 @@ export default async function TargetCompanyJobsPage({
       </div>
 
       <JobsNav />
-      <div className="section-head"><h2>{items.length} open jobs · {recommended} recommended</h2></div>
+      <div className="section-head"><h2>{items.length} current openings · {recommended} recommended</h2></div>
 
       <TargetCompanyJobsClient
         items={items}
         initialCompany={params.company ?? 'all'}
-        initialFit={params.fit ?? 'recommended'}
+        initialFit={params.fit ?? 'all'}
       />
     </>;
   } catch (error) {
