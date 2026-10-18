@@ -14,7 +14,7 @@ function LoadFailure() {
         <h1 className="title">Fortune 500 jobs</h1>
         <div className="sub">These jobs are temporarily unavailable.</div>
       </div>
-      <div className="row"><a className="btn ghost" href="/companies">Target companies →</a></div>
+      <div className="row"><a className="btn ghost" href="/companies">Fortune 500 companies →</a></div>
     </div>
     <JobsNav />
     <div className="notice">Please refresh this page in a moment.</div>
@@ -25,7 +25,7 @@ function LoadFailure() {
 export default async function TargetCompanyJobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ group?: string; company?: string }>;
+  searchParams: Promise<{ company?: string; fit?: string }>;
 }) {
   const params = await searchParams;
 
@@ -37,24 +37,26 @@ export default async function TargetCompanyJobsPage({
     ]);
     const fortune500Companies = filterFortune500Companies(watchlist);
     const items = rankTargetCompanyJobs(jobs.filter(isMainCareerJob), fortune500Companies, profile);
+    const recommended = items.filter((item) => item.recommended).length;
+
     return <>
       <div className="topbar">
         <div>
           <h1 className="title">Fortune 500 jobs</h1>
-          <div className="sub">Open roles from the 2026 Fortune 500 target-company universe.</div>
+          <div className="sub">Open jobs currently stored from 2026 Fortune 500 employers.</div>
         </div>
         <div className="row">
-          <a className="btn ghost" href="/companies">View Fortune 500 companies</a>
+          <a className="btn ghost" href="/companies">Fortune 500 companies</a>
         </div>
       </div>
 
       <JobsNav />
-      <div className="section-head"><h2>{items.length} job{items.length === 1 ? '' : 's'}</h2></div>
+      <div className="section-head"><h2>{items.length} open jobs · {recommended} recommended</h2></div>
 
       <TargetCompanyJobsClient
         items={items}
-        initialGroup={params.group ?? 'all'}
         initialCompany={params.company ?? 'all'}
+        initialFit={params.fit ?? 'recommended'}
       />
     </>;
   } catch (error) {
