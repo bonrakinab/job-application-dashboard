@@ -18,11 +18,21 @@ export interface TargetCompanyOpportunity {
   reasons: string[];
 }
 
+const COMPANY_ALIASES: Record<string, string> = {
+  alphabet: 'google',
+  'meta platforms': 'meta',
+  'bank of new york bny': 'bny',
+  'bank of new york': 'bny',
+  'walt disney': 'disney',
+  'procter gamble': 'p g',
+};
+
 function canonicalCompany(value: string) {
-  return normalizeText(value)
-    .replace(/\b(inc|incorporated|corp|corporation|ltd|limited|llc|plc|canada|technologies|technology)\b/g, ' ')
+  const normalized = normalizeText(value)
+    .replace(/\b(inc|incorporated|corp|corporation|ltd|limited|llc|plc|canada|technologies|technology|company|co)\b/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+  return COMPANY_ALIASES[normalized] ?? normalized;
 }
 
 export function sameCompany(target: string, actual: string) {
@@ -32,9 +42,12 @@ export function sameCompany(target: string, actual: string) {
   return a === b || (Math.min(a.length, b.length) >= 5 && (a.startsWith(b) || b.startsWith(a)));
 }
 
-function reasonsFor(job: JobWithMatch, profile: CandidateProfile, match: MatchScore, stage: OpportunityStage, family: string, watchedCompany: string, groupLabels: string[]) {
-  const reasons: string[] = [`${watchedCompany} is in your target-employer watchlist.`];
-  if (groupLabels.length) reasons.push(`Employer groups: ${groupLabels.slice(0, 3).join(', ')}.`);
+export function isOpenTargetJob(job: JobWithMatch) {
+  return !['closed', 'likely_closed'].includes(job.validityStatus ?? 'unknown');
+}
+
+function reasonsFor(job: JobWithMatch, profile: CandidateProfile, match: MatchScore, stage: OpportunityStage, family: string, watchedCompany: string) {
+  const reasons: string[] = [`${watchedCompany} is a Fortune 500 employer.`];
   if (stage === 'internship') reasons.push('Internship/co-op role; early-career opportunities are intentionally prioritized.');
   else if (stage === 'new-grad') reasons.push('New-graduate / early-career role.');
   else if (stage === 'entry-level') reasons.push('Entry-level or junior role.');
@@ -42,14 +55,14 @@ function reasonsFor(job: JobWithMatch, profile: CandidateProfile, match: MatchSc
   if (match.matchedSkills.length) reasons.push(`Direct skill evidence: ${match.matchedSkills.slice(0, 4).join(', ')}.`);
   if (match.location >= 80) reasons.push('Location / remote eligibility aligns with your preferences.');
   if (match.blockers.length) reasons.push(`Eligibility concern: ${match.blockers[0]}`);
-  else if (family === 'Other') reasons.push('Target employer, but this title is outside your main technical role families.');
+  else if (family === 'Other') reasons.push('This title is outside your main technical role families.');
   return reasons.slice(0, 4);
 }
 
 export function rankTargetCompanyJobs(jobs: JobWithMatch[], watchlist: CompanyWatch[], profile: CandidateProfile): TargetCompanyOpportunity[] {
   const enabled = watchlist.filter((company) => company.enabled !== false);
 
-  return jobs.flatMap((job) => {
+  return jobs.filter(isOpenTargetJob).flatMap((job) => {
     const watched = enabled.find((company) => sameCompany(company.company, job.company));
     if (!watched) return [];
 
@@ -84,7 +97,7 @@ export function rankTargetCompanyJobs(jobs: JobWithMatch[], watchlist: CompanyWa
       priority,
       highlySuitable,
       recommended,
-      reasons: reasonsFor(job, profile, match, stage, family, watched.company, groups.map((group) => group.label)),
+      reasons: reasonsFor(job, profile, match, stage, family, watched.company),
     } satisfies TargetCompanyOpportunity];
   }).sort((a, b) => {
     if (a.highlySuitable !== b.highlySuitable) return a.highlySuitable ? -1 : 1;
