@@ -1,8 +1,8 @@
 import { TargetCompanyJobsClient } from '@/components/TargetCompanyJobsClient';
 import { JobsNav } from '@/components/JobsNav';
 import { filterFortune500Companies } from '@/lib/fortune500';
+import { jobsForFortune500Catalog } from '@/lib/fortune500-catalog';
 import { listCompleteCareerJobs } from '@/lib/fortune500-jobs-store';
-import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { getCandidateProfile, listCompanyWatchlist } from '@/lib/store';
 import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
 
@@ -41,7 +41,7 @@ export default async function TargetCompanyJobsPage({
       listCompanyWatchlist(),
     ]);
     const fortune500Companies = filterFortune500Companies(watchlist);
-    const currentJobs = jobs.filter(isMainCareerJob).filter(isCurrentJob);
+    const currentJobs = jobsForFortune500Catalog(jobs).filter(isCurrentJob);
     const items = rankTargetCompanyJobs(currentJobs, fortune500Companies, profile);
     const recommended = items.filter((item) => item.recommended).length;
 
@@ -49,7 +49,7 @@ export default async function TargetCompanyJobsPage({
       <div className="topbar">
         <div>
           <h1 className="title">Fortune 500 jobs</h1>
-          <div className="sub">Current Ontario/Canada openings from Fortune 500 employers, with newest verified postings first.</div>
+          <div className="sub">All current openings collected from Fortune 500 employer career sources. Recent postings appear first; recommendations are optional filters.</div>
         </div>
         <div className="row">
           <a className="btn ghost" href="/companies">Fortune 500 companies</a>
