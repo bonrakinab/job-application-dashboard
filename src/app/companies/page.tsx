@@ -1,13 +1,18 @@
 import { CompanyWatchlistClient } from '@/components/CompanyWatchlistClient';
 import { filterFortune500Companies } from '@/lib/fortune500';
+import { jobsForFortune500Catalog } from '@/lib/fortune500-catalog';
 import { listCompleteCareerJobs } from '@/lib/fortune500-jobs-store';
-import { isMainCareerJob } from '@/lib/part-time-jobs';
 import { getCandidateProfile, listCompanyWatchlist } from '@/lib/store';
 import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
 
 export const dynamic = 'force-dynamic';
 
 function hasCompletedScan(sourceMetadata?: Record<string, unknown>) {
+  const catalog = sourceMetadata?.verified_source_catalog;
+  if (catalog && typeof catalog === 'object') {
+    const verifiedAt = (catalog as Record<string, unknown>).verified_at;
+    if (typeof verifiedAt === 'string' && verifiedAt.length > 0) return true;
+  }
   const value = sourceMetadata?.fortune500_scan;
   if (!value || typeof value !== 'object') return false;
   const checkedAt = (value as Record<string, unknown>).last_checked_at;
@@ -40,7 +45,7 @@ export default async function CompaniesPage() {
       getCandidateProfile(),
     ]);
     const companies = filterFortune500Companies(watchlist);
-    const currentJobs = allJobs.filter(isMainCareerJob).filter(isCurrentJob);
+    const currentJobs = jobsForFortune500Catalog(allJobs).filter(isCurrentJob);
     const opportunities = rankTargetCompanyJobs(currentJobs, companies, profile);
     const byCompany = new Map<string, typeof opportunities>();
     for (const item of opportunities) {
@@ -62,7 +67,7 @@ export default async function CompaniesPage() {
       <div className="topbar">
         <div>
           <h1 className="title">Fortune 500 companies</h1>
-          <div className="sub">All 500 companies. A company only shows “no openings” after its careers sources have actually been checked.</div>
+          <div className="sub">All 500 companies. Opening counts come from the live Fortune catalog; unverified companies stay marked as pending rather than showing a false zero.</div>
         </div>
         <div className="row">
           <a className="btn primary" href="/target-jobs?fit=all">All current openings</a>
@@ -71,7 +76,7 @@ export default async function CompaniesPage() {
       </div>
 
       <div className="section-head">
-        <h2>500 companies · {checkedCompanies} checked · {totalJobs} current openings · {recommendedJobs} recommended</h2>
+        <h2>500 companies · {checkedCompanies} source-verified · {totalJobs} current openings · {recommendedJobs} recommended</h2>
       </div>
       <CompanyWatchlistClient companies={coverage} />
     </>;
