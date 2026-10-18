@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { CompanyWatch } from '@/lib/types';
 import { COMPANY_GROUPS, companyGroups } from '@/lib/company-groups';
+import { fortune500Rank } from '@/lib/fortune500';
 
 type CompanyCoverage = CompanyWatch & { jobs: number; recommended: number };
 
@@ -15,7 +16,6 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
   const [sector, setSector] = useState('all');
   const [coverage, setCoverage] = useState('all');
   const [group, setGroup] = useState('all');
-  const [source, setSource] = useState('all');
   const sectors = useMemo(() => [...new Set(companies.map((company) => company.sector))].sort(), [companies]);
 
   const groupSummaries = useMemo(() => COMPANY_GROUPS.map((definition) => {
@@ -35,12 +35,11 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
     const sectorMatch = sector === 'all' || company.sector === sector;
     const coverageMatch = coverage === 'all' || (coverage === 'live' ? company.jobs > 0 : company.jobs === 0);
     const groupMatch = group === 'all' || groups.some((item) => item.id === group);
-    const sourceMatch = source === 'all' || company.source === source;
-    return queryMatch && sectorMatch && coverageMatch && groupMatch && sourceMatch;
-  }), [companies, coverage, group, q, sector, source]);
+    return queryMatch && sectorMatch && coverageMatch && groupMatch;
+  }), [companies, coverage, group, q, sector]);
 
   return <>
-    <input className="input" aria-label="Search companies" placeholder="Search companies…" value={q} onChange={(event) => setQ(event.target.value)} />
+    <input className="input" aria-label="Search Fortune 500 companies" placeholder="Search Fortune 500 companies…" value={q} onChange={(event) => setQ(event.target.value)} />
     <details className="filter-panel">
       <summary>Filters</summary>
       <div className="filter-panel-body searchbar company-filterbar">
@@ -48,33 +47,29 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
           <option value="all">All groups</option>
           {groupSummaries.map((value) => <option value={value.id} key={value.id}>{value.label} ({value.count})</option>)}
         </select>
-        <select className="select" aria-label="Company source" value={source} onChange={(event) => setSource(event.target.value)}>
-          <option value="all">All company sources</option>
-          <option value="yc">YC startups</option>
-          <option value="curated">Curated employers</option>
-        </select>
         <select className="select" aria-label="Sector" value={sector} onChange={(event) => setSector(event.target.value)}>
           <option value="all">All sectors</option>
           {sectors.map((value) => <option value={value} key={value}>{value}</option>)}
         </select>
         <select className="select" aria-label="Job coverage" value={coverage} onChange={(event) => setCoverage(event.target.value)}>
-          <option value="all">All companies</option>
+          <option value="all">All Fortune 500 companies</option>
           <option value="live">Companies with jobs</option>
           <option value="watching">No current jobs</option>
         </select>
       </div>
     </details>
 
-    <div className="result-line"><span className="small muted">{visible.length} compan{visible.length === 1 ? 'y' : 'ies'}</span></div>
+    <div className="result-line"><span className="small muted">{visible.length} Fortune 500 compan{visible.length === 1 ? 'y' : 'ies'}</span></div>
 
     <div className="company-grid">
       {visible.map((company) => {
+        const rank = fortune500Rank(company);
         return <div className="card company-card" key={company.company}>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div className="job-title">{company.company}</div>
               <div className="job-company">{company.sector}</div>
-              {company.source === 'yc' ? <span className="tag">YC startup</span> : null}
+              {rank ? <span className="tag">Fortune 500 #{rank}</span> : null}
             </div>
             <span className={`pill ${company.jobs > 0 ? 'strong' : ''}`}>{company.jobs > 0 ? `${company.jobs} jobs` : 'watching'}</span>
           </div>
@@ -87,6 +82,6 @@ export function CompanyWatchlistClient({ companies }: { companies: CompanyCovera
         </div>;
       })}
     </div>
-    {!visible.length ? <div className="notice">No target companies match these filters.</div> : null}
+    {!visible.length ? <div className="notice">No Fortune 500 companies match these filters.</div> : null}
   </>;
 }
