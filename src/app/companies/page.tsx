@@ -1,8 +1,8 @@
 import { CompanyWatchlistClient } from '@/components/CompanyWatchlistClient';
 import { filterFortune500Companies } from '@/lib/fortune500';
 import { isMainCareerJob } from '@/lib/part-time-jobs';
-import { listCompanyWatchlist, listJobs } from '@/lib/store';
-import { sameCompany } from '@/lib/target-company-jobs';
+import { getCandidateProfile, listCompanyWatchlist, listJobs } from '@/lib/store';
+import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,8 +10,8 @@ function LoadFailure() {
   return <>
     <div className="topbar">
       <div>
-        <h1 className="title">Target companies</h1>
-        <div className="sub">The Fortune 500 target-company list is temporarily unavailable.</div>
+        <h1 className="title">Fortune 500 companies</h1>
+        <div className="sub">The Fortune 500 company list is temporarily unavailable.</div>
       </div>
       <div className="row"><a className="btn ghost" href="/target-jobs">Fortune 500 jobs →</a></div>
     </div>
@@ -22,29 +22,43 @@ function LoadFailure() {
 
 export default async function CompaniesPage() {
   try {
-    const [watchlist, allJobs] = await Promise.all([listCompanyWatchlist(), listJobs(2000)]);
+    const [watchlist, allJobs, profile] = await Promise.all([
+      listCompanyWatchlist(),
+      listJobs(2000),
+      getCandidateProfile(),
+    ]);
     const companies = filterFortune500Companies(watchlist);
-    const jobs = allJobs.filter(isMainCareerJob);
+    const opportunities = rankTargetCompanyJobs(allJobs.filter(isMainCareerJob), companies, profile);
+    const byCompany = new Map<string, typeof opportunities>();
+    for (const item of opportunities) {
+      byCompany.set(item.watchedCompany, [...(byCompany.get(item.watchedCompany) ?? []), item]);
+    }
     const coverage = companies.map((company) => {
-      const matchingJobs = jobs.filter((job) => sameCompany(company.company, job.company));
+      const matching = byCompany.get(company.company) ?? [];
       return {
         ...company,
-        jobs: matchingJobs.length,
-        recommended: matchingJobs.filter((job) => job.match && ['exceptional', 'strong', 'reasonable'].includes(job.match.recommendation) && !job.match.blockers.length).length,
+        jobs: matching.length,
+        recommended: matching.filter((item) => item.recommended).length,
       };
     });
+    const totalJobs = opportunities.length;
+    const recommendedJobs = opportunities.filter((item) => item.recommended).length;
+
     return <>
       <div className="topbar">
         <div>
-          <h1 className="title">Target companies</h1>
-          <div className="sub">All 2026 Fortune 500 companies, ordered by Fortune rank.</div>
+          <h1 className="title">Fortune 500 companies</h1>
+          <div className="sub">All 500 companies, ordered by 2026 Fortune rank.</div>
         </div>
         <div className="row">
-          <a className="btn primary" href="/target-jobs">View Fortune 500 jobs</a>
+          <a className="btn primary" href="/target-jobs?fit=recommended">Recommended jobs</a>
+          <a className="btn ghost" href="/target-jobs?fit=all">All Fortune 500 jobs</a>
         </div>
       </div>
 
-      <div className="section-head"><h2>{companies.length} Fortune 500 companies</h2></div>
+      <div className="section-head">
+        <h2>500 companies · {totalJobs} open jobs · {recommendedJobs} recommended</h2>
+      </div>
       <CompanyWatchlistClient companies={coverage} />
     </>;
   } catch (error) {
