@@ -11,6 +11,12 @@ function stageLabel(stage: TargetCompanyOpportunity['stage']) {
   return 'Experienced';
 }
 
+function normalizeFit(value: string) {
+  if (value === 'best') return 'recommended';
+  if (value === 'high') return 'strong';
+  return ['recommended', 'strong', 'eligible', 'all'].includes(value) ? value : 'recommended';
+}
+
 export function TargetCompanyJobsClient({
   items,
   initialCompany = 'all',
@@ -21,7 +27,7 @@ export function TargetCompanyJobsClient({
   initialFit?: string;
 }) {
   const [q, setQ] = useState('');
-  const [fit, setFit] = useState(initialFit || 'recommended');
+  const [fit, setFit] = useState(normalizeFit(initialFit));
   const [company, setCompany] = useState(initialCompany || 'all');
 
   const companies = useMemo(() => [...new Set(items.map((item) => item.watchedCompany))].sort(), [items]);
