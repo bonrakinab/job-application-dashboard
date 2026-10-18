@@ -1,27 +1,9 @@
 import { CompanyWatchlistClient } from '@/components/CompanyWatchlistClient';
 import { filterFortune500Companies } from '@/lib/fortune500';
-import { jobsForFortune500Catalog } from '@/lib/fortune500-catalog';
-import { listCompleteCareerJobs } from '@/lib/fortune500-jobs-store';
-import { getCandidateProfile, listCompanyWatchlist } from '@/lib/store';
-import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
+import { listFortune500CatalogCompanyCounts, listFortune500SourceCoverage } from '@/lib/fortune500-jobs-store';
+import { listCompanyWatchlist } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
-
-function hasCompletedScan(sourceMetadata?: Record<string, unknown>) {
-  const catalog = sourceMetadata?.verified_source_catalog;
-  if (catalog && typeof catalog === 'object') {
-    const verifiedAt = (catalog as Record<string, unknown>).verified_at;
-    if (typeof verifiedAt === 'string' && verifiedAt.length > 0) return true;
-  }
-  const value = sourceMetadata?.fortune500_scan;
-  if (!value || typeof value !== 'object') return false;
-  const checkedAt = (value as Record<string, unknown>).last_checked_at;
-  return typeof checkedAt === 'string' && checkedAt.length > 0;
-}
-
-function isCurrentJob(job: { validityStatus?: string }) {
-  return !['closed', 'likely_closed'].includes(job.validityStatus ?? 'unknown');
-}
 
 function LoadFailure() {
   return <>
@@ -39,44 +21,37 @@ function LoadFailure() {
 
 export default async function CompaniesPage() {
   try {
-    const [watchlist, allJobs, profile] = await Promise.all([
+    const [watchlist, counts, sourceCoverage] = await Promise.all([
       listCompanyWatchlist(),
-      listCompleteCareerJobs(),
-      getCandidateProfile(),
+      listFortune500CatalogCompanyCounts(),
+      listFortune500SourceCoverage(),
     ]);
     const companies = filterFortune500Companies(watchlist);
-    const currentJobs = jobsForFortune500Catalog(allJobs).filter(isCurrentJob);
-    const opportunities = rankTargetCompanyJobs(currentJobs, companies, profile);
-    const byCompany = new Map<string, typeof opportunities>();
-    for (const item of opportunities) {
-      byCompany.set(item.watchedCompany, [...(byCompany.get(item.watchedCompany) ?? []), item]);
-    }
-    const coverage = companies.map((company) => {
-      const matching = byCompany.get(company.company) ?? [];
-      return {
-        ...company,
-        jobs: matching.length,
-        recommended: matching.filter((item) => item.recommended).length,
-      };
-    });
-    const totalJobs = opportunities.length;
-    const recommendedJobs = opportunities.filter((item) => item.recommended).length;
-    const checkedCompanies = companies.filter((company) => hasCompletedScan(company.sourceMetadata)).length;
+    const coverage = companies.map((company) => ({
+      ...company,
+      jobs: counts.get(company.company) ?? 0,
+      sourceCoverage: sourceCoverage.get(company.company),
+    }));
+    const totalJobs = [...counts.values()].reduce((sum, count) => sum + count, 0);
+    const mappedCompanies = companies.filter((company) => (sourceCoverage.get(company.company)?.totalSources ?? 0) > 0).length;
+    const syncedCompanies = companies.filter((company) => {
+      const source = sourceCoverage.get(company.company);
+      return Boolean(source && source.totalSources > 0 && source.completedSources === source.totalSources);
+    }).length;
 
     return <>
       <div className="topbar">
         <div>
           <h1 className="title">Fortune 500 companies</h1>
-          <div className="sub">All 500 companies. Opening counts come from the live Fortune catalog; unverified companies stay marked as pending rather than showing a false zero.</div>
+          <div className="sub">All 500 companies. Each card distinguishes live-source coverage from a real zero-opening result, so missing source coverage is never presented as “no jobs.”</div>
         </div>
         <div className="row">
-          <a className="btn primary" href="/target-jobs?fit=all">All current openings</a>
-          <a className="btn ghost" href="/target-jobs?fit=recommended">Recommended</a>
+          <a className="btn primary" href="/target-jobs">All current openings</a>
         </div>
       </div>
 
       <div className="section-head">
-        <h2>500 companies · {checkedCompanies} source-verified · {totalJobs} current openings · {recommendedJobs} recommended</h2>
+        <h2>500 companies · {mappedCompanies} source-mapped · {syncedCompanies} fully synced · {totalJobs.toLocaleString()} current openings</h2>
       </div>
       <CompanyWatchlistClient companies={coverage} />
     </>;
