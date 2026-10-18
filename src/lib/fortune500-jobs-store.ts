@@ -163,3 +163,39 @@ export async function listFortune500CatalogCompanyCounts() {
   );
   return new Map(rows.map((row) => [row.company, Number(row.current_openings) || 0]));
 }
+
+export type FortuneSourceCoverage = {
+  totalSources: number;
+  completedSources: number;
+  errorSources: number;
+  pendingSources: number;
+  lastCheckedAt?: string;
+};
+
+export async function listFortune500SourceCoverage() {
+  if (!supabaseConfigured) return new Map<string, FortuneSourceCoverage>();
+  const rows = await supabaseRequest<Array<{
+    company: string;
+    last_checked_at?: string | null;
+    last_status?: string | null;
+  }>>('fortune_job_sources?enabled=eq.true&select=company,last_checked_at,last_status&order=company.asc&limit=5000');
+
+  const result = new Map<string, FortuneSourceCoverage>();
+  for (const row of rows) {
+    const current = result.get(row.company) ?? {
+      totalSources: 0,
+      completedSources: 0,
+      errorSources: 0,
+      pendingSources: 0,
+    };
+    current.totalSources += 1;
+    if (row.last_status === 'ok') current.completedSources += 1;
+    else if (row.last_status === 'error') current.errorSources += 1;
+    else current.pendingSources += 1;
+    if (row.last_checked_at && (!current.lastCheckedAt || row.last_checked_at > current.lastCheckedAt)) {
+      current.lastCheckedAt = row.last_checked_at;
+    }
+    result.set(row.company, current);
+  }
+  return result;
+}
