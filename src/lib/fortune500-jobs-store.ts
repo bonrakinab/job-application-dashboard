@@ -78,10 +78,10 @@ function rowToJob(row: any): JobWithMatch {
   };
 }
 
-export async function listCompleteCareerJobs(limit = 12000): Promise<JobWithMatch[]> {
+export async function listCompleteCareerJobs(limit = 100000): Promise<JobWithMatch[]> {
   if (!supabaseConfigured) return [];
-  const requested = Math.max(1, Math.min(limit, 12000));
-  const pageSize = 500;
+  const requested = Math.max(1, Math.min(limit, 100000));
+  const pageSize = 1000;
   const rows: any[] = [];
 
   for (let offset = 0; offset < requested; offset += pageSize) {
