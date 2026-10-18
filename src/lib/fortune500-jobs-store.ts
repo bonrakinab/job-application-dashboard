@@ -1,5 +1,8 @@
 import type { ApplicationRecord, JobWithMatch, MatchScore } from './types';
-import { supabaseConfigured, supabaseRequest } from './supabase-rest';
+import { supabaseAuthHeaders, supabaseConfigured, supabaseRequest } from './supabase-rest';
+
+const baseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)?.replace(/\/$/, '');
+const apiKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function rowToJob(row: any): JobWithMatch {
   const matchRow = Array.isArray(row.job_matches) ? row.job_matches[0] : row.job_matches;
@@ -93,4 +96,70 @@ export async function listCompleteCareerJobs(limit = 100000): Promise<JobWithMat
   }
 
   return [...new Map(rows.map((row) => [row.id, row])).values()].map(rowToJob);
+}
+
+function safeSearchTerm(value: string) {
+  return value.trim().replace(/[(),]/g, ' ').replace(/\s+/g, ' ').slice(0, 120);
+}
+
+export async function listFortune500CatalogPage({
+  page = 1,
+  pageSize = 100,
+  company,
+  query,
+}: {
+  page?: number;
+  pageSize?: number;
+  company?: string;
+  query?: string;
+} = {}) {
+  if (!supabaseConfigured || !baseUrl || !apiKey) {
+    return { jobs: [] as JobWithMatch[], total: 0, page: 1, pageSize: 100, pageCount: 1 };
+  }
+
+  const normalizedPage = Math.max(1, Math.floor(page));
+  const normalizedSize = Math.max(25, Math.min(250, Math.floor(pageSize)));
+  const offset = (normalizedPage - 1) * normalizedSize;
+  const params = new URLSearchParams({
+    select: '*',
+    order: 'catalog_sort_at.desc.nullslast,company.asc,title.asc',
+    limit: String(normalizedSize),
+    offset: String(offset),
+  });
+
+  if (company && company !== 'all') params.set('company', `eq.${company}`);
+  const term = safeSearchTerm(query ?? '');
+  if (term) params.set('or', `(title.ilike.*${term}*,location.ilike.*${term}*,company.ilike.*${term}*)`);
+
+  const response = await fetch(`${baseUrl}/rest/v1/fortune500_catalog_current?${params.toString()}`, {
+    headers: {
+      ...supabaseAuthHeaders(apiKey),
+      Prefer: 'count=exact',
+    },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(`Fortune catalog ${response.status}: ${(await response.text()).slice(0, 500)}`);
+
+  const rows = await response.json() as any[];
+  const contentRange = response.headers.get('content-range') ?? '';
+  const totalText = contentRange.split('/')[1];
+  const total = totalText && totalText !== '*' ? Number(totalText) || 0 : rows.length;
+  const pageCount = Math.max(1, Math.ceil(total / normalizedSize));
+  const safePage = Math.min(normalizedPage, pageCount);
+
+  return {
+    jobs: rows.map(rowToJob),
+    total,
+    page: safePage,
+    pageSize: normalizedSize,
+    pageCount,
+  };
+}
+
+export async function listFortune500CatalogCompanyCounts() {
+  if (!supabaseConfigured) return new Map<string, number>();
+  const rows = await supabaseRequest<Array<{ company: string; current_openings: number | string }>>(
+    'fortune500_catalog_company_counts?select=company,current_openings&order=company.asc&limit=1000',
+  );
+  return new Map(rows.map((row) => [row.company, Number(row.current_openings) || 0]));
 }
