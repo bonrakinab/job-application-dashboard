@@ -8,6 +8,10 @@ import { rankTargetCompanyJobs } from '@/lib/target-company-jobs';
 
 export const dynamic = 'force-dynamic';
 
+function isCurrentJob(job: { validityStatus?: string }) {
+  return !['closed', 'likely_closed'].includes(job.validityStatus ?? 'unknown');
+}
+
 function LoadFailure() {
   return <>
     <div className="topbar">
@@ -37,7 +41,8 @@ export default async function TargetCompanyJobsPage({
       listCompanyWatchlist(),
     ]);
     const fortune500Companies = filterFortune500Companies(watchlist);
-    const items = rankTargetCompanyJobs(jobs.filter(isMainCareerJob), fortune500Companies, profile);
+    const currentJobs = jobs.filter(isMainCareerJob).filter(isCurrentJob);
+    const items = rankTargetCompanyJobs(currentJobs, fortune500Companies, profile);
     const recommended = items.filter((item) => item.recommended).length;
 
     return <>
