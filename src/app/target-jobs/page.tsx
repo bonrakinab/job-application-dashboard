@@ -87,7 +87,7 @@ export default async function TargetCompanyJobsPage({
       <div className="topbar">
         <div>
           <h1 className="title">Fortune 500 jobs</h1>
-          <div className="sub">The full current-opening catalog collected from Fortune 500 employer career sources. Results are server-paginated, so the catalog is not truncated when it grows.</div>
+          <div className="sub">Current Canada and Ontario openings collected from Fortune 500 employer career sources, including older postings that are still active.</div>
         </div>
         <div className="row">
           <a className="btn ghost" href="/companies">Fortune 500 companies</a>
@@ -102,7 +102,7 @@ export default async function TargetCompanyJobsPage({
           className="input"
           aria-label="Search Fortune 500 jobs"
           name="q"
-          placeholder="Search title, company, or location…"
+          placeholder="Search title, company, location, skills, or description…"
           defaultValue={query}
         />
         <select className="select" aria-label="Company" name="company" defaultValue={company}>
