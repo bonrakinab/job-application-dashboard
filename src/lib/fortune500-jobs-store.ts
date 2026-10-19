@@ -99,7 +99,7 @@ export async function listCompleteCareerJobs(limit = 100000): Promise<JobWithMat
 }
 
 function safeSearchTerm(value: string) {
-  return value.trim().replace(/[(),]/g, ' ').replace(/\s+/g, ' ').slice(0, 120);
+  return value.trim().replace(/[(),%_*]/g, ' ').replace(/\s+/g, ' ').slice(0, 120);
 }
 
 export async function listFortune500CatalogPage({
@@ -129,7 +129,12 @@ export async function listFortune500CatalogPage({
 
   if (company && company !== 'all') params.set('company', `eq.${company}`);
   const term = safeSearchTerm(query ?? '');
-  if (term) params.set('or', `(title.ilike.*${term}*,location.ilike.*${term}*,company.ilike.*${term}*)`);
+  if (term) {
+    params.set(
+      'or',
+      `(title.ilike.*${term}*,location.ilike.*${term}*,company.ilike.*${term}*,description.ilike.*${term}*,department.ilike.*${term}*,employment_type.ilike.*${term}*,workplace_type.ilike.*${term}*)`,
+    );
+  }
 
   const response = await fetch(`${baseUrl}/rest/v1/fortune500_catalog_current?${params.toString()}`, {
     headers: {
