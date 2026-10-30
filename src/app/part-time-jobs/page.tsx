@@ -1,16 +1,17 @@
 import { JobListClient } from '@/components/JobListClient';
 import { JobsNav } from '@/components/JobsNav';
 import { isWindsorPartTimeJob, PART_TIME_PROFILE_ID } from '@/lib/part-time-jobs';
-import { getCandidateProfileOptional, jobMatchNeedsRefresh, listJobs } from '@/lib/store';
+import { listJobsForProfile } from '@/lib/profile-job-list';
+import { getCandidateProfileOptional, jobMatchNeedsRefresh } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PartTimeJobsPage() {
-  const [allJobs, profile] = await Promise.all([
-    listJobs(3000),
+  const [profileJobs, profile] = await Promise.all([
+    listJobsForProfile(PART_TIME_PROFILE_ID, 3000),
     getCandidateProfileOptional(PART_TIME_PROFILE_ID),
   ]);
-  const jobs = allJobs.filter(isWindsorPartTimeJob);
+  const jobs = profileJobs.filter(isWindsorPartTimeJob);
   const tableJobs = jobs.map((job) => ({
     ...job,
     match: profile && !jobMatchNeedsRefresh(job.match, PART_TIME_PROFILE_ID) ? job.match : undefined,
