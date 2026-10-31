@@ -104,3 +104,11 @@ The app falls back to non-persistent demo data when Supabase is absent, so the U
 
 <!-- deployment retry: resume-tailoring -->
 <!-- deployment retry: resume-tailoring 2026-08-09T07:24Z -->
+
+### Recruiter outreach
+
+`/recruiters` is part of the existing JobAgent dashboard and appears in desktop/mobile navigation and More tools. It includes the Ontario agency/contact directory, source verification notes, domain-specific editable outreach drafts, photos/logos from official public sources, CSV export, and a Kanban outreach board. Saved stages, notes, due dates, custom contacts and interactions use `public.recruiter_outreach` in the existing Supabase project, scoped server-side to the main `default` candidate profile. Apply `supabase/migrations/20261031040135_recruiter_outreach.sql` before deploying. The existing dashboard session protects the page and API; the table enables RLS and permits only server service-role access.
+
+Outreach and replies are logged manually. Draft copy/email composer actions do not mark messages as sent. No automatic email sending, inbox monitoring or LinkedIn reply synchronization is enabled. The directory is a dated research snapshot, not an exhaustive Ontario agency census; supplier account contacts, historical leads, agency-scope tags and unverified hiring mandates are labeled. No contact email was inferred from a naming convention. Public image URLs may change and fall back to initials.
+
+Validate with `node --import tsx --test src/lib/recruiter-outreach.test.ts src/proxy.test.ts`, `npm run typecheck` and `npm run build`.

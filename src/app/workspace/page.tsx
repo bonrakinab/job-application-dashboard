@@ -1,4 +1,5 @@
 const tools = [
+  { href: '/recruiters', title: 'Recruiter outreach', description: 'Find Ontario recruiters, prepare introductions and track conversations on your outreach board.', action: 'Open outreach' },
   {
     href: '/ats-analyzer',
     title: 'ATS Analyzer',
