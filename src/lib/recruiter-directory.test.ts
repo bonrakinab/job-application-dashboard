@@ -18,3 +18,17 @@ test('supplier account contacts retain their distinct classification',()=>{
 test('company counts include multiple people without collapsing them into one agency record',()=>{
  assert.deepEqual(companyContactCounts([{company:'B',title:'',verification:''},{company:'A',title:'',verification:''},{company:'B',title:'',verification:''}]),[['A',1],['B',2]]);
 });
+test('every published personal domain is backed by attributed evidence and an explicit suitability limit',()=>{
+ for(const c of data.contacts){
+  assert.ok(c.audit?.checkedAt,c.name);assert.ok(c.audit.reviewedSources.length,c.name);
+  assert.deepEqual([...new Set(c.domainEvidence.map(e=>e.domain))],c.domains,c.name);
+  for(const e of c.domainEvidence){assert.ok(/^https:\/\//.test(e.source),c.name);assert.ok(e.summary&&e.whySuitable&&e.limitation,c.name);assert.ok(['Attributed hiring activity','Stated personal specialization','Self-reported recruitment history'].includes(e.basis),c.name);}
+  if(c.audit.status==='Hiring history not verified')assert.equal(c.domains.length,0,c.name);
+  assert.equal(c.audit.completedPlacementsVerified,false,c.name);
+ }
+});
+test('agency scope, training and job-title keywords do not become individual hiring domains',()=>{
+ for(const name of ['Daniela Cacciapuoti','Daria Dudnyk','Kathy Pak','Lavina McKimm']){const c=data.contacts.find(c=>c.name===name);assert.ok(c);assert.deepEqual(c.domains,[],name);}
+ const tarah=data.contacts.find(c=>c.name==='Tarah Katzberg')!;assert.ok(!(tarah.domains as string[]).includes('ERP & Business Systems'));assert.ok(tarah.domainEvidence.every(e=>e.basis==='Attributed hiring activity'));
+ const ian=data.contacts.find(c=>c.name==='Ian Kinsella')!;assert.ok(!(ian.domains as string[]).includes('IT Support'));
+});
