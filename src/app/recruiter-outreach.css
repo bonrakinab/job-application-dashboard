@@ -29,3 +29,5 @@
 .recruiter-hub .identity-note{font-size:12px;color:#d2bd95;line-height:1.6}.recruiter-hub .load-more{text-align:center;margin:24px 0;color:#aebfb5}.recruiter-hub .agency-card{content-visibility:auto;contain-intrinsic-size:auto 340px}
 
 .recruiter-hub .filters .company-filter{flex:1 1 240px;max-width:360px;min-width:0;color:var(--ink)}.recruiter-hub .filters .company-filter select{max-width:none;width:100%;flex:none}.recruiter-hub .filters{align-items:flex-end}@media(max-width:760px){.recruiter-hub .filters .company-filter{flex-basis:100%;max-width:none}}
+
+.recruiter-hub .card-footer{flex-wrap:wrap;gap:12px}.recruiter-hub .contact-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;flex-basis:100%;padding-bottom:14px;min-width:0}.recruiter-hub .contact-actions a{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--lime);overflow-wrap:anywhere;min-width:0}.recruiter-hub .contact-actions .contact-email{flex-basis:100%}.recruiter-hub .contact-email{overflow-wrap:anywhere}.recruiter-hub .contact-email:hover,.recruiter-hub .contact-actions a:hover{text-decoration:underline}.recruiter-hub .contact-actions .muted{font-size:11px}
