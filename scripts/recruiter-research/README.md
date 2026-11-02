@@ -17,3 +17,11 @@ Directory profiles may be unclaimed. New directory-only identities explicitly re
 `audit-domains.py` takes an audit source-cache directory and the official team-page cache as arguments. It deliberately clears unsupported tags. Additional directory import and identity corroboration were performed against the separately cached source pages; do not run an audit against an incomplete cache and present it as a full re-verification. Check `src/data/recruiters.json` for the final review provenance and coverage counts.
 
 Validation includes stable contact IDs, supplier contact classification, domain-to-evidence integrity, explicit unknowns, posting-versus-placement distinctions, private API protection, and a production Next.js build. Outreach history remains in the existing server-backed pipeline and is not rewritten by this update.
+
+## Recruiter message review — November 2, 2026
+
+All 788 directory records have drafting context in `recruiter-message-context.json`. The message engine uses explicit individual hooks where evidence is available, a warm introduction for Tarah based on the conversation supplied by the user, and transparent referral wording for unverified contacts. No personal specialty is invented for directory-only leads. A few sector-versus-function errors found during this review were corrected in the source directory and excluded by the audit script.
+
+Recipient, domain and channel choices generate different introductions, relevant candidate experience and a single request. SAP, Oracle, seniority and contract mismatches remain explicit. Follow-ups mention an earlier message only when outbound activity was logged, or refer to the known user-described conversation. Connection notes use an application budget of 200 characters. The Messages view can export the full set of drafts for review; it does not send messages or change outreach stages.
+
+`recruiter-messages.test.ts` checks every directory record across every supported candidate domain and channel, plus targeted cases for unsupported specialties, product mismatches, senior/contract referrals, warm conversations and follow-up history.

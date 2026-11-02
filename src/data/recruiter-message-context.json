@@ -1,0 +1,5597 @@
+{
+  "contact-156e2c75027c": {
+    "focus": "Oracle ERP and business systems",
+    "hook": "Thank you again for your advice about approaching staffing recruiters. I wanted to give you a clearer picture of the experience I can bring to a permanent role.",
+    "source": "",
+    "basis": "Conversation supplied by you",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": true
+  },
+  "contact-a4b259cd7521": {
+    "focus": "software and full-stack recruitment",
+    "hook": "Your LRO profile lists full-stack, web and mobile development within your technology recruitment practice.",
+    "source": "https://www.lrostaffing.com/team/joey-kewin/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Software Engineering",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-fc3a18111d01": {
+    "focus": "software engineering recruitment",
+    "hook": "Your Morgan McKinley profile lists Python, JavaScript and other software engineering searches.",
+    "source": "https://www.morganmckinley.com/ca/consultant/alan-depuis",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Software Engineering",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-fff95d111a3b": {
+    "focus": "ERP and technology recruitment",
+    "hook": "Your profile includes ERP recruitment as well as IT risk and governance, which prompted me to get in touch.",
+    "source": "https://www.morganmckinley.com/ca/consultant/anna-siu",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-b2b7fdeeff1c": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-447f38ea2a20": {
+    "focus": "SAP recruitment",
+    "hook": "I read about your SAP recruitment background and your work helping SAP consulting firms grow their teams.",
+    "source": "https://scaleituprecruiting.com/about",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "My hands-on ERP experience is in Oracle Fusion rather than SAP; I’d appreciate guidance on relevant Oracle or business-systems opportunities.",
+    "warm": false
+  },
+  "contact-9cbd3992b165": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-af19e7c6f2a7": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-46a4e6de66ca": {
+    "focus": "data and analytics recruitment",
+    "hook": "I came across the Data Scientist / Analytics Engineer listing attributed to you, involving Python, SQL and data-platform work.",
+    "source": "https://ca.linkedin.com/jobs/view/data-scientist-at-robert-half-4436803285",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "I’m targeting early-career permanent roles rather than the experienced one-year contract in that listing.",
+    "warm": false,
+    "candidateEvidence": "Alongside my MSc AI research, I’ve used Python and SQL in software projects and worked with business data and enterprise systems at Banglalink."
+  },
+  "contact-fd45ee52bf2c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ca9fb16d38ef": {
+    "focus": "Python and AI recruitment",
+    "hook": "I came across the Mississauga Python Engineer–AI listing attributed to you at Procom.",
+    "source": "https://ca.linkedin.com/jobs/view/python-engineer-ai-at-procom-4462318964",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "I’m interested in permanent early-career opportunities rather than assuming that contract-to-hire search fits my experience.",
+    "warm": false
+  },
+  "contact-d9ab30e25449": {
+    "focus": "AI data recruitment",
+    "hook": "I noticed your recruitment activity for multilingual AI/ML data annotators at TEKsystems.",
+    "source": "https://ca.linkedin.com/in/biabrazuca",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "I’d be interested in related permanent AI/data roles aligned with my research and software background.",
+    "warm": false
+  },
+  "contact-612d9cf02b33": {
+    "focus": "data recruitment",
+    "hook": "I came across the Toronto Data Architect search attributed to you at Insight Global.",
+    "source": "https://ca.linkedin.com/jobs/view/data-architect-at-insight-global-4480700643",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "I’m exploring early-career data roles rather than architecture-level positions.",
+    "warm": false
+  },
+  "contact-1b8ee29561d9": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment, finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-daa1be9f9bb7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-717a4b1b795f": {
+    "focus": "cybersecurity recruitment",
+    "hook": "I came across the Incident Responder Manager search attributed to you at Hays.",
+    "source": "https://ca.linkedin.com/jobs/view/incident-responder-manager-at-hays-4471772208",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Cybersecurity",
+    "constraint": "I’m seeking an early-career IT governance or security-support role, rather than an incident-response management position.",
+    "warm": false
+  },
+  "contact-9836c8d25d82": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-70b76ec720f6": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment among your specialties.",
+    "source": "https://striverecruitment.ca/meet-the-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-8d390d8e4be9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f386d4340599": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e1f2e063422c": {
+    "focus": "SAP recruitment",
+    "hook": "I came across your Toronto SAP Tester listing covering SAP finance and supply-chain modules.",
+    "source": "https://ca.linkedin.com/jobs/view/sap-tester-at-precisionerp-precisionit-4425608901",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "My hands-on experience is with Oracle Fusion, so I’m asking about Oracle or business-systems support roles rather than that SAP testing contract.",
+    "warm": false
+  },
+  "contact-c707371dc783": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4faffa438dd4": {
+    "focus": "AI and data recruitment",
+    "hook": "Your personal profile includes AI/ML and data within your technology recruitment practice, along with permanent placements.",
+    "source": "https://www.iqpartners.com/recruiters/gary-hinde/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-22011ba777e4": {
+    "focus": "software and cloud recruitment",
+    "hook": "Your profile lists .NET, Java, AWS and cloud searches across contract and permanent recruitment.",
+    "source": "https://www.iqpartners.com/recruiters/george-good/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Software Engineering",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-e21629123195": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-380c98631d6c": {
+    "focus": "senior technology recruitment",
+    "hook": "Your profile describes cybersecurity, senior technology appointments and executive search.",
+    "source": "https://www.morganmckinley.com/ca/consultant/ian-kinsella",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Cybersecurity",
+    "constraint": "I’m seeking an early-career role, so a referral to the colleague who handles that level would be especially helpful.",
+    "warm": false,
+    "referralOnly": true
+  },
+  "contact-8e7c95a116f7": {
+    "focus": "AI and software recruitment",
+    "hook": "I noticed your post about ML/AI, mobile, Python/Java, React and D365 developer searches.",
+    "source": "https://www.linkedin.com/posts/jamie-dunne-pmp-2b8310194_we-are-currently-hiring-for-multiple-roles-activity-7425543268341444608-a5ue",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "The advertised roles were senior or contract-based; I’m reaching out about permanent early-career opportunities instead.",
+    "warm": false
+  },
+  "contact-ab69d2c5aa5f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ac40fbd2d28e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b21e007cd26b": {
+    "focus": "backend software recruitment",
+    "hook": "I came across the Node.js/TypeScript and AWS serverless backend search you shared.",
+    "source": "https://ca.linkedin.com/in/jessica-nagra",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Software Engineering",
+    "constraint": "I’m seeking an early-career permanent role rather than the senior contract described in that post.",
+    "warm": false
+  },
+  "contact-76b8c5b78385": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3ff28618e3f3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4085d566cbc3": {
+    "focus": "developers and IT infrastructure",
+    "hook": "Your LRO profile describes developer and infrastructure recruitment, with a focus on IT contract placement.",
+    "source": "https://www.lrostaffing.com/team/kush-baudi/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Software Engineering",
+    "constraint": "My preference is permanent full-time work; a referral to the permanent technology team would be helpful if your searches are contract-focused.",
+    "warm": false,
+    "referralOnly": true
+  },
+  "contact-d2735438f4e2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1077960abacb": {
+    "focus": "technology recruitment",
+    "hook": "Your individual bio describes permanent and contract IT searches at intermediate-to-senior levels.",
+    "source": "https://www.precisionerp.com/about/team/mark-garbe",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Technology (general)",
+    "constraint": "I’m targeting early-career work and would appreciate a referral to a recruiter who handles that level.",
+    "warm": false,
+    "referralOnly": true
+  },
+  "contact-8133077b797b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-61a4b01f4a98": {
+    "focus": "cloud data recruitment",
+    "hook": "I came across the Toronto cloud data-migration search you shared involving Snowflake and Azure AKS.",
+    "source": "https://ca.linkedin.com/in/melissawoodhouse",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "I’m seeking early-career permanent data opportunities rather than assuming I meet that specialist migration role’s requirements.",
+    "warm": false,
+    "candidateEvidence": "Alongside my MSc AI research, I’ve used Python and SQL in software projects and worked with business data and enterprise systems at Banglalink."
+  },
+  "contact-49b19b5b0b76": {
+    "focus": "business systems recruitment",
+    "hook": "I noticed your recruitment activity for project managers working on ITSM, application and Cloud/SaaS implementations.",
+    "source": "https://ca.linkedin.com/in/meringeorge",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "My experience is in application support rather than project-management leadership; I’m seeking permanent support or business-systems roles.",
+    "warm": false
+  },
+  "contact-4280101506c0": {
+    "focus": "enterprise business systems",
+    "hook": "I came across the permanent ServiceNow Technical Lead listing attributed to you.",
+    "source": "https://ca.linkedin.com/jobs/view/servicenow-technical-lead-at-randstad-digital-4467786479",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "My hands-on platform experience is Oracle Fusion, and I’m looking for early-career application support rather than a ServiceNow lead position.",
+    "warm": false
+  },
+  "contact-713c77f09187": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-38be45cd342f": {
+    "focus": "software and technology recruitment",
+    "hook": "Your profile covers software, data/AI and cloud recruitment, including permanent searches across Canada.",
+    "source": "https://www.iqpartners.com/recruiters/nikko-iannantuono/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Software Engineering",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-0af150936a89": {
+    "focus": "data analytics recruitment",
+    "hook": "I came across the full-time permanent Data Analyst listing attributed to you, with remote work on EST hours.",
+    "source": "https://ca.linkedin.com/jobs/view/data-analyst-at-insight-global-4455460395",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "I’d welcome guidance on comparable early-career roles that accept Ontario residents.",
+    "warm": false,
+    "candidateEvidence": "Alongside my MSc AI research, I’ve used Python and SQL in software projects and worked with business data and enterprise systems at Banglalink."
+  },
+  "contact-c20b9fba3bdd": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment, HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-5eaff2988709": {
+    "focus": "technology and infrastructure recruitment",
+    "hook": "Your LRO profile describes technical recruitment involving embedded systems, telecommunications and application services.",
+    "source": "https://www.lrostaffing.com/team/peter-heuthorst/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Technology (general)",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-3ac1cd63df22": {
+    "focus": "technology executive search",
+    "hook": "Your profile describes senior-management and executive recruitment for technology companies and start-ups.",
+    "source": "https://www.iqpartners.com/recruiters/priscilla-poirier/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Technology (general)",
+    "constraint": "I’m seeking early-career opportunities, so I’d appreciate a referral to someone who handles junior IT searches.",
+    "warm": false,
+    "referralOnly": true
+  },
+  "contact-306ade35909e": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment, manufacturing and operations recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-284ee3700537": {
+    "focus": "enterprise applications recruitment",
+    "hook": "Your public profile identifies enterprise applications as a recruitment specialty.",
+    "source": "https://ca.linkedin.com/in/samm-stevens",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-f7e5173ed0f6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3d8ff046a414": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists IT recruitment, administrative recruitment, HR recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-0c9c7a53a3c2": {
+    "focus": "Oracle and business systems recruitment",
+    "hook": "Your bio describes recruitment across Oracle/PeopleSoft/JDE, business intelligence and data warehousing.",
+    "source": "https://www.precisionerp.com/about/team/shawn-derouin",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-44d9fe5595fc": {
+    "focus": "DevOps recruitment",
+    "hook": "I came across the Toronto DevOps Engineer search attributed to you at Altis.",
+    "source": "https://ca.linkedin.com/jobs/view/devops-engineer-at-altis-4465151513",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Cloud & DevOps",
+    "constraint": "I’m targeting junior cloud or IT operations roles rather than assuming a fit for that engineering vacancy.",
+    "warm": false
+  },
+  "contact-702052834d49": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7ead33bc939d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8a9903d0f34c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-920f70e1d553": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e779e810c861": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-73cfaefc6325": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7c74ef6e3063": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-914dd68d3b53": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-79de78167002": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6259bde5548e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bbf081e9cde2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-05bea9d6eddc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-327d41170e7b": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Olade Consulting Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4b1737f347b2": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for DigitalTek Solutions and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-fa30d8aba852": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for IT/IQ Tech Recruiters and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3a9d02acd428": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Altis Recruitment & Technology and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f1e06633bdd7": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for NewFound Recruiting and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-548ba1ba6f62": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Insight Global and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ae0531d362a0": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Maverin Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2538264d05b0": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Mandrake and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-82ff5476178f": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for LeverageTek Staffing Solutions and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6a7ca2040399": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Step by Step Professional Services Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3c600a368099": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for I4C Technology Consulting and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ed80cfaecb65": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Headsource International Corp. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ab701c5ce40b": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Avanciers Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7f82da1ee0f0": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Tundra Technical Solutions Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ac31b8f5587d": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Perrett Laver and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9d3cb4e0c28a": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Quarry Consulting Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8b6f5378d5e4": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Atlantis Consulting Group Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-aa653129f462": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Sybex Support Services Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2ba691d49aee": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for GTT Digital Corp. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-254b6dab1843": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for WilsonHCG and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-13b01c70515e": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Able Industrial Trades Inc. o/a Aliant Resources and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-71152a063425": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Strategisense Consulting and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b48f39eb27c9": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Infotek Consulting Services Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-abbaec414220": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for KBRS and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-54396bea73b2": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Resolve Support Services Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-27da6dd9c2c2": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Procom and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-22f7e1e9bde4": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Waterhouse Executive Search and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-67eae05decf8": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Workland and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-760586419244": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Plan IT Search and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ab414e3e0e05": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Maplesoft Group and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-44395f86bef9": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Teamrecruiter.com and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e55258a02c56": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Bevertec and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-993d580da983": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for S.i. Systems and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-105b289f9366": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Akkodis Canada Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9869b8d9d9b6": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Quantum Management Services Limited and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b9f9316a7b07": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for IQ PARTNERS and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cbd7c09d35eb": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Boyden Ontario and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ceab032c052d": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Speridian Technologies Canada Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ef2e93ce61e5": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for iPSS Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-434f7c1c7e8f": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Randstad Canada and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f86b8e47d9d1": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Compunnel Software Group Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-23f7aa637f29": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Transatlantic Business Consulting Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cdeec8aae506": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Workiy Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a7c63028cd1c": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for SRA Staffing Solutions and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-64d9e4229545": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for 22nd Century Technologies Canada, Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e18434fd331a": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Green PI Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8cc6a7c89852": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Alquemy and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-284417f314e4": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Aplin and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cf362fc17ccd": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Computacenter Canada Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c9d9179e49e2": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for TEKsystems and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0c888847b36b": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Enterprise Solutions Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c0ee179a4c4b": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for TalentWorld and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0bed4bbc6044": {
+    "focus": "",
+    "hook": "I found your name listed as a supplier contact for Cleo Consulting Inc. and hoped you could help route a candidate enquiry.",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dffce5bc8712": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-3885978a2acb": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-aef10df01c31": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-354452392368": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6844364fc99f": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-950e1478ada7": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-939a76a864fb": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d10eedcb1cf1": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6a57626f3aa4": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3fabeeaf40d1": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0dc5d736fd79": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d7020649d583": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0393d85836ae": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4065aebc8e00": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c446d4744844": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f81d45114414": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7bf826367c1c": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a2611b36ac96": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-fda4290f195b": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d20f65804502": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4a8a095a9911": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-b062e0a4165a": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-33b7d185d018": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-e344a81a350c": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-6fe4297ca62d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-475d5622db60": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3971454911c7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0834d3c08a54": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-58ff1fc74ba1": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4245b82b33b4": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0b090493d4b4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1c1416629eed": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://recruitinginmotion.ca/recruitment-solutions-canada/meet-our-team/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-facb96668b0d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-af713d013286": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/lee-anne-mcdougall/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-eadcdda3121f": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/linda-mclachlan/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-02a658281b13": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/shannon-maloney/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-e99259ae382b": {
+    "focus": "administrative recruitment",
+    "hook": "Your published role includes administration, HR, marketing and communications recruitment.",
+    "source": "https://www.lrostaffing.com/team/natasha-ocal/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "Administrative",
+    "constraint": "I’d be interested in administrative or clerical support searches; I’m not presenting myself as an experienced HR practitioner.",
+    "warm": false
+  },
+  "contact-435dee61ec09": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-50b3ecb32666": {
+    "focus": "professional recruitment",
+    "hook": "Your personal profile describes contract and permanent placement across general and niche markets.",
+    "source": "https://www.lrostaffing.com/team/sakura-gomi/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-8fba38af5bc4": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment, administrative recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/stacey-leclaire/",
+    "basis": "Self-reported recruitment history",
+    "preferredDomain": "Administrative"
+  },
+  "contact-241374fc193a": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/deborah-montgomery/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-c504caf9bb53": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2ea1fdd47ab3": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment, government staffing among your specialties.",
+    "source": "https://www.lrostaffing.com/team/shu-li/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-81ae1ebbcf0d": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, government staffing among your specialties.",
+    "source": "https://www.lrostaffing.com/team/isabella-liepold/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-05daf98a832d": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/jordan-craig/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0b3b9cf73f69": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/scott-hallam/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f094750abc6c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bd87475ae219": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9bca4aa72ea8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-af9534705e4b": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists HR recruitment, administrative recruitment, finance and accounting recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/andrew-mcdougall/",
+    "basis": "Self-reported recruitment history",
+    "preferredDomain": "Administrative"
+  },
+  "contact-99b294e9275b": {
+    "focus": "software recruitment",
+    "hook": "Your individual profile lists software recruitment, IT recruitment among your specialties.",
+    "source": "https://www.lrostaffing.com/team/john-paul-baragwanath/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Software Engineering"
+  },
+  "contact-4bb4ff5606fc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4cb6c8f59551": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f376ab024b6e": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/bruce-powell/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)",
+    "referralOnly": true
+  },
+  "contact-767bf560faf7": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/randy-quarin/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-14ea53ecd3e6": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/peter-zukow/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-29992c8b3d8b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-03adf734582c": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/adrian-robinson/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6820ff187f05": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/kelly-noelle/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-18e6c5cd6f6f": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/rhys-metler/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0c12fa3bbf5f": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/claire-mcconnachie/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bc6fd793ce1b": {
+    "focus": "software recruitment",
+    "hook": "Your individual profile lists software recruitment, AI and data recruitment, IT recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/sarah-baker/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Software Engineering",
+    "referralOnly": true
+  },
+  "contact-fd380ee8207e": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment, manufacturing and operations recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/elaine-bellio/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b4fecbb11a9d": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/tanya-schwartz/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-c37051451392": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/victor-tamm/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1c61ddcdd1c5": {
+    "focus": "legal-sector recruitment",
+    "hook": "Your profile describes recruitment across legal teams and their support functions.",
+    "source": "https://www.iqpartners.com/recruiters/melissa-hansen/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-6c669936de64": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/brandon-young/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6347f249eb2c": {
+    "focus": "healthcare and life sciences recruitment",
+    "hook": "Your profile describes healthcare and life-sciences recruitment, including health technology organizations.",
+    "source": "https://www.iqpartners.com/recruiters/kayla-vangorkum/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-19ec46aa1664": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/michael-van-olm/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-37039071a33a": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/brandon-biafore/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1ac40e1fbd41": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment, legal recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/steven-petroff/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0b474c8a47bc": {
+    "focus": "HR recruitment",
+    "hook": "Your individual profile lists HR recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/john-trenholme/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a66187e3b63b": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/magda-jarota/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2b4bf4c6ef92": {
+    "focus": "HR recruitment",
+    "hook": "Your individual profile lists HR recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/neeral-morzaria/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-89b62cc6d3d5": {
+    "focus": "real estate and investment recruitment",
+    "hook": "Your profile describes searches for investment professionals, advisors and real estate organizations.",
+    "source": "https://www.iqpartners.com/recruiters/ben-basian/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-e0c5451a6ff7": {
+    "focus": "HR recruitment",
+    "hook": "Your individual profile lists HR recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/sarah-sekenda/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-19f851e604a3": {
+    "focus": "real estate and construction recruitment",
+    "hook": "Your profile describes recruitment across real estate and construction organizations.",
+    "source": "https://www.iqpartners.com/recruiters/carl-anthony/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "ERP & Business Systems",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-6d506176d158": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment, sales and marketing recruitment, manufacturing and operations recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/luba-hamiuka/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-a8928ef6027f": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/nadia-novello/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-24856b55f278": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/liam-odonnell/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cc878ba0a90d": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/reaghan-geimer/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-95ed2010f457": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/jessica-hough/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-aa31208178be": {
+    "focus": "sales and marketing recruitment",
+    "hook": "Your individual profile lists sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/malwina-chaudhry/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b19e3ceb8e15": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9c2f0c7d3bfb": {
+    "focus": "HR recruitment",
+    "hook": "Your individual profile lists HR recruitment, finance and accounting recruitment, sales and marketing recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/katie-howe/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0281466b0a8e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7128d746666c": {
+    "focus": "administrative recruitment",
+    "hook": "Your individual profile lists administrative recruitment, HR recruitment among your specialties.",
+    "source": "https://www.iqpartners.com/recruiters/danielle-bosley/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Administrative"
+  },
+  "contact-d6d63f16df65": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-86448f8e5d66": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f6c52d30df84": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dd52e590facf": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-979f92286ce7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-641323f22737": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a12f545e5576": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ec795ebd3e57": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a7cd3d33de66": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-73147ac83b9e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4d10986f6c0d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-217c38329adc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2bb0f47c4881": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1879ee724866": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9f545d865fb9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7d69a9afa8e3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-56ae4f5e017b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8971650f9896": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-424f909204c8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3e808f03c0e1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e89dd32f8971": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2cd7fd5ab8da": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3f97c9b6dc98": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d475a9004020": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-371610f7d841": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e19ce47dc775": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-78ff8e529805": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-897bfd2a9124": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ff737947ce45": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://striverecruitment.ca/meet-the-team-gta/",
+    "basis": "Self-reported recruitment history",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1b76ddf4ad8b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7ed8d76eb3c2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d62f77ee7a55": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://striverecruitment.ca/meet-the-team-gta/",
+    "basis": "Self-reported recruitment history",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a397aef6afeb": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://striverecruitment.ca/meet-the-team-gta/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5b1b3a1cdf76": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b0132f358786": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1bc5ee242daf": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://striverecruitment.ca/meet-the-team-gta/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5a6b1fabcdf5": {
+    "focus": "manufacturing and operations recruitment",
+    "hook": "Your individual profile lists manufacturing and operations recruitment among your specialties.",
+    "source": "https://striverecruitment.ca/meet-the-team-gta/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-73e1cc3aeeed": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3aa78f843ae7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c1e37161ad15": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8e4785e41196": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-14cbc3c7ca64": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-abcd75c99b38": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bffbe1049ef3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c8c05405be36": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2ca9eec9a815": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-538324380b18": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cba5f62ef454": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6796aee4128e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-799571e6176f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-09c9599a2a82": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8293a1683102": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e084fe9172be": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1d62ee5df9ca": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-90cd20c9eec3": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/brady-jones/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8de7c186bf8b": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/patrick-johnson/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ef2831784e39": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/neda-canario/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f5b9c3a37dcf": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-866fd3fab306": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-fd0934da1d1c": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/natalie-cordiano/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ec59863caee6": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/satinder-brar/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-63af763eabf7": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/lea-jaouich/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1b996e08b3fe": {
+    "focus": "legal recruitment",
+    "hook": "Your individual profile lists legal recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/claire-balas/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-788623489697": {
+    "focus": "finance and accounting recruitment",
+    "hook": "Your individual profile lists finance and accounting recruitment among your specialties.",
+    "source": "https://www.bjrcrecruiting.com/team/roisin-keane/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3886e71d8f50": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-aef7b67b52e4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1e65ac88ddf7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9b7c76bc395a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c81d7eab280a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0d8f8344b02a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-60ef2e3d463d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1dbcb17d677d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bf79dfda73f9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-395da52f0def": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1478b24b1d5e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e9165854a177": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-93adb5635ab7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-405a874848ff": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-76b7191e8e4f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ff57daa7e67b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-175237b0ceda": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-22e5d7795e68": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-88d089d4b1a6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-41afef96fac0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f67261de3b2d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f0d1a5933e56": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c7402c172fed": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ba052fb870ee": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-afee57ff02bd": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6608dc1ca0f4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-33335a8ae47a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-424b48fa297a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ccfeeedf433a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d2b686418002": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3134dd7f3ab1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-124187606d02": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-93dc3701828d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b2febb72b025": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3cf1d8181d53": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-16d918968c41": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4b0175bb55d4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c64ac5320d3e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a1c56d6d835b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-415e1669ce2c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-65951dc6ed95": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6abfcfe12250": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-331011183abf": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-68760013cfb4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-51b1f70af3a4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1ae908c6ceb1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-be99756e8165": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bb1539511361": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9dc620f385c1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-726f6dcc41b9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b849e8546aad": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-41330b2cea95": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bb9d06d20542": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b2ae79195d7f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0250057c998a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a069d90087d9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-48f538311b56": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b17629b23e4e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-de2355508029": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-027936e307d7": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment among your specialties.",
+    "source": "https://www.itconnex.ca/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-d40575df3a15": {
+    "focus": "AI and technology recruitment",
+    "hook": "Your IT Connex bio describes recruitment from junior through executive levels and a growing focus on AI/ML and IoT.",
+    "source": "https://www.itconnex.ca/",
+    "basis": "Reviewed person-specific source",
+    "preferredDomain": "AI & Data",
+    "constraint": "",
+    "warm": false
+  },
+  "contact-c1ab4dbe4c4e": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment among your specialties.",
+    "source": "https://www.itconnex.ca/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-595034d2a063": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f49f517f1ebe": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-69cce5cd121f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-54e1a9c852f4": {
+    "focus": "IT recruitment",
+    "hook": "Your individual profile lists IT recruitment among your specialties.",
+    "source": "https://www.itconnex.ca/",
+    "basis": "Stated personal specialization",
+    "preferredDomain": "Technology (general)"
+  },
+  "contact-a001cdb01d30": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a1dc8d1423e1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-22a52c7913e0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ff5a4a5e6cc7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-210ac48d8c8c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b0b795b0b70e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f409903aa308": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-798ffb8e79fe": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9ae5932bb66d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cccdc80c39d5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e96f001c6fa1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2b13e8421a95": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1d3b67ec234b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-af55b77bc62c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-28b894f3a0d7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-859ff0f00770": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d322d0dc297b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-651b27ec3f4d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-81490516022b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a80e5841244f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-001a061fc2e7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ee007fb20218": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-075d329823d5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-126acd7a2f03": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ef4f450cc99c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-76799a5baa85": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-72d6abaeec23": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c4301e2b47dd": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-48a33c613f99": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0920cd894e72": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e87f862cc6b0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f0636206631b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4756143b4e4c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4d017b62f251": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-394ffcd2bcc8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0af7b2bf1411": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3827404e9878": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-404e2b01847d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-763bd133f79e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0651cb095b74": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a82439c58fc4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-35cbba79f418": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7d75509a7a81": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bfd1ce8e07fe": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-70c2ca80ffa8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cdbb46aa871c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2357b716521d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ffb89e686037": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4114ed1f56b3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-76885eefcbbc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b8bf76fb1919": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-76db22c147a5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-68ded0b87d0b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7ad868154bca": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-03bee08d7d7f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-47a796c19b60": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-86190cbf5dbc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2ffefd4083d2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ca68a4466dba": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4cb91ebc674d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e374b97966b9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2ba348a710bc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-657a50ef4083": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-76db473bf9a0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-75df443c27f1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-27c963d4361d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7caa34e99c53": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ba3d17a9f1d9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-80725613c2ba": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9a078d7db30b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-38c19d3c1432": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-665d96bd2bf0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a2c757046e7f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5cfd0984ee2e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7602b8fbf482": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1dce7fc8f104": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-081822213832": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0b2c854eb7e4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6b7f6d66f445": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-efff6eb9be80": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2011adde00b3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f296935ca299": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8f10cdc8ef12": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d110c5550f85": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f4fe6cf0d503": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-24d471b307d8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-564a353fb945": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5b9a632c89d4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e4a48350d0df": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c52dc8590288": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ff62698409ed": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1e957f795d16": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b29161a086da": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2e9dc2fb51ca": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-03e0ebf1ea5c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5a9e39f29f66": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a0a585676f22": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b5f78a7a29ea": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e415707602d7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f71dfb4aa91a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d2406a3f5808": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cf465bec2fb9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5a7846986cdb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2cbc50da1666": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8396712d4ada": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-037e4bde8867": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d6cf94c58248": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0cb6141a333c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-87aa3aa9c8e7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cc17fe8f31cb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8c5fd81ed2ce": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-604d72700d9b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e029e77447fc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c849a383d226": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4d0d31b76456": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d62499aac41e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5f7a1e28fa70": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b6baaad8372d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d4c7e8004bbb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0cb229bc550e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-026e080d38eb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8a74438eb767": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f541e7c486f9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-095a9337dadf": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6afa42978803": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cea45403ee3c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4d772dc7490e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3fec5df078d4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-487c6233348d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7a75c2a1074e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-98182b5bfb96": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-493dda08d3a3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f8c550ef2686": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-576f5b878cc9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f8e893ac4e54": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7c9e4e2f8934": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2ea7c0c60c51": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-13ab07de835c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8b3982816397": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d33e886b0b4e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4c82620696e8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d0f8496428eb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d1012c287e02": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d3c2e07e3e73": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6347e8847eef": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4914fc332e65": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-81d65a238774": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-14b926bf07df": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-908a38815cc7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f456d1d28408": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2c435eb6affb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e1067a8db3ae": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c916daf6c856": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-94734f851eae": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-50491b97c02e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7fe7cbc41aa5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a5ac131c87a3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dc7d2c06c6ec": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0bf961586b26": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dd5da054f40e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-007f02f6c321": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5a630f664cb4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9a9841acd379": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cf5f41399505": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6c41ab4f96c9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-22db8af3dae7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6508d7f4448a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e376aa97d8e0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6887ff6f7934": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-af5ef17126b3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d1e8f66e5152": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2d9512b425df": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5b3fd0925726": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d54d5a84cf62": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0f06a390f99d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d044f18f2ba7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3ac14ef3786b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d2c90f0633c3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2ec5c52e0e88": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7186f7df8473": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-829071de2295": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-be60fe4f40d2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e844be9b9d62": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7be11287d2bd": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2025427b8418": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-67e98d0481b0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-38b65799fa21": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6a1c6bdf5506": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-48d00a76bf54": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2d667d31423a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c1d8d9100cec": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e9053153d16a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d1a9ecf5b372": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-008a3b3cd7b2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f6a8e401fe65": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d9accddebdb3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ed45442f23bc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-985f48bf6135": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2e06c6905986": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-509c1ae5b223": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2be374abba60": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bcb00f2810d8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1a25c3b69299": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1e6e73c78a17": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-22d521396305": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-70f54bd249aa": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1301fdc74b78": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-68f52d701779": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c0b70b363033": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-46f7e3f00f18": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b47af9523ea4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-44e40c88bf48": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d0760d49ec26": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-37b6b4d6c7c3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-37a49f82ef34": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c57f2e6c2023": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1115a25877c6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cdcba92ba4b8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f9e728426695": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-652c9d2b822f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c8522ff37409": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1c036e4c8df5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b9070b80b926": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-09b806c7f297": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-32f6f77c360f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-951fb271c10d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c161e93677ac": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-03fb30cd35ab": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ff7e5f6ed6a9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8c887df6c8c5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a309b9dcd38c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-af67274eb0de": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bb407f3accbe": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9afef596ee63": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cecd5049e782": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cda9aa4a4d82": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8e1607e1e738": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6c107f825f1f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8adb3d859635": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4cbd8295e1de": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-de645ffd6da7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6d12a16e438c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-199d081b1143": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-db9e5d807915": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-33d15fac6136": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-32241f6c543d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d65deeaca373": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7eac9fd64f15": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1edba53975af": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-23c8a9cb797c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f0dd83f054a3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-794f610d70ba": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1e54ef9b7040": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-65ac54639aa7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b43ec0f778c8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e4d09740202d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e2b310053524": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-26e9652fb5a4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-94a5e81d03d7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e8fca9aad34f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d5af667c8b8c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-db89f7aaa0c2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cc24cff42d36": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-691dd95834e7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6f2705723c15": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f663746b1347": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f7abe9c73ef6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7d4fddec7bd9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7415485e4ac7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-24a057e99393": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7d0ad2908848": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cc9bc8697738": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a5522171da86": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-34fb52b2f843": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-75239f7f89f0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a52e4c394d5a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-079c19217318": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1ec5a9a2ad8b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-30535d7f41b6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f1619f2f50f1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f3106cc5ef4d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7c311770e100": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a643d3913ab4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d2341cc6729d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4666c50ab78d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-47ae54fb42d3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2e88ad1e97be": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d8cda1576ec0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-76c5922488c6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c5b54efe6ad9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d0696dab23b5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cc0362887e6a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-edbf9a24d905": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ba068bd5d4a1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-fe0b69013a27": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-74367b7ecfc6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-15a54356c55d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-81ed94184d08": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-69c625222b32": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d6997e84bdef": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8ff11a89c1eb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a48bdc43adfb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-15900933642d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ad04546b0037": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-03cb68ddaa5f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-34a1e59d71a9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2cc23c65509f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b3af61b06fbb": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f88c830004b9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0a0607090c64": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f78218e3e01d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-65a8874947a5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dbc1cbf1cfbe": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-22f4025849cc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f425913827ae": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-550c63ea207a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6a54eb2af37a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c863c12d6c38": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3f5128442100": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ead536933bfa": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dbcb95ef8a4b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2fbde3db2c00": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cb720bcc89e7": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e87fe3fe2222": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0489cd54634b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-58e7be254b94": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-88e2f0ad65cc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-626825796e7c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0c93cfa8580e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6b3ef1390d6a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d06343d37b63": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a0664c4ff245": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a9893078b2b1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-26327f71dae1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ec5d743dd3b0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d58e5561cbf9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-cfdaedefa07f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e0e4f4629ab9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c2472dc36d9c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1fdaf72f7f39": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-91aa8b183196": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-80bf4cf3b272": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e64b24ce96b6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0c8e50582eb1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f8b848062665": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b5fa1f1e5768": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0a6d14a77816": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-140dc97277f9": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-985002b26f8a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-00145cc65054": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c45e1e7fa799": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-21454a033b8f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-401262eedcd3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6d96c4a9c3dc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c99eaeaf2481": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0dac802bd9cd": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2d6e976efe88": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f9014777fccc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-490c2f00991d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-59bb871a3708": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-083895fc5498": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bd9b9d417acc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bcd299492a8f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1039df8c5b72": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3a436da745d0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-98f0fb6b0001": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6ce500550812": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-601a0e7bbe0f": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-30f51f83a2a2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e86ffc9ae693": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f540fa0a1a9d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a0e46042074a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dff30740b94e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f72fb0470363": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a26eda6d67ce": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e253a55434dd": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0da3ab65d0a5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3bceff18e9e6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-962dbbd1dbbf": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ce9cf088337e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f7b18640dea2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0168e7cb4ab1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-eb6b1b874f61": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5cb3b6e48646": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2c360575ba89": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4d9eebcafc13": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-fe023afc0fe5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e5c0ba6f6b03": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b171bb76d56a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b1fdf160265d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-38b4c520f5dd": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ca999fa5d9c1": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-720e5e96c7b2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7f1b82717771": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5933d8c82bf8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-50b6aad7d249": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-93b1f0fcc351": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9f14e05fc9c8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-21e01a3cf0ac": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-877f15b44f1e": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-881b2d0933fe": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9619561b2c04": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-9b78b6bff1ab": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-f097b19466df": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0c50bb941c00": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-445f7dfefa09": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c745a0d82989": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bd30c27f6f52": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8a76a75e1029": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-58d106abc5ea": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d018ff794621": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e658c35c6771": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-3706da5b9f46": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a3377c9ecfea": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-012c61b2ccd2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-02dcf44b4b9d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-e66424b809dd": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0008e4643b5d": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-1744b45adeb0": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-d8c2b65eb542": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-fea6e213c8fc": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-148dc349a1f5": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-475a62f6b749": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-5009e58437a2": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-11a9f49290f3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7a99fd1b36fa": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-330df5e01a35": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a4c373256610": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7e028f63cc33": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c06e362a3252": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a036591b88ab": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-478a4c34a8a4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-6da76f87dadf": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-564b4d79b427": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-b04b334e6f02": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-28f31f09cdc4": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-dd72210cc160": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-4089ff52d8f3": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-18961caf6c2c": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-616aa3ab4a65": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-0f8ff3748f49": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-a86e059a8bb8": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-bf8c1540fd18": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8f919a7c8808": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-2d211116c230": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8aafc8c53f05": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-acdf657d978a": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-69e03b929a37": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8ed83a568039": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-8288ec6c8f4b": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-147dc753e616": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-ff43ebd8a563": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-82497ab0a6b6": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-c4e884e24bda": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "No supported personal specialty; referral wording",
+    "preferredDomain": "ERP & Business Systems"
+  },
+  "contact-7a273b9eb961": {
+    "focus": "",
+    "hook": "",
+    "source": "",
+    "basis": "Directory-only identity; no specialty or current employment assumed",
+    "preferredDomain": "ERP & Business Systems"
+  }
+}
