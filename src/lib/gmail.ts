@@ -157,3 +157,30 @@ export async function createOutreachDraft(subject: string, text: string, to?: st
   if (!response.ok) throw new Error(`Gmail ${response.status}: ${(await response.text()).slice(0, 600)}`);
   return response.json() as Promise<{ id?: string; message?: { id?: string; threadId?: string } }>;
 }
+
+// Read only previous JobAgent/Ontario alert messages, not unrelated mailbox content.
+// A failed history check is an error so the caller cannot silently resend listings.
+export async function readJobAlertHistory() {
+  const token=await accessToken();
+  if(!token)throw new Error('Gmail alert history could not be checked: OAuth is not configured.');
+  const auth={Authorization:`Bearer ${token}`};
+  const query='in:sent newer_than:90d {subject:"Ontario Job Alert" subject:"Job Agent:" subject:"Windsor part-time"}';
+  const ids:{id:string}[]=[];let page:string|undefined;
+  do{
+    const params=new URLSearchParams({q:query,maxResults:'100',...(page?{pageToken:page}:{})});
+    const list=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?'+params,{headers:auth,cache:'no-store',signal:AbortSignal.timeout(10_000)});
+    if(!list.ok)throw new Error(`Gmail alert history ${list.status}`);
+    const found=await list.json() as {messages?:{id:string}[];nextPageToken?:string};ids.push(...found.messages??[]);page=found.nextPageToken;
+    if(page&&ids.length>=1000)throw new Error('Gmail alert history exceeds the safe scan limit; refusing an incomplete deduplication check.');
+  }while(page);
+  const messages:string[]=[];
+  const decode=(part:any):string=>[part?.body?.data?Buffer.from(part.body.data,'base64url').toString('utf8'):'',...(part?.parts??[]).map(decode)].join('\n');
+  for(let start=0;start<ids.length;start+=5){
+    const batch=await Promise.all(ids.slice(start,start+5).map(async({id})=>{
+      const r=await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`,{headers:auth,cache:'no-store',signal:AbortSignal.timeout(10_000)});
+      if(!r.ok)throw new Error(`Gmail alert message ${r.status}`);
+      const value=await r.json() as {payload?:unknown};return decode(value.payload);
+    }));messages.push(...batch);
+  }
+  return messages;
+}

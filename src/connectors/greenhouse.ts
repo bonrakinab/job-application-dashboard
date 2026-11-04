@@ -6,6 +6,7 @@ type GreenhouseJob = {
   id: number;
   title: string;
   updated_at?: string;
+  first_published?: string;
   absolute_url: string;
   location?: { name?: string };
   content?: string;
@@ -30,7 +31,7 @@ export const greenhouseAdapter: JobSourceAdapter = {
       company: source.company,
       location: item.location?.name,
       description: stripHtml(item.content ?? ''),
-      postedAt: item.updated_at,
+      postedAt: item.first_published,
       discoveredAt: new Date().toISOString(),
       department: item.departments?.map((d) => d.name).filter(Boolean).join(', '),
       raw: item,
