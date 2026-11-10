@@ -47,3 +47,40 @@ test('dashboard-stored Gmail token overrides an environment fallback', () => {
   assert.equal(preferredGmailRefreshToken(null, 'env-token'), 'env-token');
   assert.equal(preferredGmailRefreshToken('  ', 'env-token'), 'env-token');
 });
+
+
+test('Gmail reconnect requests message access needed to deduplicate alerts', async () => {
+  const { googleAuthorizationUrl } = await import('./google-oauth');
+  const previous = { clientId: process.env.GOOGLE_CLIENT_ID, clientSecret: process.env.GOOGLE_CLIENT_SECRET, auth: process.env.AUTH_SECRET };
+  try {
+    process.env.GOOGLE_CLIENT_ID = 'test-client';
+    process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
+    process.env.AUTH_SECRET = 'test-auth';
+    const url = new URL(googleAuthorizationUrl(new Request('https://example.com/api/auth/google/start')));
+    const scopes = url.searchParams.get('scope')!.split(' ');
+    assert.ok(scopes.includes('https://www.googleapis.com/auth/gmail.compose'));
+    assert.ok(scopes.includes('https://www.googleapis.com/auth/gmail.readonly'));
+    assert.ok(!scopes.includes('https://mail.google.com/'));
+    assert.equal(url.searchParams.get('access_type'), 'offline');
+    assert.equal(url.searchParams.get('prompt'), 'consent');
+  } finally {
+    for (const [key, value] of Object.entries({ GOOGLE_CLIENT_ID: previous.clientId, GOOGLE_CLIENT_SECRET: previous.clientSecret, AUTH_SECRET: previous.auth })) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+  }
+});
+
+
+test('Gmail health rejects compose-only access that cannot read Sent for deduplication', async () => {
+  const { validateGoogleAccessToken } = await import('./google-oauth');
+  const original = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = async (input) => {
+    const url = String(input); calls.push(url);
+    return new Response('{}', { status: url.includes('/messages?') ? 403 : 200 });
+  };
+  try {
+    await assert.rejects(validateGoogleAccessToken('test-access'), /messages authorization 403/);
+    assert.equal(calls.length, 2);
+  } finally { globalThis.fetch = original; }
+});

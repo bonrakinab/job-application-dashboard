@@ -1,4 +1,4 @@
-import { getStoredGmailRefreshToken, hasStoredGmailConnection } from './google-oauth';
+import { getStoredGmailRefreshToken, hasStoredGmailConnection, validateGoogleAccessToken } from './google-oauth';
 
 function base64Url(value: string) {
   return Buffer.from(value, 'utf8').toString('base64url');
@@ -99,11 +99,7 @@ export async function validateGmailOAuth() {
   const token = await accessToken();
   if (!token) throw new Error('Gmail OAuth is not configured.');
 
-  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts?maxResults=1', {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!response.ok) throw new Error(`Gmail authorization ${response.status}: ${(await response.text()).slice(0, 600)}`);
+  await validateGoogleAccessToken(token);
   return { ok: true };
 }
 
@@ -164,7 +160,7 @@ export async function readJobAlertHistory() {
   const token=await accessToken();
   if(!token)throw new Error('Gmail alert history could not be checked: OAuth is not configured.');
   const auth={Authorization:`Bearer ${token}`};
-  const query='in:sent newer_than:90d {subject:"Ontario Job Alert" subject:"Job Agent:" subject:"Windsor part-time"}';
+  const query='in:sent newer_than:90d {subject:"Ontario Job Alert" subject:"Job Agent:" subject:"Windsor part-time" subject:"Ontario Customer Representative Job Alert" subject:"Ontario Customer Associate Job Alert"}';
   const ids:{id:string}[]=[];let page:string|undefined;
   do{
     const params=new URLSearchParams({q:query,maxResults:'100',...(page?{pageToken:page}:{})});

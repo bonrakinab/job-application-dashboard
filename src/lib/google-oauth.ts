@@ -1,7 +1,11 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { deleteRows, supabaseRequest, upsertRows } from './supabase-rest';
 
-const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.compose';
+// Reading Sent is required for cross-workflow duplicate checks; compose alone cannot read messages.
+const GMAIL_SCOPE = [
+  'https://www.googleapis.com/auth/gmail.compose',
+  'https://www.googleapis.com/auth/gmail.readonly',
+].join(' ');
 const PROVIDER = 'gmail';
 const STATE_TTL_MS = 10 * 60 * 1000;
 
@@ -160,9 +164,13 @@ export async function exchangeGoogleAuthorizationCode(code: string, redirectUri:
 }
 
 export async function validateGoogleAccessToken(accessToken: string) {
-  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts?maxResults=1', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: 'no-store',
-  });
-  if (!response.ok) throw new Error(`Gmail authorization ${response.status}: ${(await response.text()).slice(0, 500)}`);
+  // Check both capabilities so a partial consent grant is not reported as alert-ready.
+  for (const resource of ['drafts', 'messages']) {
+    const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/${resource}?maxResults=1`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) throw new Error(`Gmail ${resource} authorization ${response.status}: ${(await response.text()).slice(0, 500)}`);
+  }
 }

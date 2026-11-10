@@ -37,13 +37,13 @@ export default async function SettingsPage() {
     <div className="section-head"><h2>Email connection</h2></div>
     <div className="card">
       {gmailAuth.authorized ? <div className="row" style={{ justifyContent: 'space-between' }}>
-        <div><b>Gmail connected</b><p className="small muted">Used for outreach drafts and configured alerts.</p></div>
+        <div><b>Gmail connected</b><p className="small muted">Used for outreach drafts, configured alerts, and duplicate checks against Sent mail.</p></div>
         {gmail.storedConnection ? <form action="/api/auth/google/disconnect" method="post"><button className="btn ghost" type="submit">Disconnect</button></form> : null}
       </div> : gmail.oauth ? <div className="row" style={{ justifyContent: 'space-between' }}>
         <div><b>Gmail needs to be reconnected</b><p className="small muted">Reconnect to restore dashboard email features.</p></div>
         <a className="btn primary" href="/api/auth/google/start">Reconnect Gmail</a>
       </div> : <div className="row" style={{ justifyContent: 'space-between' }}>
-        <div><b>Gmail is not connected</b><p className="small muted">Connect it to create outreach drafts.</p></div>
+        <div><b>Gmail is not connected</b><p className="small muted">Connect Gmail to restore dashboard job-alert delivery and outreach drafts. Allow read access for duplicate checks against Sent mail.</p></div>
         <a className="btn primary" href="/api/auth/google/start">Connect Gmail</a>
       </div>}
     </div>
