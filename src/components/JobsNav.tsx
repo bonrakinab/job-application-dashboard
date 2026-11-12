@@ -1,6 +1,7 @@
 const links = [
   { href: '/recommended', label: 'Best matches' },
   { href: '/fresh-openings', label: 'Recent' },
+  { href: '/customer-service', label: 'Customer Service' },
   { href: '/part-time-jobs', label: 'Part-time' },
   { href: '/jobs', label: 'All jobs' },
   { href: '/target-jobs', label: 'Fortune 500' },

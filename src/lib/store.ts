@@ -1,3 +1,4 @@
+import { customerServiceQuery, isOntarioCustomerServiceJob } from './customer-service-jobs';
 import type { AnswerBankEntry, ApplicationPack, ApplicationRecord, ApplicationStatus, CandidateProfile, CandidateProfileId, CompanyIntelligence, CompanyWatch, DashboardStats, Job, JobValidityVerification, JobWithMatch, MatchScore, SearchProfile, WebhookIntegration } from './types';
 import { demoJobs, demoProfile } from './demo';
 import { jsonEnv } from './utils';
@@ -470,4 +471,15 @@ export async function saveWebhookIntegration(integration: WebhookIntegration & {
 export async function deleteWebhookIntegration(id: string) {
   if (!supabaseConfigured) return;
   await deleteRows(`webhook_integrations?id=eq.${encodeURIComponent(id)}`);
+}
+
+export async function listCustomerServiceJobs(): Promise<JobWithMatch[]> {
+  if (!supabaseConfigured) throw new Error('Connect the job database to load customer service openings.');
+  const jobs: JobWithMatch[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const rows = await supabaseRequest<any[]>(customerServiceQuery(offset));
+    jobs.push(...rows.map(rowToJob).filter(isOntarioCustomerServiceJob));
+    if (rows.length < 500) break;
+  }
+  return [...new Map(jobs.map(job => [job.id, job])).values()];
 }
