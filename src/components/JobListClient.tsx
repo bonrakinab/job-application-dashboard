@@ -53,7 +53,8 @@ export function JobListClient({ jobs, fixedJobType, newestFirst = false }: { new
     const applicationHit=matchesApplicationFilter(j.application,applicationState);
     const validityHit=validity==='all'
       || (validity==='viable' && !['closed','likely_closed'].includes(j.validityStatus ?? 'unknown'))
-      || (validity==='verified' && ['active','likely_active'].includes(j.validityStatus ?? 'unknown'))
+      || (validity==='verified' && j.validityStatus==='active')
+      || (validity==='likely' && j.validityStatus==='likely_active')
       || (validity==='unknown' && (j.validityStatus ?? 'unknown')==='unknown')
       || (validity==='closed' && ['closed','likely_closed'].includes(j.validityStatus ?? 'unknown'));
     return jobMatchesType(j,workplace)&&match&&category&&sourceHit&&stageHit&&typeHit&&applicationHit&&validityHit;
@@ -73,10 +74,10 @@ export function JobListClient({ jobs, fixedJobType, newestFirst = false }: { new
       <div className="filter-panel-body searchbar job-filters">
         <select className="select" aria-label="Match rating" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">All match ratings</option><option value="exceptional">Exceptional</option><option value="strong">Strong</option><option value="reasonable">Reasonable</option><option value="stretch">Stretch</option><option value="skip">Skip</option></select>
         <select className="select" aria-label="Career stage" value={careerStage} onChange={e=>setCareerStage(e.target.value)}><option value="all">All stages</option><option value="internship">Internships</option><option value="new-grad">New grad</option><option value="entry-level">Entry level</option><option value="experienced">Experienced</option></select>
-        {!fixedJobType ? <select className="select" aria-label="Job type" value={jobType} onChange={e=>setJobType(e.target.value as JobTypeFilter)}><option value="all">All job types</option><option value="full-time">Full-time</option><option value="part-time">Part-time</option><option value="contract">Contract</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="on-site">On-site</option></select> : null}
+        {!fixedJobType ? <select className="select" aria-label="Job type" value={jobType} onChange={e=>setJobType(e.target.value as JobTypeFilter)}><option value="all">All job types</option><option value="full-time">Full-time</option><option value="part-time">Part-time</option><option value="contract">Contract / temporary</option></select> : null}
         <select className="select" aria-label="Workplace" value={workplace} onChange={e=>setWorkplace(e.target.value as JobTypeFilter)}><option value="all">All workplaces</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="on-site">On-site</option></select>
         <select className="select" aria-label="Application state" value={applicationState} onChange={e=>setApplicationState(e.target.value as ApplicationFilter)}><option value="all">Any application status</option><option value="applied">Applied</option><option value="not-applied">Not applied</option></select>
-        <select className="select" aria-label="Posting state" value={validity} onChange={e=>setValidity(e.target.value)}><option value="viable">Open or unverified</option><option value="verified">Verified active</option><option value="unknown">Unverified</option><option value="closed">Closed</option><option value="all">Any posting state</option></select>
+        <select className="select" aria-label="Posting state" value={validity} onChange={e=>setValidity(e.target.value)}><option value="viable">Open or unverified</option><option value="verified">Verified active</option><option value="likely">Likely active</option><option value="unknown">Unverified</option><option value="closed">Closed</option><option value="all">Any posting state</option></select>
         <select className="select" aria-label="Source" value={source} onChange={e=>setSource(e.target.value)}><option value="all">All sources</option>{sources.map(value=><option value={value} key={value}>{value}</option>)}</select>
       </div>
     </details>

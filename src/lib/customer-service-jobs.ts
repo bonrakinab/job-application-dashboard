@@ -40,11 +40,15 @@ export function isOntarioCustomerServiceJob(job: Pick<Job, 'title' | 'location' 
   return /\b(canada|worldwide|global|anywhere in the world|north america|americas)\b/.test(location);
 }
 
-// Query the service inventory first, rather than filtering the latest 3,000 technical jobs.
+// Keep this predicate in sync with jobs_customer_service_inventory_idx in the migration.
+export const CUSTOMER_SERVICE_LOCATION_PATTERNS = [
+  '*Ontario*', '*Canada*', '*Worldwide*', '*Global*', '*North America*',
+  '*Americas*', '*Anywhere in the World*', '* ON', '* ON *', '* ON,*', 'ON-*',
+];
+// List pages do not need full descriptions, raw ATS payloads, or generated match explanations.
+export const CUSTOMER_SERVICE_COLUMNS = 'id,external_id,source,source_key,url,apply_url,title,company,location,posted_at,discovered_at,last_seen_at,employment_type,remote,workplace_type,validity_status,health_score,last_verified_at,application_profile_id,job_matches(overall,recommendation,profile_id),applications(id,status,job_id)';
 export function customerServiceQuery(offset: number, limit = 500) {
   const titles = CUSTOMER_SERVICE_TERMS.map(term => `title.ilike.*${term.replace(/ /g, '*')}*`);
-  const locations = ['Ontario', 'Canada', 'Worldwide', 'Global', 'North America', 'Americas', 'Anywhere in the World', ...ONTARIO_CITIES];
-  const places = locations.map(place => `location.ilike.*${place}*`);
-  places.push('location.ilike.* ON', 'location.ilike.* ON *', 'location.ilike."* ON,*"', 'location.ilike.ON-*');
-  return `jobs?select=*,job_matches(*),applications(*)&and=${encodeURIComponent(`(or(${titles.join(',')}),or(${places.join(',')}))`)}&order=discovered_at.desc,id.asc&limit=${limit}&offset=${offset}`;
+  const places = CUSTOMER_SERVICE_LOCATION_PATTERNS.map(pattern => `location.ilike.${pattern.includes(',') ? JSON.stringify(pattern) : pattern}`);
+  return `jobs?select=${CUSTOMER_SERVICE_COLUMNS}&and=${encodeURIComponent(`(or(${titles.join(',')}),or(${places.join(',')}))`)}&order=discovered_at.desc,id.asc&limit=${limit}&offset=${offset}`;
 }

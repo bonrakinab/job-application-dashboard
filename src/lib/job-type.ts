@@ -24,9 +24,17 @@ export function jobMatchesType(job: Pick<Job, 'title' | 'location' | 'employment
   if (filter === 'full-time') return /\b(full[\s_-]*time|permanent)\b/.test(text);
   if (filter === 'part-time') return /\b(part[\s_-]*time|casual)\b/.test(text);
   if (filter === 'contract') return /\b(contract|contractor|contractual|temporary|temp\b|fixed[ -]?term|freelance)\b/.test(text);
-  if (filter === 'remote') return job.remote === true || hasRemoteSignal(text);
-  if (filter === 'hybrid') return hasHybridSignal(text);
-  return hasOnSiteSignal(text) || (job.remote === false && !hasRemoteSignal(text) && !hasHybridSignal(text));
+  // Hybrid is often also flagged remote by source feeds. Give explicit workplace
+  // information precedence so the three workplace filters do not overlap.
+  const structured = (job.workplaceType ?? '').toLowerCase();
+  const signal = hasHybridSignal(structured) ? 'hybrid'
+    : hasOnSiteSignal(structured) ? 'on-site'
+    : hasRemoteSignal(structured) ? 'remote'
+    : hasHybridSignal(text) ? 'hybrid'
+    : hasOnSiteSignal(text) ? 'on-site'
+    : job.remote === true || hasRemoteSignal(text) ? 'remote'
+    : job.remote === false ? 'on-site' : undefined;
+  return signal === filter;
 }
 
 export function jobTypeLabels(job: Pick<Job, 'title' | 'location' | 'employmentType' | 'workplaceType' | 'remote'>) {

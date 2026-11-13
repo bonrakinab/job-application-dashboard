@@ -602,3 +602,8 @@ summary:focus-visible {
     flex-direction: column;
   }
 }
+
+/* Keep the jobs navigation visible and the table inside the page width. */
+.content { min-width: 0; }
+.subnav a[aria-current="page"] { background: #e8efff; color: #193f8f; font-weight: 700; }
+@media (max-width: 640px) { .subnav { flex-wrap: wrap; overflow-x: visible; } }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { customerServiceQuery, isOntarioCustomerServiceJob } from './customer-service-jobs';
+import { readFileSync } from 'node:fs';
+import { CUSTOMER_SERVICE_TERMS, CUSTOMER_SERVICE_LOCATION_PATTERNS, customerServiceQuery, isOntarioCustomerServiceJob } from './customer-service-jobs';
 const job = (location: string, title = 'Customer Service Representative', remote = false) => ({ location, title, remote });
 test('covers Ontario cities and all employment profiles without score gating', () => {
   for (const location of ['Windsor, ON', 'Kenora, Ontario', 'New Liskeard, Ontario', 'Toronto, Canada', 'ON-Ottawa']) {
@@ -22,4 +23,15 @@ test('query applies role and location scope before paginating without the main i
   assert.match(query, /and=\(or\(title/);
   assert.match(query, /location.ilike.\*Ontario\*/);
   assert.match(query, /offset=3500$/);
+});
+
+test('list query stays lean and every predicate is covered by its partial index', () => {
+  const query = decodeURIComponent(customerServiceQuery(0));
+  assert.ok(!query.includes('select=*'));
+  assert.ok(!query.includes('raw'));
+  assert.ok(!query.includes('description'));
+  assert.ok(query.includes('job_matches(overall,recommendation,profile_id)'));
+  const migration = readFileSync(new URL('../../supabase/migrations/20261113084021_customer_service_role_inventory_index.sql', import.meta.url), 'utf8');
+  for (const term of CUSTOMER_SERVICE_TERMS) assert.ok(migration.includes("title ilike '%" + term.replace(/ /g, '%') + "%'"));
+  for (const pattern of CUSTOMER_SERVICE_LOCATION_PATTERNS) assert.ok(migration.includes("location ilike '" + pattern.replace(/\*/g, '%') + "'"));
 });

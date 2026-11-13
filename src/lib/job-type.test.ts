@@ -39,3 +39,13 @@ test('returns multiple useful labels', () => {
   assert.deepEqual(jobTypeLabels({ ...base, employmentType: 'Full-time', workplaceType: 'Hybrid' }), ['Full-time', 'Hybrid']);
   assert.deepEqual(jobTypeLabels({ ...base, employmentType: 'Full-time', workplaceType: 'On-site' }), ['Full-time', 'On-site']);
 });
+
+test('hybrid and explicit workplace values override the remote flag', () => {
+  const hybrid = { ...base, remote: true, workplaceType: 'Hybrid' };
+  assert.equal(jobMatchesType(hybrid, 'remote'), false);
+  assert.equal(jobMatchesType(hybrid, 'hybrid'), true);
+  assert.deepEqual(jobTypeLabels(hybrid), ['Hybrid']);
+  const onsite = { ...base, remote: true, workplaceType: 'On-site' };
+  assert.equal(jobMatchesType(onsite, 'remote'), false);
+  assert.equal(jobMatchesType(onsite, 'on-site'), true);
+});
